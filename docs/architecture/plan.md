@@ -1,6 +1,6 @@
 # Mise Pre-Launch Platform: architecture and implementation plan
 
-Status: accepted for Phase 1. Source brief: `# MISE PRE-LAUNCH PLATFORM.md` (kept beside the repo).
+Status: accepted for Phase 1, and revised after the build so it matches what was built. Source brief: `# MISE PRE-LAUNCH PLATFORM.md` (kept beside the repo).
 
 This document covers the twelve planning items the brief asks for, then reviews the plan
 against the brief. Deeper detail lives in the sibling docs (`docs/database`, `docs/api`,
@@ -102,7 +102,7 @@ Public:
 | POST | `/api/v1/leads` | create lead; naturally idempotent on email |
 | POST | `/api/v1/leads/verify` | confirm email with signed token |
 | GET | `/api/v1/leads/me` | lead's own summary and referral counts (profile token) |
-| PUT | `/api/v1/leads/preferences` | progressive profiling (profile token) |
+| PATCH | `/api/v1/leads/preferences` | progressive profiling (profile token) |
 | POST | `/api/v1/leads/unsubscribe` | signed token from email |
 | GET | `/api/v1/referrals/{code}` | validate a code, return referrer's first name |
 | POST | `/api/v1/events` | batch of analytics events |
@@ -136,7 +136,7 @@ Admin: `/login`, `/` (dashboard), `/leads`, `/leads/[id]`.
 
 `packages/ui` holds brand primitives with no data fetching: `MiseButton`, `Container`,
 `Section`, `Heading`, `Text`, `MediaFrame`, `Field` controls, `FAQItem`, `ProcessStep`,
-`Reveal`. Feature components that need data or content (`WaitlistForm`, `MealPreview`,
+`ImageReveal`. Feature components that need data or content (`WaitlistForm`, `MealPreview`,
 `ChefFeature`, `IngredientStory`, `ReferralPanel`) live in `apps/marketing` and compose the
 primitives. All copy comes from `apps/marketing/src/content/*.ts`, typed, so a CMS can
 replace the files without touching components.
@@ -145,7 +145,9 @@ replace the files without touching components.
 
 - Motion tokens: `fast` 150ms, `standard` 300ms, `editorial` 900ms; one easing for
   entrances, one for interactions.
-- Motion (the library) handles the hero settle, FAQ and mobile navigation.
+- CSS handles the hero settle, image reveals, the FAQ and the mobile menu. The Motion
+  library named in the brief was dropped during the build: CSS covers every case, runs
+  before hydration and ships no JavaScript (ADR-007).
 - GSAP ScrollTrigger is used once, for the pinned Farm → Dinner sequence, and is loaded
   lazily when that section approaches the viewport on wide screens only.
 - Reduced motion: the hero renders settled, the story renders as a static illustrated

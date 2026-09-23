@@ -24,7 +24,7 @@ here are the ones the customer product will grow from.
 
 ## Run it locally
 
-You need Docker, Node 22 or newer with pnpm 11, and Go 1.25 or newer.
+You need Docker, Node 22 or newer with pnpm 11, and Go 1.27 or newer.
 
 Mise uses its own port block so it can run beside other projects:
 marketing **3100**, admin **3101**, API **8090**, PostgreSQL **5460**, Mailpit **1026** (SMTP) and **8026** (inbox).

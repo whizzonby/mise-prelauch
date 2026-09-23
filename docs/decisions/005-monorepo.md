@@ -13,7 +13,7 @@ is no package build step.
 
 - A change that touches the API, its client and a screen is one pull request and one review.
 - The design system is shared by importing it, not by publishing it.
-- No task runner (Turborepo, Nx). `pnpm -r` runs a script everywhere; with seven small
+- No task runner (Turborepo, Nx). `pnpm -r` runs a script everywhere; with eight small
   workspaces, caching would save seconds.
 
 ## Toolchain pins

@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" "One step left"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Confirm this email address to take your place on the Mise list. We will write when meal kits are ready to order in your area.</p>
+{{template "button" (dict "URL" .VerifyURL "Label" "Confirm my email")}}
+<p style="margin:0;color:#5F5B50;font-size:14px;">The link works for 7 days. If you did not join the Mise list, ignore this email and nothing more will be sent.</p>
+{{template "footer" .}}

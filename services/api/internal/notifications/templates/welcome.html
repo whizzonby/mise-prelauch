@@ -1,0 +1,9 @@
+{{template "header" .}}
+{{template "heading" "You're on the Mise list"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Your email is confirmed and your place is saved. When Mise opens for orders in your area, you will hear from us before anyone who is not on the list.</p>
+<p style="margin:0 0 16px 0;">Know someone who would rather cook than chop? Send them your link. Each friend who joins and confirms their email is counted on your page.</p>
+{{template "referral" .}}
+{{template "button" (dict "URL" .WelcomeURL "Label" "Open my Mise page")}}
+<p style="margin:0;color:#5F5B50;font-size:14px;">On your page you can also tell us how you cook, so the first menus suit your kitchen.</p>
+{{template "footer" .}}

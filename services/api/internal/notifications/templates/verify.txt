@@ -1,0 +1,12 @@
+Hi {{.FirstName}},
+
+Confirm this email address to take your place on the Mise list. We will write when meal kits are ready to order in your area.
+
+Confirm my email:
+{{.VerifyURL}}
+
+The link works for 7 days. If you did not join the Mise list, ignore this email and nothing more will be sent.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.
+Unsubscribe: {{.UnsubscribeURL}}

@@ -1,0 +1,8 @@
+{{template "header" .}}
+{{template "heading" "You're already on the list"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Someone just entered this email address on the Mise waitlist. It was already there, so nothing has changed and your place is safe.</p>
+<p style="margin:0 0 16px 0;">So far {{.Referrals.Converted}} {{if eq .Referrals.Converted 1}}friend has{{else}}friends have{{end}} joined through your link.</p>
+{{template "referral" .}}
+{{template "button" (dict "URL" .WelcomeURL "Label" "Open my Mise page")}}
+{{template "footer" .}}

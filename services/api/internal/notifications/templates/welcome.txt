@@ -1,0 +1,15 @@
+Hi {{.FirstName}},
+
+You're on the Mise list. Your email is confirmed and your place is saved. When Mise opens for orders in your area, you will hear from us before anyone who is not on the list.
+
+Know someone who would rather cook than chop? Send them your link. Each friend who joins and confirms their email is counted on your page.
+
+Your invitation link:
+{{.ReferralURL}}
+
+Open your Mise page:
+{{.WelcomeURL}}
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.
+Unsubscribe: {{.UnsubscribeURL}}

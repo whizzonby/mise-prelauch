@@ -1,0 +1,33 @@
+{
+  "name": "mise",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @mise/marketing --filter @mise/admin dev",
+    "dev:marketing": "pnpm --filter @mise/marketing dev",
+    "dev:admin": "pnpm --filter @mise/admin dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "e2e": "pnpm --filter @mise/e2e test",
+    "services:up": "docker compose up -d postgres mailpit",
+    "services:down": "docker compose down",
+    "dev:api": "node infrastructure/scripts/run-go.mjs api",
+    "dev:worker": "node infrastructure/scripts/run-go.mjs worker",
+    "misectl": "node infrastructure/scripts/run-go.mjs misectl",
+    "db:migrate": "node infrastructure/scripts/run-go.mjs misectl migrate up",
+    "test:go": "node infrastructure/scripts/run-go.mjs test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.5",
+    "typescript": "^6.0.3"
+  }
+}

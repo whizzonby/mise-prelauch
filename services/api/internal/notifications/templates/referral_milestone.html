@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" (printf "%d friends have joined through you" .Count)}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">{{.Count}} people have joined the Mise list with your link and confirmed their email. Thank you for setting the table.</p>
+{{template "referral" .}}
+{{template "button" (dict "URL" .WelcomeURL "Label" "Open my Mise page")}}
+{{template "footer" .}}

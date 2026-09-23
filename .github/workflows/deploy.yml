@@ -1,0 +1,79 @@
+name: Deploy
+
+# Deployments happen here and nowhere else. No one deploys from a laptop:
+# AWS trusts only this repository's workflows (GitHub OIDC), and the
+# production environment requires an approving reviewer.
+#
+#   push to main            -> staging, automatically, after CI passes
+#   run this workflow by hand, choosing "production" -> production, after approval
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        type: choice
+        options: [staging, production]
+        default: staging
+
+concurrency:
+  group: deploy-${{ inputs.environment || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment || 'staging' }}
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'staging' }}
+    env:
+      # Set per GitHub environment (Settings -> Environments). Values come from `terraform output`.
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      NAME_PREFIX: ${{ vars.NAME_PREFIX }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.IMAGE_TAG }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        run: |
+          set -euo pipefail
+          docker build -f infrastructure/docker/api.Dockerfile -t "$ECR_REGISTRY/$NAME_PREFIX-api:$IMAGE_TAG" .
+          docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=marketing \
+            --build-arg NEXT_PUBLIC_API_URL="${{ vars.PUBLIC_API_URL }}" \
+            --build-arg NEXT_PUBLIC_SITE_URL="${{ vars.PUBLIC_SITE_URL }}" \
+            -t "$ECR_REGISTRY/$NAME_PREFIX-marketing:$IMAGE_TAG" .
+          docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=admin \
+            -t "$ECR_REGISTRY/$NAME_PREFIX-admin:$IMAGE_TAG" .
+          for image in api marketing admin; do docker push "$ECR_REGISTRY/$NAME_PREFIX-$image:$IMAGE_TAG"; done
+
+      - name: Run database migrations
+        run: infrastructure/scripts/ecs-deploy.sh migrate
+
+      - name: Roll out services
+        run: infrastructure/scripts/ecs-deploy.sh services
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 10 --retry-delay 6 "${{ vars.PUBLIC_API_URL }}/api/v1/ready"
+          curl --fail --silent --show-error --retry 10 --retry-delay 6 --output /dev/null "${{ vars.PUBLIC_SITE_URL }}/"

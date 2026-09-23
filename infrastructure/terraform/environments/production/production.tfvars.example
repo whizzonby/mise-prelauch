@@ -1,0 +1,8 @@
+# Copy to production.tfvars and fill in. Real tfvars files are not committed.
+domain                   = "mise.tt"
+route53_zone_id          = "Z0000000000000000000"
+mail_from                = "Mise <hello@mise.tt>"
+github_repository        = "your-org/mise"
+github_oidc_provider_arn = "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"
+alarm_email              = "ops@mise.tt"
+# admin_allowed_cidrs    = ["203.0.113.0/24"]

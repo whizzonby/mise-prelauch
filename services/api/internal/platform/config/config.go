@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -70,7 +72,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		Env:           get("MISE_ENV", "local"),
 		HTTPAddr:      get("HTTP_ADDR", ":8090"),
-		DatabaseURL:   need("DATABASE_URL"),
+		DatabaseURL:   databaseURL(need),
 		PublicSiteURL: strings.TrimRight(get("PUBLIC_SITE_URL", "http://localhost:3100"), "/"),
 		CORSOrigins:   splitList(get("CORS_ORIGINS", "http://localhost:3100")),
 
@@ -139,6 +141,26 @@ func Load() (Config, error) {
 	}
 
 	return cfg, errors.Join(errs...)
+}
+
+// databaseURL returns DATABASE_URL, or builds it from DB_HOST, DB_USER,
+// DB_PASSWORD and DB_NAME. The parts form exists for AWS, where RDS keeps the
+// password in Secrets Manager as its own value rather than inside a URL.
+func databaseURL(need func(string) string) string {
+	if v := strings.TrimSpace(os.Getenv("DATABASE_URL")); v != "" {
+		return v
+	}
+	if os.Getenv("DB_HOST") == "" {
+		return need("DATABASE_URL")
+	}
+	u := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(need("DB_USER"), need("DB_PASSWORD")),
+		Host:     net.JoinHostPort(os.Getenv("DB_HOST"), get("DB_PORT", "5432")),
+		Path:     "/" + need("DB_NAME"),
+		RawQuery: "sslmode=" + get("DB_SSLMODE", "require"),
+	}
+	return u.String()
 }
 
 func get(key, fallback string) string {

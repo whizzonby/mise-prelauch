@@ -48,7 +48,7 @@ export const privacy: LegalDocument = {
       heading: "Who sees it",
       paragraphs: [
         "The Mise team, and the companies that host our systems and deliver our email on our behalf. We do not sell or rent your details to anyone.",
-        "A friend who invited you can see that someone joined with their link, and how many. They cannot see who.",
+        "A friend who invited you can see that someone joined with their link, and how many. They cannot see who. People you invite see your first name on the invitation page.",
       ],
     },
     {

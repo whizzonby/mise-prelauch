@@ -4,13 +4,27 @@ import { buttonClasses, Container, cx, Wordmark } from "@mise/ui";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 
 import { navigation, primaryCta } from "@/content/site";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
+  // Where a menu link is taking the visitor, held until the menu has closed.
+  const pendingHref = useRef<string | null>(null);
+
+  // The open menu locks page scrolling, and stays locked until its closing
+  // animation ends. Navigating to a section before then would not scroll, so
+  // the link closes the menu first and the navigation follows.
+  const followAfterClose = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    pendingHref.current = event.currentTarget.getAttribute("href");
+    setOpen(false);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -61,6 +75,14 @@ export function SiteHeader() {
             <Dialog.Portal>
               <Dialog.Content
                 aria-describedby={undefined}
+                onCloseAutoFocus={(event) => {
+                  const href = pendingHref.current;
+                  if (!href) return;
+                  pendingHref.current = null;
+                  // Focus follows the visitor to the section, not back to the menu button.
+                  event.preventDefault();
+                  router.push(href);
+                }}
                 className="fixed inset-0 z-50 flex flex-col bg-background data-[state=closed]:animate-[menu-out_var(--duration-fast)_var(--ease-interaction)] data-[state=open]:animate-[menu-in_var(--duration-standard)_var(--ease-settle)] motion-reduce:animate-none! lg:hidden"
               >
                 <Container className="flex h-18 shrink-0 items-center justify-between">
@@ -80,7 +102,7 @@ export function SiteHeader() {
                         <li key={item.href} className="border-b border-border">
                           <Link
                             href={item.href}
-                            onClick={() => setOpen(false)}
+                            onClick={followAfterClose}
                             className="type-h2 block py-4 text-primary"
                           >
                             {item.label}
@@ -91,7 +113,7 @@ export function SiteHeader() {
                   </nav>
                   <Link
                     href={primaryCta.href}
-                    onClick={() => setOpen(false)}
+                    onClick={followAfterClose}
                     className={buttonClasses("primary", "lg", "mt-8 w-full")}
                   >
                     {primaryCta.label}

@@ -1,14 +1,14 @@
 import type { StaticImageData } from "next/image";
 
-import chefHerbs from "@/assets/images/chef-herbs.jpg";
-import chefKnife from "@/assets/images/chef-knife.jpg";
+import chefDetail from "@/assets/images/chef-detail.jpg";
+import chefMain from "@/assets/images/chef-main.jpg";
 import coconut from "@/assets/images/ingredient-coconut.jpg";
 import garlic from "@/assets/images/ingredient-garlic.jpg";
 import lime from "@/assets/images/ingredient-lime.jpg";
-import mango from "@/assets/images/ingredient-mango.jpg";
 import okra from "@/assets/images/ingredient-okra.jpg";
-import marketBaskets from "@/assets/images/market-baskets.jpg";
-import marketLimes from "@/assets/images/market-limes.jpg";
+import pepper from "@/assets/images/ingredient-pepper.jpg";
+import marketPeppers from "@/assets/images/market-peppers.jpg";
+import marketStall from "@/assets/images/market-stall.jpg";
 import spices from "@/assets/images/spices.jpg";
 import storyDinner from "@/assets/images/story-dinner.jpg";
 import storyFarm from "@/assets/images/story-farm.jpg";
@@ -17,8 +17,8 @@ import storyKit from "@/assets/images/story-kit.jpg";
 import storyKitchen from "@/assets/images/story-kitchen.jpg";
 
 /*
- * PLACEHOLDER PHOTOGRAPHY. Every image in this file is an openly licensed
- * stand-in from Wikimedia Commons (credits: docs/content/image-credits.md).
+ * PLACEHOLDER PHOTOGRAPHY. Every image in this file is a stock photograph
+ * from Pexels (credits: docs/content/image-credits.md).
  * Replace them with Mise's own photography before launch; alt text describes
  * what the current image shows and must be rewritten with each replacement.
  */
@@ -40,11 +40,11 @@ export const hero = {
    * `prep` is what the Mise kitchen has already done to it.
    */
   counter: [
-    { id: "coconut", name: "Coconut", prep: "cracked", src: coconut, alt: "A whole coconut beside a cracked half showing white flesh" },
-    { id: "lime", name: "Lime", prep: "halved", src: lime, alt: "A whole lime beside a cut half" },
-    { id: "garlic", name: "Garlic", prep: "peeled", src: garlic, alt: "A garlic bulb, loose cloves and one peeled clove" },
-    { id: "mango", name: "Julie mango", prep: "sliced", src: mango, alt: "A ripe mango beside a sliced half" },
-    { id: "ochro", name: "Ochro", prep: "trimmed", src: okra, alt: "A pile of fresh green ochro pods" },
+    { id: "coconut", name: "Coconut", prep: "cracked", src: coconut, alt: "Two whole coconuts and one cracked open, showing pieces of white flesh" },
+    { id: "lime", name: "Lime", prep: "halved", src: lime, alt: "A whole lime with lime halves and wedges on a white counter" },
+    { id: "garlic", name: "Garlic", prep: "peeled", src: garlic, alt: "Garlic bulbs cut across, with loose peeled cloves" },
+    { id: "ochro", name: "Ochro", prep: "sliced", src: okra, alt: "An ochro pod with five neat slices cut from it" },
+    { id: "pepper", name: "Bird pepper", prep: "whole", src: pepper, alt: "Three small red hot peppers in a row" },
   ],
 } as const;
 
@@ -57,35 +57,35 @@ export const story = {
       name: "Farm",
       body: "It starts with growers in Trinidad & Tobago. Menus are planned around what local farms are harvesting, including produce that is good to eat but hard to sell.",
       src: storyFarm,
-      alt: "A young coconut hanging from a palm",
+      alt: "Banana plants on a green hillside, with forest stretching to the horizon",
     },
     {
       id: "kitchen",
       name: "Mise kitchen",
       body: "Our cooks wash, peel, chop, season and portion. The slow part of dinner is finished before the kit leaves us.",
       src: storyKitchen,
-      alt: "Hands chopping red peppers on a round wooden board",
+      alt: "Hands mincing garlic on a wooden board beside red onions",
     },
     {
       id: "kit",
       name: "Your meal kit",
       body: "Everything the recipe needs, measured and labelled, with a recipe card and a QR code that opens a cook-along video.",
       src: storyKit,
-      alt: "Chopped vegetables arranged in separate piles on two wooden boards",
+      alt: "A box packed with squash, sweet potato, ginger, broccoli and tomatoes",
     },
     {
       id: "home",
       name: "Your kitchen",
       body: "You do the good part. Most recipes take one pot or one pan and are built for a weeknight.",
       src: storyHome,
-      alt: "A pot of vegetable stew simmering on a stove with a wooden spoon",
+      alt: "A hand stirring a pot of tomato stew with a spoon",
     },
     {
       id: "dinner",
       name: "Dinner",
       body: "A home-cooked Caribbean meal on the table, without the trip to the market or the pile of peelings.",
       src: storyDinner,
-      alt: "A pan of curry, a bowl of rice and fresh herbs laid out on a dark table",
+      alt: "A girl and her father serving themselves at a dinner table",
     },
   ],
 } as const;
@@ -112,8 +112,8 @@ export const chefs = {
   ],
   note: "The first guest chefs will be announced before launch.",
   photos: {
-    main: { src: chefKnife, alt: "A cook mincing garlic with a large kitchen knife" },
-    detail: { src: chefHerbs, alt: "Hands chopping fresh green herbs on a board" },
+    main: { src: chefMain, alt: "A chef in a black jacket chopping fresh herbs on a wooden board" },
+    detail: { src: chefDetail, alt: "A cook dropping chopped herbs onto a board in a dark kitchen" },
   },
 } as const;
 
@@ -131,8 +131,8 @@ export const sustainability = {
   ],
   note: "This is how we intend to operate. Once we are delivering, we will publish what we actually achieve.",
   photos: {
-    main: { src: marketBaskets, alt: "Market baskets piled with onions, potatoes and green beans" },
-    detail: { src: marketLimes, alt: "A basket of limes, sweet potatoes and ginger" },
+    main: { src: marketStall, alt: "A market stall piled with bananas, cocoa pods, pineapples and limes" },
+    detail: { src: marketPeppers, alt: "A basket heaped with red, yellow and green seasoning peppers" },
   },
 } as const;
 
@@ -183,5 +183,5 @@ export const waitlistSection = {
   title: "Save your place",
   body: "Join the list and we will email you when Mise opens in your area. It takes less than a minute.",
   assurances: ["Free, with nothing to pay or commit to", "First to hear the launch date", "Unsubscribe whenever you like"],
-  photo: { src: spices, alt: "Ginger, chillies, turmeric, garlic and whole spices arranged in rows" },
+  photo: { src: spices, alt: "Small metal dishes of ground spices, salt and dried herbs" },
 } as const;

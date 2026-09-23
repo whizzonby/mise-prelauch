@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.27"
+  NODE_VERSION: "24"
+
+jobs:
+  web:
+    name: Web (lint, types, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8090
+          NEXT_PUBLIC_SITE_URL: http://localhost:3100
+
+  api:
+    name: API (vet, tests, migrations)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: mise
+          POSTGRES_PASSWORD: mise
+          POSTGRES_DB: mise_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mise -d mise_test"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://mise:mise@localhost:5432/mise_test?sslmode=disable
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: services/api/go.sum
+      - name: Formatting
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go vet ./...
+      - name: Tests (unit and database)
+        run: go test ./... -race -count=1
+      - name: Migrations apply to an empty database, roll back and re-apply
+        env:
+          MISE_ENV: local
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          TOKEN_SIGNING_KEY: ci-only-signing-key-ci-only-signing-key
+        run: |
+          psql "$DATABASE_URL" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+          go run ./cmd/misectl migrate up
+          go run ./cmd/misectl migrate down
+          go run ./cmd/misectl migrate up
+      - run: go build ./...
+
+  security:
+    name: Dependency and secret checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: services/api/go.sum
+      - name: Go vulnerabilities
+        working-directory: services/api
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: npm vulnerabilities (production dependencies, high and above)
+        run: pnpm audit --prod --audit-level high
+      - name: Committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    needs: [web, api]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the whole stack
+        run: docker compose up -d --build --wait
+      - name: Create the test admin
+        run: >
+          docker compose run --rm
+          -e MISE_ADMIN_PASSWORD="$E2E_ADMIN_PASSWORD"
+          migrate /app/misectl admin create -email "$E2E_ADMIN_EMAIL" -name "CI Admin" -role super_admin
+        env:
+          E2E_ADMIN_EMAIL: ci-admin@mise.local
+          E2E_ADMIN_PASSWORD: ${{ github.run_id }}-ci-admin-password
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @mise/e2e...
+      - run: pnpm --filter @mise/e2e exec playwright install --with-deps chromium
+      - run: pnpm e2e
+        env:
+          E2E_ADMIN_EMAIL: ci-admin@mise.local
+          E2E_ADMIN_PASSWORD: ${{ github.run_id }}-ci-admin-password
+      - name: Stack logs
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7

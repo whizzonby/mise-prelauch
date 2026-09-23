@@ -1,0 +1,5 @@
+# Copy to backend.hcl. The bucket and lock table are created once per AWS
+# account, by hand or with a separate bootstrap configuration.
+bucket         = "mise-terraform-state-000000000000"
+region         = "us-east-1"
+dynamodb_table = "mise-terraform-locks"

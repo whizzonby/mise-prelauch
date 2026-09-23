@@ -29,5 +29,6 @@ export const footer = {
   legal: [
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
+    { label: "Photo credits", href: "/credits" },
   ],
 } as const;

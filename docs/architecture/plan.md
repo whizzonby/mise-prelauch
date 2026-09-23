@@ -219,5 +219,5 @@ None block the build; all are configuration:
 3. Referral rewards. Default: none promised; copy says early access is prioritised by
    list order only if that is later configured.
 4. Real photography, chef names, meals and plan pricing. All placeholder content is
-   flagged in `src/content` and credited in `docs/content/image-credits.md`.
+   flagged in `src/content`; the stock photographs are listed in `docs/content/image-credits.md`.
 5. Legal review of the privacy policy and terms (placeholder text is marked as draft).

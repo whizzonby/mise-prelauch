@@ -1,14 +1,16 @@
 import type { StaticImageData } from "next/image";
 
-import callaloo from "@/assets/images/meal-callaloo.jpg";
-import curriedEggs from "@/assets/images/meal-curried-eggs.jpg";
-import stewChicken from "@/assets/images/meal-stew-chicken.jpg";
-import stewedLentils from "@/assets/images/meal-stewed-lentils.jpg";
-import sweetPotatoBake from "@/assets/images/meal-sweet-potato-bake.jpg";
+import channa from "@/assets/images/meal-channa.jpg";
+import curryChicken from "@/assets/images/meal-curry-chicken.jpg";
+import jerkChicken from "@/assets/images/meal-jerk-chicken.jpg";
+import oxtail from "@/assets/images/meal-oxtail.jpg";
+import plantain from "@/assets/images/meal-plantain.jpg";
+import pumpkinSoup from "@/assets/images/meal-pumpkin-soup.jpg";
 
 /*
  * SAMPLE MENU. These dishes, times and photographs are placeholders that show
- * how the menu will be presented. Replace them with the real launch menu.
+ * how the menu will be presented. The photographs are stock images from
+ * Pexels, not Mise's cooking. Replace all of it with the real launch menu.
  *
  * `nutrition` is deliberately left out of every sample dish: calories and
  * protein are facts about a real recipe and must come from the nutritionist,
@@ -41,54 +43,64 @@ export interface Meal {
 
 export const meals: Meal[] = [
   {
-    id: "callaloo-shrimp",
-    name: "Callaloo with shrimp",
+    id: "curry-chicken",
+    name: "Curry chicken and potato",
     category: "caribbean-classics",
-    description: "Dasheen leaves simmered with coconut milk, ochro and pimento, finished with shrimp.",
-    chef: "Mise kitchen",
-    prepMinutes: 30,
-    dietary: ["Pescatarian"],
-    image: { src: callaloo, alt: "A bowl of green callaloo topped with shrimp, on a wooden table beside fresh peppers" },
-  },
-  {
-    id: "stew-chicken",
-    name: "Stew chicken, rice and peas",
-    category: "family",
-    description: "Chicken browned in burnt sugar and green seasoning, with coconut rice and pigeon peas.",
+    description: "Chicken and potato cooked down in green seasoning and Trinidad curry, made for rice or roti.",
     chef: "Mise kitchen",
     prepMinutes: 40,
     dietary: [],
-    image: { src: stewChicken, alt: "Stewed chicken with rice and peas and a spoonful of slaw on a white plate" },
+    image: { src: curryChicken, alt: "Curry chicken with chunks of potato in a white bowl" },
   },
   {
-    id: "stewed-lentils",
-    name: "Stewed lentils with pimento",
-    category: "chef-series",
-    description: "Slow lentils with pumpkin, thyme and seasoning peppers. A guest chef's version of a weekday staple.",
-    chef: "Guest chef, to be announced",
-    prepMinutes: 35,
-    dietary: ["Vegan"],
-    image: { src: stewedLentils, alt: "Two clay dishes of lentil stew, each topped with a green pepper, on rough cloth" },
-  },
-  {
-    id: "curried-eggs",
-    name: "Curried eggs",
-    category: "fitness",
-    description: "Boiled eggs in a tomato and curry sauce with chadon beni, built to go with rice or roti.",
-    chef: "Mise kitchen",
-    prepMinutes: 25,
-    dietary: ["Vegetarian"],
-    image: { src: curriedEggs, alt: "Three eggs in a red curry sauce scattered with herbs, in a yellow bowl" },
-  },
-  {
-    id: "sweet-potato-bake",
-    name: "Sweet potato bake",
+    id: "jerk-chicken",
+    name: "Jerk chicken, rice and peas",
     category: "family",
-    description: "Thin-sliced sweet potato layered with coconut milk and nutmeg, baked until the top catches.",
+    description: "Chicken in a pimento and scotch bonnet rub, with coconut rice and peas and fried ripe plantain.",
     chef: "Mise kitchen",
     prepMinutes: 45,
+    dietary: [],
+    image: { src: jerkChicken, alt: "Jerk chicken with rice and peas and fried plantain on a white plate" },
+  },
+  {
+    id: "stewed-oxtail",
+    name: "Stewed oxtail with thyme",
+    category: "chef-series",
+    description: "Oxtail browned in burnt sugar and braised until it gives. A guest chef's Sunday dish.",
+    chef: "Guest chef, to be announced",
+    prepMinutes: 50,
+    dietary: [],
+    image: { src: oxtail, alt: "Dark, glossy stewed oxtail topped with a sprig of thyme" },
+  },
+  {
+    id: "curried-channa",
+    name: "Curried channa and rice",
+    category: "fitness",
+    description: "Chickpeas simmered with geera, garlic and tomato, served beside steamed rice.",
+    chef: "Mise kitchen",
+    prepMinutes: 25,
+    dietary: ["Vegan"],
+    image: { src: channa, alt: "A white plate, half steamed rice and half curried chickpeas" },
+  },
+  {
+    id: "pumpkin-soup",
+    name: "Pumpkin soup",
+    category: "family",
+    description: "Pumpkin and split peas blended smooth with coconut milk, ginger and a little pepper.",
+    chef: "Mise kitchen",
+    prepMinutes: 30,
     dietary: ["Vegetarian"],
-    image: { src: sweetPotatoBake, alt: "A round pan of golden baked sliced potato with a knife resting on it" },
+    image: { src: pumpkinSoup, alt: "A terracotta pot of smooth yellow soup" },
+  },
+  {
+    id: "fried-plantain",
+    name: "Fried ripe plantain",
+    category: "caribbean-classics",
+    description: "Ripe plantain, sliced long and fried until the edges caramelise. The side that goes with everything.",
+    chef: "Mise kitchen",
+    prepMinutes: 15,
+    dietary: ["Vegan"],
+    image: { src: plantain, alt: "Slices of fried ripe plantain on a white plate" },
   },
 ];
 

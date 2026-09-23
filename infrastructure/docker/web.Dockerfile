@@ -29,8 +29,11 @@ COPY apps/${APP} apps/${APP}
 
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_SITE_URL
+# Optional: serve the API from the site's own address (see apps/marketing/next.config.ts).
+ARG API_PROXY_TARGET
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
+    API_PROXY_TARGET=${API_PROXY_TARGET} \
     NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter "@mise/${APP}" build
 

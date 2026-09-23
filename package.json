@@ -20,7 +20,10 @@
     "dev:worker": "node infrastructure/scripts/run-go.mjs worker",
     "misectl": "node infrastructure/scripts/run-go.mjs misectl",
     "db:migrate": "node infrastructure/scripts/run-go.mjs misectl migrate up",
-    "test:go": "node infrastructure/scripts/run-go.mjs test"
+    "test:go": "node infrastructure/scripts/run-go.mjs test",
+    "share": "node infrastructure/scripts/share.mjs start",
+    "share:stop": "node infrastructure/scripts/share.mjs stop",
+    "share:url": "node infrastructure/scripts/share.mjs url"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

@@ -53,6 +53,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  /*
+   * Optional same-origin API. When API_PROXY_TARGET is set at build time (and
+   * NEXT_PUBLIC_API_URL is empty), the browser calls /api/v1/... on the site's
+   * own address and this server forwards it to the API. Used when the site is
+   * shared through a single tunnel (docker-compose.share.yml); in AWS the
+   * browser calls the API's own host instead.
+   *
+   * Only the endpoints the public site uses are forwarded. The admin API is
+   * deliberately left out, so it is never reachable through the public site.
+   */
+  async rewrites() {
+    const target = process.env.API_PROXY_TARGET?.replace(/\/$/, "");
+    if (!target) return [];
+    return ["/api/v1/leads/:path*", "/api/v1/referrals/:path*", "/api/v1/events", "/api/v1/health", "/api/v1/ready"].map(
+      (source) => ({ source, destination: `${target}${source}` }),
+    );
+  },
 };
 
 export default nextConfig;

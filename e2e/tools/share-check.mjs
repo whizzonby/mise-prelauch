@@ -1,0 +1,21 @@
+// Dev helper: joins the waitlist through a public address in a real browser. node tools/share-check.mjs <url>
+import { chromium } from "@playwright/test";
+const url = process.argv[2];
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const failed = [];
+page.on("requestfailed", (r) => failed.push(r.url()));
+page.on("console", (m) => { if (m.type() === "error") failed.push("console: " + m.text().slice(0, 120)); });
+await page.goto(url + "/#waitlist", { waitUntil: "networkidle" });
+const form = page.getByRole("form", { name: "Join the Mise waitlist" });
+await form.getByLabel("First name").fill("Remote");
+await form.getByLabel("Email", { exact: true }).fill(`remote-check-${Date.now()}@example.com`);
+await form.getByLabel("Where would you like delivery?").selectOption("tobago");
+await form.getByRole("checkbox", { name: /Email me about the Mise launch/ }).check();
+await page.waitForTimeout(1800);
+await form.getByRole("button", { name: "Join the waitlist" }).click();
+await page.waitForURL(/\/welcome$/, { timeout: 30000 });
+console.log("heading:", await page.getByRole("heading", { level: 1 }).textContent());
+console.log("invitation link:", await page.getByLabel("Your invitation link").inputValue());
+console.log(failed.length ? "problems:\n" + failed.join("\n") : "no failed requests or console errors");
+await browser.close();

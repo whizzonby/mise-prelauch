@@ -1,0 +1,39 @@
+# Share the local marketing site with someone outside your network, through a
+# temporary Cloudflare quick tunnel. Use it through the script, which finds the
+# tunnel's address and passes it in as SHARE_URL:
+#
+#   pnpm share        start sharing and print the public address
+#   pnpm share:stop   stop sharing and return to the normal local setup
+#
+# What becomes public: the marketing site, and the API endpoints the site uses
+# (they are served from the site's own address). What stays reachable only from
+# this machine: the admin app, the API port, PostgreSQL and the Mailpit inbox.
+#
+# The address is random and lasts only while the tunnel container runs. Anyone
+# who has it can open the site, so stop sharing when you are done.
+services:
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://marketing:3100
+    restart: unless-stopped
+
+  marketing:
+    build:
+      args:
+        # Empty: the browser calls /api/v1 on the site's own address...
+        NEXT_PUBLIC_API_URL: ""
+        # ...and the site's server forwards those calls to the API container.
+        API_PROXY_TARGET: http://api:8080
+        NEXT_PUBLIC_SITE_URL: ${SHARE_URL:?run this through "pnpm share"}
+
+  # Links in emails and invitation links must use the public address.
+  # Rate limits are switched back on, because the site is now on the internet.
+  api:
+    environment:
+      PUBLIC_SITE_URL: ${SHARE_URL:?run this through "pnpm share"}
+      CORS_ORIGINS: ${SHARE_URL:?run this through "pnpm share"},http://localhost:3100
+      RATE_LIMITS_DISABLED: "false"
+
+  worker:
+    environment:
+      PUBLIC_SITE_URL: ${SHARE_URL:?run this through "pnpm share"}

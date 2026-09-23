@@ -1,0 +1,42 @@
+{
+  "name": "@mise/marketing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3100",
+    "build": "next build",
+    "start": "next start --port 3100",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
+    "@mise/analytics": "workspace:*",
+    "@mise/api-client": "workspace:*",
+    "@mise/ui": "workspace:*",
+    "@mise/validation": "workspace:*",
+    "@radix-ui/react-accordion": "^1.2.20",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@tanstack/react-query": "^5.103.2",
+    "gsap": "^3.15.0",
+    "lucide-react": "^1.47.0",
+    "next": "^16.3.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-hook-form": "^7.88.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@mise/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.1",
+    "tailwindcss": "^4.3.3",
+    "vitest": "^5.0.1"
+  }
+}

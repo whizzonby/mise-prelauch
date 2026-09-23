@@ -1,0 +1,14 @@
+{
+  "name": "@mise/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@mise/config": "workspace:*",
+    "@playwright/test": "^1.63.0"
+  }
+}

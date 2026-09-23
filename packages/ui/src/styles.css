@@ -1,0 +1,198 @@
+/*
+ * Mise design tokens. Import after `@import "tailwindcss"` in each app.
+ * The spec for these values is docs/architecture/design-system.md.
+ *
+ * Rules that are deliberately not expressible here: no gradients, no blur or
+ * glass, no glow. The default Tailwind palette, radii and shadows are removed
+ * so nothing off-system can be reached by accident.
+ */
+
+@theme {
+  /* ---- Colour: named for what is on a Trinidadian kitchen counter ---- */
+  --color-*: initial;
+  --color-background: #f3ecdd; /* cassava cream: the page */
+  --color-surface: #fcfaf4; /* coconut white: forms, raised panels */
+  --color-foreground: #22211d; /* coal-pot charcoal: text */
+  --color-muted: #5f5b50; /* secondary text, 5.7:1 on background */
+  --color-primary: #1e3a2b; /* dasheen leaf green */
+  --color-primary-foreground: #fcfaf4;
+  --color-secondary: #4a6a28; /* chadon beni green */
+  --color-accent: #b4411c; /* roucou (annatto) red-orange */
+  --color-accent-foreground: #fcfaf4;
+  --color-border: #d9cfba; /* hairlines and dividers */
+  --color-border-strong: #8a8372; /* form control outlines, 3:1 on background */
+  --color-success: #2f6b3f;
+  --color-warning: #8a5a00;
+  --color-error: #9b1c2e; /* sorrel red, distinct from the accent */
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* ---- Type ---- */
+  --font-display: var(--font-young-serif), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Shape: small radii, like a printed label. Photographs are never rounded. ---- */
+  --radius-*: initial;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-full: 9999px;
+
+  /* ---- Elevation: one shadow, for things that float above the page. ---- */
+  --shadow-*: initial;
+  --shadow-overlay: 0 16px 40px rgb(34 33 29 / 0.18);
+
+  /* ---- Motion ---- */
+  --ease-*: initial;
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1); /* entrances: quick start, long soft landing */
+  --ease-interaction: cubic-bezier(0.4, 0, 0.2, 1); /* hover, press, toggle */
+
+  /* ---- Breakpoints: Tailwind defaults plus one for large desktop ---- */
+  --breakpoint-3xl: 120rem;
+}
+
+:root {
+  --duration-fast: 150ms; /* direct feedback: hover, press, focus */
+  --duration-standard: 300ms; /* state changes: open, close, swap */
+  --duration-editorial: 900ms; /* storytelling: image reveals, the hero settle */
+
+  --page-gutter: clamp(1.25rem, 4vw, 4rem);
+  --focus-color: var(--color-foreground);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 5rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Sections with a dark ground flip the focus ring so it stays visible. */
+  .on-dark {
+    --focus-color: var(--color-surface);
+  }
+}
+
+/*
+ * Type scale. Display and headings are Young Serif; it has one weight, so
+ * hierarchy comes from size and space. Text is Instrument Sans.
+ */
+@utility type-display {
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 0.5rem + 7.4vw, 9.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+@utility type-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.6rem + 5vw, 5.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+@utility type-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2.125rem, 1.5rem + 2.7vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+@utility type-h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.3rem + 0.9vw, 2.125rem);
+  line-height: 1.14;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+  text-wrap: balance;
+}
+
+@utility type-h4 {
+  font-family: var(--font-sans);
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+@utility type-body-lg {
+  font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.375rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+@utility type-body {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+@utility type-body-sm {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+@utility type-label {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+@utility type-caption {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* Tabular figures for prep times, counts and admin numbers. */
+@utility type-figures {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* FAQ disclosure: height animates to the size Radix measures for the content. */
+@keyframes faq-open {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes faq-close {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}

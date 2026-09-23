@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "@mise/ui/styles.css";
+
+/* Tailwind scans the shared UI package for class names too. */
+@source "../../../../packages/ui/src";
+
+/*
+ * The hero counter: ingredient tiles start a little out of true and settle
+ * into their places. It is CSS so it runs at first paint, before any
+ * JavaScript, and it is the one orchestrated moment on the page.
+ */
+@keyframes counter-settle {
+  from {
+    transform: translate(var(--from-x, 0), var(--from-y, 0)) rotate(var(--from-rotate, 0deg));
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes line-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes quiet-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes menu-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@utility counter-tile {
+  animation: counter-settle var(--duration-editorial) var(--ease-settle) both;
+  animation-delay: calc(var(--order, 0) * 90ms + 150ms);
+}
+
+@utility headline-line {
+  display: block;
+  /* Clip vertically only, so a long word is never cut at the sides. */
+  overflow-y: clip;
+  /* Room for descenders so the clip does not cut them. */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+
+  & > span {
+    display: block;
+    animation: line-rise var(--duration-editorial) var(--ease-settle) both;
+    animation-delay: calc(var(--order, 0) * 110ms);
+  }
+}
+
+@utility hero-quiet {
+  animation: quiet-in var(--duration-editorial) var(--ease-interaction) both;
+  animation-delay: 500ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .counter-tile,
+  .headline-line > span,
+  .hero-quiet {
+    animation: none;
+  }
+}
+
+/*
+ * Supply-chain story. The default layout is a plain vertical sequence. On
+ * wide screens with motion allowed, story-motion.tsx sets data-enhanced and
+ * the stages stack in one pinned viewport that the scroll position scrubs.
+ */
+[data-story][data-enhanced="true"] {
+  & [data-story-stage] {
+    height: 100svh;
+    /* Clear the sticky header at the top of the pinned viewport. */
+    padding-block: 6.5rem 2rem;
+  }
+
+  & [data-story-stage] > div {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* The section title steps back so the stage names can lead. */
+  & h2 {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
+    max-width: none;
+  }
+
+  & [data-story-list] {
+    position: relative;
+    margin-top: 1.5rem;
+    gap: 0;
+  }
+
+  & [data-story-item] {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 2rem;
+    padding: 0;
+    border: 0;
+  }
+
+  & [data-story-text] {
+    grid-column: 1 / span 5;
+    align-self: center;
+  }
+
+  & [data-story-media] {
+    grid-column: 7 / span 6;
+    height: 100%;
+  }
+
+  & [data-story-media] > div {
+    height: 100%;
+    aspect-ratio: auto !important;
+  }
+
+  & [data-story-progress] {
+    display: flex;
+    margin-top: 1.5rem;
+  }
+}

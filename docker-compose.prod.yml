@@ -1,0 +1,113 @@
+# Production on a single server, using a PostgreSQL server you already run.
+#
+#   cp .env.production.example .env.production   # fill it in
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Full steps: docs/architecture/deploy-single-server.md
+#
+# Two hostnames are served:
+#   https://<DOMAIN>         the public site (its API calls go through the site itself)
+#   https://admin.<DOMAIN>   the admin
+# The API, worker and database are not reachable from the internet.
+#
+# HTTPS: if nothing else on the server uses ports 80 and 443, start with the
+# "caddy" profile and certificates are obtained automatically:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production --profile caddy up -d --build
+# If the server already runs nginx (or similar) for other sites, leave the profile
+# off and point that proxy at 127.0.0.1:3100 (site) and 127.0.0.1:3101 (admin).
+name: mise
+
+x-api: &api
+  build:
+    context: .
+    dockerfile: infrastructure/docker/api.Dockerfile
+  env_file: .env.production
+  environment:
+    MISE_ENV: production
+    HTTP_ADDR: ":8080"
+    PUBLIC_SITE_URL: https://${DOMAIN:?set DOMAIN in .env.production}
+    CORS_ORIGINS: https://${DOMAIN}
+    # The site's server forwards API calls, so there is one proxy hop to trust.
+    TRUSTED_PROXY_HOPS: "1"
+    RATE_LIMITS_DISABLED: "false"
+  extra_hosts:
+    # Lets DATABASE_URL use host.docker.internal when PostgreSQL runs on this server.
+    - "host.docker.internal:host-gateway"
+  restart: unless-stopped
+
+services:
+  migrate:
+    <<: *api
+    command: ["/app/misectl", "migrate", "up"]
+    restart: "no"
+
+  api:
+    <<: *api
+    command: ["/app/api"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *api
+    command: ["/app/worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  marketing:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        APP: marketing
+        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+        # Empty: the browser calls /api/v1 on the site's own address, and the
+        # site's server forwards the public endpoints to the API container.
+        NEXT_PUBLIC_API_URL: ""
+        API_PROXY_TARGET: http://api:8080
+    environment:
+      PORT: "3100"
+      API_INTERNAL_URL: http://api:8080
+    ports:
+      - "127.0.0.1:3100:3100"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        APP: admin
+    environment:
+      PORT: "3101"
+      API_INTERNAL_URL: http://api:8080
+      ADMIN_COOKIE_SECURE: "true"
+    ports:
+      - "127.0.0.1:3101:3101"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  caddy:
+    profiles: ["caddy"]
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - marketing
+      - admin
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

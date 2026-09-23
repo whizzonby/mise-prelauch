@@ -35,6 +35,16 @@ type Limits struct {
 	Signup, Token, Lookup, Events, AdminLogin, General *ratelimit.Limiter
 }
 
+// LimitsFor returns the production limits, or effectively none when the local
+// environment has asked for them to be off.
+func LimitsFor(cfg config.Config) Limits {
+	if !cfg.RateLimitsDisabled {
+		return DefaultLimits()
+	}
+	open := func() *ratelimit.Limiter { return ratelimit.New(1_000_000, time.Minute, 1_000_000) }
+	return Limits{Signup: open(), Token: open(), Lookup: open(), Events: open(), AdminLogin: open(), General: open()}
+}
+
 func DefaultLimits() Limits {
 	return Limits{
 		Signup:     ratelimit.New(10, time.Hour, 5),

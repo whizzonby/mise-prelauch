@@ -37,6 +37,10 @@ type Config struct {
 	Mail MailConfig
 
 	AdminSessionTTL time.Duration
+
+	// RateLimitsDisabled turns off per-IP limits so end-to-end tests can sign up
+	// repeatedly. Refused outside the local environment.
+	RateLimitsDisabled bool
 }
 
 type MailConfig struct {
@@ -106,6 +110,9 @@ func Load() (Config, error) {
 	if cfg.Mail.StartTLS, err = getBool("SMTP_STARTTLS", false); err != nil {
 		errs = append(errs, err)
 	}
+	if cfg.RateLimitsDisabled, err = getBool("RATE_LIMITS_DISABLED", false); err != nil {
+		errs = append(errs, err)
+	}
 	if cfg.AdminSessionTTL, err = getDuration("ADMIN_SESSION_TTL", 12*time.Hour); err != nil {
 		errs = append(errs, err)
 	}
@@ -123,6 +130,9 @@ func Load() (Config, error) {
 	}
 	if cfg.Mail.Driver != "smtp" && cfg.Mail.Driver != "log" {
 		errs = append(errs, fmt.Errorf("MAIL_DRIVER must be smtp or log, got %q", cfg.Mail.Driver))
+	}
+	if cfg.Env != "local" && cfg.RateLimitsDisabled {
+		errs = append(errs, errors.New("RATE_LIMITS_DISABLED is only allowed when MISE_ENV=local"))
 	}
 	if cfg.Env != "local" && cfg.Mail.Driver == "log" {
 		errs = append(errs, errors.New("MAIL_DRIVER=log is only allowed when MISE_ENV=local"))

@@ -42,6 +42,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: join(import.meta.dirname, "..", ".."),
   poweredByHeader: false,
+  // The floating dev badge covers real controls in the bottom-left corner.
+  devIndicators: false,
   reactStrictMode: true,
   transpilePackages: ["@mise/ui", "@mise/validation", "@mise/api-client", "@mise/analytics"],
   images: {

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "@mise/ui/styles.css";
+
+@source "../../../../packages/ui/src";
+
+/* The admin is a working tool: tighter type than the marketing site. */
+body {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}

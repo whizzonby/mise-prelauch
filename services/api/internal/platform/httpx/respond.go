@@ -3,6 +3,7 @@
 package httpx
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,6 +43,10 @@ func ValidationError(fields []FieldError) *Error {
 	}
 }
 
+// StatusClientClosedRequest is the conventional (nginx) status for a request
+// the client abandoned. It appears only in the access log.
+const StatusClientClosedRequest = 499
+
 var (
 	ErrNotFound     = NewError(http.StatusNotFound, "not_found", "Not found.")
 	ErrUnauthorized = NewError(http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
@@ -67,6 +72,12 @@ func JSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 // Fail writes an error envelope. Anything that is not an *Error is logged and
 // reported as a generic internal error, so internals never reach the client.
 func Fail(w http.ResponseWriter, r *http.Request, err error) {
+	// The caller went away (closed tab, navigation). Nobody is listening for a
+	// response, and it is not a server fault, so it is not logged as one.
+	if errors.Is(err, context.Canceled) && r.Context().Err() != nil {
+		w.WriteHeader(StatusClientClosedRequest)
+		return
+	}
 	var apiErr *Error
 	if !errors.As(err, &apiErr) {
 		slog.ErrorContext(r.Context(), "unhandled error", "error", err.Error())

@@ -42,7 +42,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           server.New(cfg, pool, server.DefaultLimits()),
+		Handler:           server.New(cfg, pool, server.LimitsFor(cfg)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      60 * time.Second, // CSV export streams
@@ -52,6 +52,9 @@ func run() error {
 
 	serveErr := make(chan error, 1)
 	go func() {
+		if cfg.RateLimitsDisabled {
+			slog.Warn("rate limits are disabled")
+		}
 		slog.Info("api listening", "addr", cfg.HTTPAddr)
 		serveErr <- srv.ListenAndServe()
 	}()

@@ -31,6 +31,18 @@ export const dietaryInterests: Option[] = [
   { value: "high-protein", label: "High protein" },
 ];
 
+/**
+ * The packaging question: a vote that helps decide what kits arrive in.
+ * The admin dashboard shows the count for each value; keep its labels
+ * (apps/admin/src/lib/format.ts) in step when these change.
+ */
+export const packagingOptions: Option[] = [
+  { value: "compostable", label: "Compostable" },
+  { value: "paper", label: "Paper and card" },
+  { value: "reusable", label: "Reusable, collected next delivery" },
+  { value: "no-preference", label: "No preference" },
+];
+
 export const householdSizes: Option[] = [
   { value: "1", label: "Just me" },
   { value: "2", label: "2 people" },
@@ -47,6 +59,8 @@ export const waitlistForm = {
   privacyLead: "We use your details to plan the launch and never sell them.",
   phoneHint: "Only if you would like a text when your area opens.",
   dietaryHint: "Choose any that apply. This shapes the first menus.",
+  packagingLegend: "How should your kits be packed?",
+  packagingHint: "Help us decide. We will go with what most people choose.",
   alreadyOnList: {
     title: "You are already on the list",
     body: "That email address has a place saved. We have sent it an email with your personal link.",

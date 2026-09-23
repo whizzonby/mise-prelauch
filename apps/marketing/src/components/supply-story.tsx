@@ -41,7 +41,7 @@ export function SupplyStory() {
                   </Text>
                 </div>
                 <figure data-story-media className="md:col-span-6 md:col-start-7">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-primary-foreground/10">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-primary-foreground/10">
                     <Image
                       src={stage.src}
                       alt={stage.alt}

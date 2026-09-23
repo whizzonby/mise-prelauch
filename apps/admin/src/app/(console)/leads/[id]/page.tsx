@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { EraseLeadForm, StatusForm } from "@/components/lead-actions";
 import { DetailList, Panel } from "@/components/panel";
-import { formatDateTime, humanize, statusTone } from "@/lib/format";
+import { formatDateTime, humanize, packagingLabel, statusTone } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Lead" };
@@ -91,6 +91,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                 ["Menus of interest", list(prefs.meal_interests)],
                 ["Meals per week", prefs.meals_per_week],
                 ["Cooks at home", prefs.cooking_frequency ? humanize(prefs.cooking_frequency) : null],
+                ["Packaging vote", prefs.packaging_preference ? packagingLabel(prefs.packaging_preference) : null],
                 ...Object.entries(prefs.metadata ?? {}).map(([key, value]): [string, string] => [humanize(key), humanize(String(value))]),
               ]}
             />

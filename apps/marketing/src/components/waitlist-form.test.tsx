@@ -35,9 +35,20 @@ beforeEach(() => {
 });
 
 describe("WaitlistForm", () => {
-  it("does not pre-tick the consent box", () => {
+  it("does not pre-tick the consent box or pre-select a packaging vote", () => {
     renderForm();
     expect(screen.getByRole("checkbox", { name: /Email me about the Mise launch/ })).not.toBeChecked();
+    for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
+  });
+
+  it("leaves the packaging vote out when it is not answered", async () => {
+    createLead.mockResolvedValue({ outcome: "created", profile_token: "t.k", lead: {} });
+    const user = userEvent.setup();
+    renderForm();
+    await fillRequired(user);
+    await user.click(screen.getByRole("button", { name: "Join the waitlist" }));
+    await waitFor(() => expect(createLead).toHaveBeenCalledTimes(1));
+    expect(createLead.mock.calls[0]![0].packaging_preference).toBeUndefined();
   });
 
   it("explains what is missing and does not call the API", async () => {
@@ -72,6 +83,7 @@ describe("WaitlistForm", () => {
     await fillRequired(user);
     await user.click(screen.getByLabelText("Vegetarian"));
     await user.selectOptions(screen.getByLabelText(/Household size/), "3");
+    await user.click(screen.getByLabelText("Compostable"));
     await user.click(screen.getByRole("button", { name: "Join the waitlist" }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/welcome"));
@@ -82,6 +94,7 @@ describe("WaitlistForm", () => {
       location: "port-of-spain",
       dietary_interests: ["vegetarian"],
       household_size: 3,
+      packaging_preference: "compostable",
       consent: true,
       referral_code: "ABC2345",
       website: "",

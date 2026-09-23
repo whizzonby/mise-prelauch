@@ -119,7 +119,8 @@ Full spec in `docs/architecture/design-system.md`. Summary:
   coal-pot charcoal (foreground), cassava cream (background), coconut white (surface).
 - Type: Young Serif for display, Instrument Sans for text. Sentence case throughout.
 - No gradients, no glass, no glow. One shadow token, used only for overlays.
-- Radii are small (2–4px), like a printed label. Photography is never rounded.
+- Radii are modest: 8px on buttons and fields, 12px on photographs (revised after the
+  1 October 2026 review; originally square-cornered).
 - Signature: the hero is a literal mise en place. Ingredient photographs sit on a strict
   grid and settle into position on load. That is the one orchestrated moment.
 

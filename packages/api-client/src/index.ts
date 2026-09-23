@@ -38,6 +38,7 @@ export interface CreateLeadInput {
   location: string;
   dietary_interests: string[];
   household_size?: number;
+  packaging_preference?: string;
   consent: boolean;
   referral_code?: string;
   attribution?: { first?: AttributionTouch; latest?: AttributionTouch };
@@ -64,6 +65,7 @@ export interface PreferencesInput {
   meal_interests?: string[];
   cooking_frequency?: string;
   delivery_area?: string;
+  packaging_preference?: string;
   household_type?: string;
   fitness_goal?: string;
   usage?: string;
@@ -114,6 +116,8 @@ export interface Overview {
   sources: Bucket[];
   dietary: Bucket[];
   household_sizes: Bucket[];
+  /** Packaging votes; "none" counts leads who did not answer. */
+  packaging: Bucket[];
   locations: Bucket[];
 }
 
@@ -143,6 +147,8 @@ export interface LeadFilter {
   location?: string;
   source?: string;
   referral?: string;
+  /** A packaging option value, or "none". */
+  packaging?: string;
   from?: string;
   to?: string;
   page?: number;
@@ -177,6 +183,7 @@ export interface LeadDetail {
     meal_interests: string[];
     cooking_frequency: string | null;
     delivery_area: string | null;
+    packaging_preference: string | null;
     metadata: Record<string, string>;
     updated_at: string;
   } | null;

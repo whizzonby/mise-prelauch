@@ -36,6 +36,8 @@ export const waitlistSchema = z.object({
   dietaryInterests: z.array(z.string()).max(12),
   /** "" means the person did not say. */
   householdSize: z.string().regex(/^([1-9]|1[0-2])?$/, "Choose a household size from the list."),
+  /** "" means the person did not choose. */
+  packagingPreference: z.string(),
   consent: z.boolean().refine((v) => v, "Tick the box so we can email you about the launch."),
 });
 
@@ -48,6 +50,7 @@ export const waitlistDefaults: WaitlistValues = {
   location: "",
   dietaryInterests: [],
   householdSize: "",
+  packagingPreference: "",
   consent: false,
 };
 

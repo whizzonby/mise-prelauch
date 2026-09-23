@@ -3,12 +3,12 @@ import { buttonClasses, Field, Heading, Input, Select, Tag, Text } from "@mise/u
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { formatDate, humanize, LEAD_STATUSES, number, statusTone } from "@/lib/format";
+import { formatDate, humanize, LEAD_STATUSES, number, PACKAGING_LABELS, statusTone } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Leads" };
 
-const FILTER_KEYS = ["q", "status", "location", "source", "referral", "from", "to"] as const;
+const FILTER_KEYS = ["q", "status", "location", "source", "packaging", "referral", "from", "to"] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 type Params = Partial<Record<FilterKey | "page" | "erased", string>>;
 
@@ -61,7 +61,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       ) : null}
 
       <form method="get" className="mt-6 grid gap-4 border border-border bg-surface p-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Field id="q" label="Name or email" className="sm:col-span-2">
+        <Field id="q" label="Name or email">
           <Input id="q" name="q" type="search" defaultValue={active.q} />
         </Field>
         <Field id="status" label="Status">
@@ -108,6 +108,16 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           ) : (
             <Input id="source" name="source" defaultValue={active.source} />
           )}
+        </Field>
+        <Field id="packaging" label="Packaging vote">
+          <Select id="packaging" name="packaging" defaultValue={active.packaging ?? ""}>
+            <option value="">Any</option>
+            {Object.entries(PACKAGING_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field id="from" label="Signed up from">
           <Input id="from" name="from" type="date" defaultValue={active.from} />

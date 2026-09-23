@@ -21,6 +21,9 @@ import (
 
 const maxBody = 8 << 10
 
+// optionPattern matches stored option values such as packaging choices.
+var optionPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,39}$`)
+
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type Handler struct {
@@ -123,14 +126,19 @@ func parseFilter(r *http.Request) (LeadFilter, error) {
 		Location: q.Get("location"),
 		Source:   q.Get("source"),
 		Referral: q.Get("referral"),
-		Page:     1,
-		PageSize: 25,
+		// Packaging is an option value, or "none".
+		Packaging: q.Get("packaging"),
+		Page:      1,
+		PageSize:  25,
 	}
 	if len(f.Query) > 100 {
 		return f, badParam("q", "Search text is too long.")
 	}
 	if f.Status != "" && !leads.Status(f.Status).Valid() {
 		return f, badParam("status", "Unknown status.")
+	}
+	if f.Packaging != "" && !optionPattern.MatchString(f.Packaging) {
+		return f, badParam("packaging", "Unknown packaging option.")
 	}
 	if f.Referral != "" && f.Referral != "referrer" && f.Referral != "referred" {
 		return f, badParam("referral", "referral must be referrer or referred.")
@@ -319,7 +327,7 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 			`+sourceExpr+`, COALESCE(a.utm_medium, ''), COALESCE(a.utm_campaign, ''),
 			COALESCE(p.household_size::text, ''), COALESCE(p.meals_per_week::text, ''),
 			array_to_string(p.dietary_preferences, '|'), array_to_string(p.meal_interests, '|'),
-			COALESCE(p.cooking_frequency, ''),
+			COALESCE(p.cooking_frequency, ''), COALESCE(p.packaging_preference, ''),
 			(SELECT count(*) FROM referrals r WHERE r.referrer_lead_id = l.id AND r.status = 'converted'),
 			l.email_verified_at, l.consent_at, l.created_at
 		`+leadFrom+where+fmt.Sprintf(" ORDER BY l.created_at, l.id LIMIT %d", exportLimit), args...)
@@ -337,19 +345,19 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 	cw := csv.NewWriter(w)
 	_ = cw.Write([]string{"id", "first_name", "email", "phone", "location", "status", "referral_code",
 		"source", "utm_medium", "utm_campaign", "household_size", "meals_per_week", "dietary_preferences",
-		"meal_interests", "cooking_frequency", "referrals_converted", "email_verified_at", "consent_at", "created_at"})
+		"meal_interests", "cooking_frequency", "packaging_preference", "referrals_converted", "email_verified_at", "consent_at", "created_at"})
 
 	for rows.Next() {
 		var (
 			id, firstName, email, phone, location, status, code, source, medium, campaign string
-			household, meals, cooking                                                     string
+			household, meals, cooking, packaging                                          string
 			dietary, interests                                                            *string
 			converted                                                                     int
 			verifiedAt                                                                    *time.Time
 			consentAt, createdAt                                                          time.Time
 		)
 		if err := rows.Scan(&id, &firstName, &email, &phone, &location, &status, &code, &source, &medium,
-			&campaign, &household, &meals, &dietary, &interests, &cooking, &converted, &verifiedAt,
+			&campaign, &household, &meals, &dietary, &interests, &cooking, &packaging, &converted, &verifiedAt,
 			&consentAt, &createdAt); err != nil {
 			slog.ErrorContext(r.Context(), "export scan failed", "error", err.Error())
 			break
@@ -359,7 +367,7 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 			verified = verifiedAt.UTC().Format(time.RFC3339)
 		}
 		record := []string{id, firstName, email, phone, location, status, code, source, medium, campaign,
-			household, meals, deref(dietary), deref(interests), cooking, strconv.Itoa(converted), verified,
+			household, meals, deref(dietary), deref(interests), cooking, packaging, strconv.Itoa(converted), verified,
 			consentAt.UTC().Format(time.RFC3339), createdAt.UTC().Format(time.RFC3339)}
 		for i, cell := range record {
 			record[i] = csvSafe(cell)

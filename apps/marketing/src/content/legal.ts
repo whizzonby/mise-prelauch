@@ -19,7 +19,7 @@ export interface LegalDocument {
 
 export const privacy: LegalDocument = {
   title: "Privacy policy",
-  updated: "September 2026",
+  updated: "October 2026",
   intro:
     "This policy explains what Mise collects when you join the waitlist, why, and what you can do about it. It is written to be read.",
   sections: [
@@ -54,7 +54,7 @@ export const privacy: LegalDocument = {
     {
       heading: "How long we keep it",
       paragraphs: [
-        "Until you ask us to delete it, or until two years after the waitlist closes, whichever comes first. If you become a Mise customer, your waitlist details become part of your customer account and that account's own policy applies.",
+        "For the pre-launch campaign only. When it ends, we delete the details of everyone on the list who has not become a Mise customer. You can ask us to delete yours sooner at any time. If you do become a customer, your waitlist details carry over into your customer account, and that account's own policy applies.",
       ],
     },
     {

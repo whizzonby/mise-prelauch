@@ -24,7 +24,7 @@ export function WaitlistSection() {
             ))}
           </ul>
           <ImageReveal className="mt-10 hidden lg:block">
-            <div className="relative aspect-[3/2] overflow-hidden bg-border">
+            <div className="relative aspect-[3/2] overflow-hidden rounded-lg bg-border">
               <Image
                 src={waitlistSection.photo.src}
                 alt={waitlistSection.photo.alt}

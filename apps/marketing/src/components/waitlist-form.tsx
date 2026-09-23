@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { dietaryInterests, householdSizes, locations, waitlistForm } from "@/content/waitlist";
+import { dietaryInterests, householdSizes, locations, packagingOptions, waitlistForm } from "@/content/waitlist";
 import { api } from "@/lib/api";
 import { saveProfileToken } from "@/lib/lead-session";
 
@@ -25,6 +25,7 @@ const apiFields: Record<string, keyof WaitlistValues> = {
   location: "location",
   dietary_interests: "dietaryInterests",
   household_size: "householdSize",
+  packaging_preference: "packagingPreference",
   consent: "consent",
 };
 
@@ -84,6 +85,7 @@ export function WaitlistForm({ placement, referralCode }: WaitlistFormProps) {
       location: values.location,
       dietary_interests: values.dietaryInterests,
       household_size: values.householdSize ? Number(values.householdSize) : undefined,
+      packaging_preference: values.packagingPreference || undefined,
       consent: values.consent,
       referral_code: code,
       attribution: attribution.first || attribution.latest ? attribution : undefined,
@@ -204,6 +206,18 @@ export function WaitlistForm({ placement, referralCode }: WaitlistFormProps) {
       >
         {dietaryInterests.map((option) => (
           <Choice key={option.value} value={option.value} label={option.label} {...register("dietaryInterests")} />
+        ))}
+      </ChoiceGroup>
+
+      <ChoiceGroup
+        id={fid("packagingPreference")}
+        legend={waitlistForm.packagingLegend}
+        optional
+        hint={waitlistForm.packagingHint}
+        error={errors.packagingPreference?.message}
+      >
+        {packagingOptions.map((option) => (
+          <Choice key={option.value} type="radio" value={option.value} label={option.label} {...register("packagingPreference")} />
         ))}
       </ChoiceGroup>
 

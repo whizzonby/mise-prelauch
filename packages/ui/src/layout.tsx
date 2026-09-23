@@ -103,13 +103,13 @@ type MediaFrameProps = {
 };
 
 /**
- * Frames a photograph: a fixed-ratio box with square corners and an optional
+ * Frames a photograph: a fixed-ratio box with rounded corners and an optional
  * caption. The child should be an image set to fill and cover.
  */
 export function MediaFrame({ ratio = "4 / 5", caption, className, children }: MediaFrameProps) {
   return (
     <figure className={className}>
-      <div className="relative overflow-hidden bg-border" style={{ aspectRatio: ratio }}>
+      <div className="relative overflow-hidden rounded-lg bg-border" style={{ aspectRatio: ratio }}>
         {children}
       </div>
       {caption ? <figcaption className="type-caption mt-2 text-muted [.on-dark_&]:text-primary-foreground/75">{caption}</figcaption> : null}

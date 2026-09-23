@@ -36,7 +36,7 @@ export function MealPreview({ meal, className }: { meal: Meal; className?: strin
   return (
     <article ref={ref} className={className}>
       <ImageReveal>
-        <div className="relative aspect-[4/5] overflow-hidden bg-border">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-border">
           <Image
             src={meal.image.src}
             alt={meal.image.alt}

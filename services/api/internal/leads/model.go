@@ -86,16 +86,18 @@ type Attribution struct {
 }
 
 type SignupInput struct {
-	FirstName        string       `json:"first_name"`
-	Email            string       `json:"email"`
-	Phone            string       `json:"phone"`
-	Location         string       `json:"location"`
-	DietaryInterests []string     `json:"dietary_interests"`
-	HouseholdSize    *int         `json:"household_size"`
-	Consent          bool         `json:"consent"`
-	ReferralCode     string       `json:"referral_code"`
-	Attribution      *Attribution `json:"attribution"`
-	AnonymousID      string       `json:"anonymous_id"`
+	FirstName        string   `json:"first_name"`
+	Email            string   `json:"email"`
+	Phone            string   `json:"phone"`
+	Location         string   `json:"location"`
+	DietaryInterests []string `json:"dietary_interests"`
+	HouseholdSize    *int     `json:"household_size"`
+	// PackagingPreference is optional: the packaging the lead would like kits to come in.
+	PackagingPreference string       `json:"packaging_preference"`
+	Consent             bool         `json:"consent"`
+	ReferralCode        string       `json:"referral_code"`
+	Attribution         *Attribution `json:"attribution"`
+	AnonymousID         string       `json:"anonymous_id"`
 
 	// Bot checks. Website is a honeypot field hidden from people; ElapsedMS is
 	// how long the form was open before it was submitted.
@@ -117,13 +119,14 @@ type SignupResult struct {
 }
 
 type PreferencesInput struct {
-	HouseholdSize      *int      `json:"household_size"`
-	MealsPerWeek       *int      `json:"meals_per_week"`
-	DietaryPreferences *[]string `json:"dietary_preferences"`
-	MealInterests      *[]string `json:"meal_interests"`
-	CookingFrequency   *string   `json:"cooking_frequency"`
-	DeliveryArea       *string   `json:"delivery_area"`
-	HouseholdType      *string   `json:"household_type"`
-	FitnessGoal        *string   `json:"fitness_goal"`
-	Usage              *string   `json:"usage"`
+	HouseholdSize       *int      `json:"household_size"`
+	MealsPerWeek        *int      `json:"meals_per_week"`
+	DietaryPreferences  *[]string `json:"dietary_preferences"`
+	PackagingPreference *string   `json:"packaging_preference"`
+	MealInterests       *[]string `json:"meal_interests"`
+	CookingFrequency    *string   `json:"cooking_frequency"`
+	DeliveryArea        *string   `json:"delivery_area"`
+	HouseholdType       *string   `json:"household_type"`
+	FitnessGoal         *string   `json:"fitness_goal"`
+	Usage               *string   `json:"usage"`
 }

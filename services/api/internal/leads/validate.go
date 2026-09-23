@@ -42,6 +42,7 @@ type normalizedSignup struct {
 	Location       string
 	Dietary        []string
 	HouseholdSize  *int
+	Packaging      *string
 	ReferralCode   string
 	Attribution    Attribution
 	AnonymousID    string
@@ -98,6 +99,14 @@ func validateSignup(in SignupInput) (normalizedSignup, error) {
 			errs.add("household_size", "out_of_range", "Household size must be between 1 and 12.")
 		} else {
 			out.HouseholdSize = in.HouseholdSize
+		}
+	}
+
+	if p := strings.TrimSpace(in.PackagingPreference); p != "" {
+		if !slugPattern.MatchString(p) {
+			errs.add("packaging_preference", "invalid", "Choose a packaging option from the list.")
+		} else {
+			out.Packaging = &p
 		}
 	}
 
@@ -246,6 +255,7 @@ type normalizedPreferences struct {
 	MealInterests    *[]string
 	CookingFrequency *string
 	DeliveryArea     *string
+	Packaging        *string
 	Metadata         map[string]string
 }
 
@@ -292,6 +302,7 @@ func validatePreferences(in PreferencesInput) (normalizedPreferences, error) {
 	}
 	out.CookingFrequency = slug("cooking_frequency", in.CookingFrequency)
 	out.DeliveryArea = slug("delivery_area", in.DeliveryArea)
+	out.Packaging = slug("packaging_preference", in.PackagingPreference)
 	for key, v := range map[string]*string{
 		"household_type": in.HouseholdType,
 		"fitness_goal":   in.FitnessGoal,

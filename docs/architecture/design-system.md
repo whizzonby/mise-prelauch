@@ -60,7 +60,10 @@ flips button, muted-text and focus-ring colours so contrast holds.
 
 ## Shape, borders, elevation
 
-- Radii: `sm` 2px, `md` 4px. Like a printed label. **Photographs are never rounded.**
+- Radii: `sm` 4px (tags, checkboxes), `md` 8px (buttons, form controls), `lg` 12px
+  (photographs), `xl` 20px (a frame around a photograph). Softened, never pill-shaped.
+  Changed after the 1 October 2026 review, where the team asked for rounded images and
+  buttons; the brand toolkit may tune these four values, and nothing else needs to change.
 - Borders: 1px hairlines. A section's top rule is `foreground`; internal dividers are `border`.
 - Shadow: one token, `shadow-overlay`, for things that float (the chart tooltip). Nothing else casts a shadow.
 - Spacing: Tailwind's 0.25rem scale. Sections use fluid vertical padding (`Section`), the page gutter is `--page-gutter`.

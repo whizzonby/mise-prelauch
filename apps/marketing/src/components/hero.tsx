@@ -81,7 +81,7 @@ export function Hero() {
                 }
               >
                 <figure className="flex h-full flex-col">
-                  <div className={cx("relative overflow-hidden bg-border", spot.stretch ? "min-h-0 flex-1" : "aspect-[3/2]")}>
+                  <div className={cx("relative overflow-hidden rounded-lg bg-border", spot.stretch ? "min-h-0 flex-1" : "aspect-[3/2]")}>
                     <Image
                       src={item.src}
                       alt={item.alt}

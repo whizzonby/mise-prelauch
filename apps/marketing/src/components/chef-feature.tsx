@@ -10,7 +10,7 @@ export function ChefFeature() {
       <Container className="grid gap-x-10 gap-y-12 lg:grid-cols-12">
         <div className="relative lg:col-span-6">
           <ImageReveal from="left">
-            <div className="relative aspect-[4/5] overflow-hidden bg-primary-foreground/10 sm:aspect-[5/4] lg:aspect-[4/5]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-primary-foreground/10 sm:aspect-[5/4] lg:aspect-[4/5]">
               <Image
                 src={chefs.photos.main.src}
                 alt={chefs.photos.main.alt}
@@ -22,8 +22,8 @@ export function ChefFeature() {
             </div>
           </ImageReveal>
           {/* A second, smaller frame overlapping the first, as on a magazine spread. */}
-          <div className="absolute -bottom-10 right-4 hidden w-[38%] border-8 border-primary sm:block lg:-right-10">
-            <div className="relative aspect-[4/5] overflow-hidden">
+          <div className="absolute -bottom-10 right-4 hidden w-[38%] rounded-xl border-8 border-primary sm:block lg:-right-10">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg">
               <Image
                 src={chefs.photos.detail.src}
                 alt={chefs.photos.detail.alt}

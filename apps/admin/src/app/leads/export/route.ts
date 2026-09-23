@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (!token) return new Response("Sign in to export leads.", { status: 401 });
 
   const filter: LeadFilter = {};
-  for (const key of ["q", "status", "location", "source", "referral", "from", "to"] as const) {
+  for (const key of ["q", "status", "location", "source", "packaging", "referral", "from", "to"] as const) {
     const value = request.nextUrl.searchParams.get(key);
     if (value) filter[key] = value;
   }

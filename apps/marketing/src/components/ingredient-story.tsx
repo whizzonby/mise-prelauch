@@ -23,7 +23,7 @@ export function IngredientStory() {
 
           <div className="grid grid-cols-5 items-end gap-3 lg:col-span-6 lg:col-start-7">
             <ImageReveal className="col-span-3">
-              <div className="relative aspect-[4/5] overflow-hidden bg-border">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-border">
                 <Image
                   src={sustainability.photos.main.src}
                   alt={sustainability.photos.main.alt}
@@ -35,7 +35,7 @@ export function IngredientStory() {
               </div>
             </ImageReveal>
             <ImageReveal className="col-span-2" delay={0.15}>
-              <div className="relative aspect-[3/4] overflow-hidden bg-border">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-border">
                 <Image
                   src={sustainability.photos.detail.src}
                   alt={sustainability.photos.detail.alt}

@@ -32,6 +32,7 @@ type Overview struct {
 	Sources             []Bucket   `json:"sources"`
 	Dietary             []Bucket   `json:"dietary"`
 	HouseholdSizes      []Bucket   `json:"household_sizes"`
+	Packaging           []Bucket   `json:"packaging"`
 	Locations           []Bucket   `json:"locations"`
 }
 
@@ -106,6 +107,14 @@ func overview(ctx context.Context, q db.Querier, days int) (*Overview, error) {
 		FROM leads l LEFT JOIN lead_preferences p ON p.lead_id = l.id
 		WHERE l.status <> 'BLOCKED'
 		GROUP BY label ORDER BY label`); err != nil {
+		return nil, err
+	}
+	// "none" rather than a sentence, so the label doubles as the leads filter value.
+	if o.Packaging, err = buckets(ctx, q, `
+		SELECT COALESCE(p.packaging_preference, 'none') AS label, count(*)
+		FROM leads l LEFT JOIN lead_preferences p ON p.lead_id = l.id
+		WHERE l.status <> 'BLOCKED'
+		GROUP BY label ORDER BY (COALESCE(p.packaging_preference, 'none') = 'none'), count(*) DESC, label`); err != nil {
 		return nil, err
 	}
 	if o.Locations, err = buckets(ctx, q, `

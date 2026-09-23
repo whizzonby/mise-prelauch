@@ -65,8 +65,8 @@ func insert(ctx context.Context, q db.Querier, in insertLead) (*Lead, error) {
 	}
 
 	if _, err := q.Exec(ctx,
-		`INSERT INTO lead_preferences (lead_id, household_size, dietary_preferences) VALUES ($1, $2, $3)`,
-		lead.ID, in.HouseholdSize, in.Dietary); err != nil {
+		`INSERT INTO lead_preferences (lead_id, household_size, dietary_preferences, packaging_preference) VALUES ($1, $2, $3, $4)`,
+		lead.ID, in.HouseholdSize, in.Dietary, in.Packaging); err != nil {
 		return nil, err
 	}
 
@@ -146,9 +146,10 @@ func upsertPreferences(ctx context.Context, q db.Querier, leadID string, p norma
 	// COALESCE keeps the stored value for any answer the person skipped.
 	_, err = q.Exec(ctx, `
 		INSERT INTO lead_preferences (lead_id, household_size, meals_per_week, dietary_preferences,
-			meal_interests, cooking_frequency, delivery_area, metadata)
-		VALUES ($1, $2, $3, COALESCE($4::text[], '{}'), COALESCE($5::text[], '{}'), $6, $7, $8::jsonb)
+			meal_interests, cooking_frequency, delivery_area, metadata, packaging_preference)
+		VALUES ($1, $2, $3, COALESCE($4::text[], '{}'), COALESCE($5::text[], '{}'), $6, $7, $8::jsonb, $9)
 		ON CONFLICT (lead_id) DO UPDATE SET
+			packaging_preference = COALESCE(EXCLUDED.packaging_preference, lead_preferences.packaging_preference),
 			household_size      = COALESCE(EXCLUDED.household_size, lead_preferences.household_size),
 			meals_per_week      = COALESCE(EXCLUDED.meals_per_week, lead_preferences.meals_per_week),
 			dietary_preferences = COALESCE($4::text[], lead_preferences.dietary_preferences),
@@ -158,7 +159,7 @@ func upsertPreferences(ctx context.Context, q db.Querier, leadID string, p norma
 			metadata            = lead_preferences.metadata || EXCLUDED.metadata,
 			updated_at          = now()`,
 		leadID, p.HouseholdSize, p.MealsPerWeek, p.Dietary, p.MealInterests, p.CookingFrequency,
-		p.DeliveryArea, metadata)
+		p.DeliveryArea, metadata, p.Packaging)
 	return err
 }
 

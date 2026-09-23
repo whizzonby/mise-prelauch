@@ -376,14 +376,15 @@ func TestDuplicateSignup(t *testing.T) {
 func TestSignupValidation(t *testing.T) {
 	h := newHarness(t)
 	res := h.do("POST", "/api/v1/leads", map[string]any{
-		"first_name":        "Visit http://evil.example",
-		"email":             "not-an-email",
-		"phone":             "call me",
-		"location":          "",
-		"dietary_interests": []string{"Not A Slug"},
-		"household_size":    40,
-		"consent":           false,
-		"elapsed_ms":        8000,
+		"first_name":           "Visit http://evil.example",
+		"email":                "not-an-email",
+		"phone":                "call me",
+		"location":             "",
+		"dietary_interests":    []string{"Not A Slug"},
+		"household_size":       40,
+		"packaging_preference": "Brown paper!",
+		"consent":              false,
+		"elapsed_ms":           8000,
 	})
 	h.wantStatus(res, http.StatusUnprocessableEntity)
 	if res.Error.Code != "validation_failed" {
@@ -393,7 +394,7 @@ func TestSignupValidation(t *testing.T) {
 	for _, f := range res.Error.Fields {
 		got[f.Field] = true
 	}
-	for _, field := range []string{"first_name", "email", "phone", "location", "dietary_interests", "household_size", "consent"} {
+	for _, field := range []string{"first_name", "email", "phone", "location", "dietary_interests", "household_size", "packaging_preference", "consent"} {
 		if !got[field] {
 			t.Errorf("no validation error for %s", field)
 		}
@@ -700,6 +701,7 @@ func TestAdminLeadsStatsExportAndErase(t *testing.T) {
 	}, fromIP("198.51.100.10"))
 	h.join("ben@example.com", map[string]any{
 		"first_name": "Ben", "location": "san-fernando", "referral_code": asha["referral_code"], "dietary_interests": []string{"high-protein"},
+		"packaging_preference": "compostable",
 	}, fromIP("198.51.100.20"))
 	res := h.do("POST", "/api/v1/leads", signupBody("=cmd@example.com", map[string]any{"first_name": "Cara", "household_size": 1}))
 	h.wantStatus(res, http.StatusCreated)
@@ -724,6 +726,13 @@ func TestAdminLeadsStatsExportAndErase(t *testing.T) {
 	if sources["instagram"] != 1 || sources["referral"] != 1 || sources["direct"] != 1 {
 		t.Errorf("sources = %v", sources)
 	}
+	packaging := map[string]float64{}
+	for _, b := range res.Data["packaging"].([]any) {
+		packaging[b.(map[string]any)["label"].(string)] = b.(map[string]any)["count"].(float64)
+	}
+	if packaging["compostable"] != 1 || packaging["none"] != 2 {
+		t.Errorf("packaging = %v; want compostable 1, none 2", packaging)
+	}
 
 	list := func(query string) []any {
 		res := h.do("GET", "/api/v1/admin/leads"+query, nil, auth)
@@ -740,6 +749,8 @@ func TestAdminLeadsStatsExportAndErase(t *testing.T) {
 		"?source=instagram":      1,
 		"?referral=referrer":     1,
 		"?referral=referred":     1,
+		"?packaging=compostable": 1,
+		"?packaging=none":        2,
 		"?from=2999-01-01":       0,
 		"?page_size=2":           2,
 	} {
@@ -755,9 +766,10 @@ func TestAdminLeadsStatsExportAndErase(t *testing.T) {
 	if res.Data["referred_by"].(map[string]any)["first_name"] != "Asha" {
 		t.Errorf("referred_by = %v", res.Data["referred_by"])
 	}
-	if res.Data["preferences"].(map[string]any)["dietary_preferences"].([]any)[0] != "high-protein" {
+	if prefs := res.Data["preferences"].(map[string]any); prefs["dietary_preferences"].([]any)[0] != "high-protein" || prefs["packaging_preference"] != "compostable" {
 		t.Errorf("preferences = %v", res.Data["preferences"])
 	}
+	h.wantStatus(h.do("GET", "/api/v1/admin/leads?packaging=Not+valid", nil, auth), http.StatusUnprocessableEntity)
 	h.wantStatus(h.do("GET", "/api/v1/admin/leads/not-a-uuid", nil, auth), http.StatusNotFound)
 	h.wantStatus(h.do("GET", "/api/v1/admin/leads/00000000-0000-0000-0000-000000000000", nil, auth), http.StatusNotFound)
 

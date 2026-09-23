@@ -19,8 +19,10 @@ type LeadFilter struct {
 	Status   string
 	Location string
 	Source   string
-	From     *time.Time
-	To       *time.Time
+	// Packaging is a packaging option value, or "none" for leads who did not choose.
+	Packaging string
+	From      *time.Time
+	To        *time.Time
 	// Referral is "referrer" (has at least one converted referral) or
 	// "referred" (was invited by someone).
 	Referral string
@@ -79,6 +81,13 @@ func (f LeadFilter) where() (string, []any) {
 	if f.Source != "" {
 		clauses = append(clauses, sourceExpr+" = "+arg(f.Source))
 	}
+	switch f.Packaging {
+	case "":
+	case "none":
+		clauses = append(clauses, "p.packaging_preference IS NULL")
+	default:
+		clauses = append(clauses, "p.packaging_preference = "+arg(f.Packaging))
+	}
 	if f.From != nil {
 		clauses = append(clauses, "l.created_at >= "+arg(*f.From))
 	}
@@ -133,14 +142,15 @@ func listLeads(ctx context.Context, q db.Querier, f LeadFilter) (*LeadPage, erro
 }
 
 type Preferences struct {
-	HouseholdSize      *int            `json:"household_size"`
-	MealsPerWeek       *int            `json:"meals_per_week"`
-	DietaryPreferences []string        `json:"dietary_preferences"`
-	MealInterests      []string        `json:"meal_interests"`
-	CookingFrequency   *string         `json:"cooking_frequency"`
-	DeliveryArea       *string         `json:"delivery_area"`
-	Metadata           json.RawMessage `json:"metadata"`
-	UpdatedAt          time.Time       `json:"updated_at"`
+	HouseholdSize       *int            `json:"household_size"`
+	MealsPerWeek        *int            `json:"meals_per_week"`
+	DietaryPreferences  []string        `json:"dietary_preferences"`
+	MealInterests       []string        `json:"meal_interests"`
+	CookingFrequency    *string         `json:"cooking_frequency"`
+	DeliveryArea        *string         `json:"delivery_area"`
+	PackagingPreference *string         `json:"packaging_preference"`
+	Metadata            json.RawMessage `json:"metadata"`
+	UpdatedAt           time.Time       `json:"updated_at"`
 }
 
 type AttributionTouch struct {
@@ -209,10 +219,10 @@ func leadDetail(ctx context.Context, q db.Querier, id string) (*LeadDetail, erro
 	var p Preferences
 	err = q.QueryRow(ctx, `
 		SELECT household_size, meals_per_week, dietary_preferences, meal_interests, cooking_frequency,
-			delivery_area, metadata, updated_at
+			delivery_area, packaging_preference, metadata, updated_at
 		FROM lead_preferences WHERE lead_id = $1`, id,
 	).Scan(&p.HouseholdSize, &p.MealsPerWeek, &p.DietaryPreferences, &p.MealInterests, &p.CookingFrequency,
-		&p.DeliveryArea, &p.Metadata, &p.UpdatedAt)
+		&p.DeliveryArea, &p.PackagingPreference, &p.Metadata, &p.UpdatedAt)
 	switch {
 	case err == nil:
 		d.Preferences = &p

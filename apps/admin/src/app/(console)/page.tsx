@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { BarList, SignupsChart } from "@/components/charts";
 import { Panel, StatTile } from "@/components/panel";
-import { humanize, number, percent } from "@/lib/format";
+import { humanize, number, packagingLabel, percent } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -97,6 +97,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             rows={overview.dietary.map((row) => ({ ...row, label: humanize(row.label) }))}
             total={overview.total_leads}
             empty="Nobody has chosen a dietary interest yet."
+          />
+        </Panel>
+        <Panel title="Packaging preference" note="The vote on the waitlist form" className="lg:col-span-2">
+          <BarList
+            rows={overview.packaging.map((row) => ({ ...row, label: packagingLabel(row.label) }))}
+            total={overview.total_leads}
+            empty="No leads yet."
           />
         </Panel>
         <Panel title="Household size">

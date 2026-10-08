@@ -4,7 +4,17 @@
 
 {$DOMAIN} {
 	encode zstd gzip
-	reverse_proxy marketing:3100
+
+	# The public API endpoints go straight to the API, so it sees each visitor's
+	# own address (rate limits and referral checks depend on that). The admin API
+	# is not exposed on the public domain.
+	@api path /api/v1/leads /api/v1/leads/* /api/v1/referrals/* /api/v1/events /api/v1/health /api/v1/ready
+	handle @api {
+		reverse_proxy api:8080
+	}
+	handle {
+		reverse_proxy marketing:3100
+	}
 }
 
 www.{$DOMAIN} {

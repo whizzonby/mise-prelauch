@@ -47,8 +47,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@mise/ui", "@mise/validation", "@mise/api-client", "@mise/analytics"],
   images: {
-    formats: ["image/avif", "image/webp"],
-    deviceSizes: [420, 640, 828, 1080, 1280, 1680, 2048],
+    // WebP only. AVIF files are smaller but take seconds each to encode on a
+    // small server, and a page asks for twenty at once: the first visitor at
+    // each screen size saw empty frames. WebP encodes several times faster.
+    formats: ["image/webp"],
+    // Few widths, so there are few variants to create (and to warm after a deploy).
+    deviceSizes: [640, 960, 1280, 1920],
+    imageSizes: [256, 384],
+    // The photographs are imported files with content-hashed names: a given
+    // URL never changes, so an optimised copy can be kept for a year.
+    minimumCacheTTL: 31536000,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

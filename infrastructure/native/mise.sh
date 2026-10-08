@@ -9,6 +9,7 @@
 #   ./infrastructure/native/mise.sh admin EMAIL "NAME"   create an admin (asks for the password)
 #   ./infrastructure/native/mise.sh update    git pull, rebuild, restart
 #   ./infrastructure/native/mise.sh status    show the four services
+#   ./infrastructure/native/mise.sh warm      prepare every image size now (start and update do this)
 #   ./infrastructure/native/mise.sh logs [api|worker|marketing|admin]
 #   ./infrastructure/native/mise.sh clean     delete build caches to free disk space
 #
@@ -141,6 +142,7 @@ cmd_start() {
   sudo systemctl restart "${SERVICES[@]}"
   sleep 4
   cmd_status
+  cmd_warm
 }
 
 # Requests the certificates and turns on the HTTP -> HTTPS redirect, using the
@@ -334,6 +336,20 @@ cmd_status() {
   curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:3101/login 2>/dev/null && echo "Admin: responding" || echo "Admin: NOT responding - run: $0 logs admin"
 }
 
+# Asks the site for every image size the pages reference, so the optimised
+# copies exist before any visitor needs them. Without this the first visitor at
+# each screen size waits while the server resizes twenty photographs.
+cmd_warm() {
+  local site=http://127.0.0.1:3100 urls count
+  # The HTML writes "&" as "&amp;" inside attributes; turn it back.
+  urls="$(curl -fsS --max-time 30 "$site/" | grep -o '/_next/image?url=[^" ,]*' | sed 's/&amp;/\&/g' | sort -u || true)"
+  count="$(echo "$urls" | grep -c . || true)"
+  [ "$count" -gt 0 ] || { echo "No images to prepare (is the site running?)."; return 0; }
+  say "Preparing $count image sizes (a minute or two)"
+  echo "$urls" | xargs -P 2 -I{} curl -fsS -o /dev/null --max-time 120 -H 'Accept: image/webp,*/*' "$site{}" || true
+  echo "Images are ready."
+}
+
 cmd_logs() { sudo journalctl -u "mise-${1:-api}" -n 60 --no-pager; }
 
 cmd_clean() {
@@ -345,8 +361,8 @@ cmd_clean() {
 }
 
 case "${1:-}" in
-  setup|build|start|https|update|status|clean) "cmd_$1" ;;
+  setup|build|start|https|update|status|warm|clean) "cmd_$1" ;;
   admin) shift; cmd_admin "$@" ;;
   logs) shift; cmd_logs "$@" ;;
-  *) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

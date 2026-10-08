@@ -6,11 +6,19 @@ import { PageShell } from "@/components/page-shell";
 import { RememberReferral } from "@/components/remember-referral";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { waitlistSection } from "@/content/home";
+import { site } from "@/content/site";
 import { serverApi } from "@/lib/api";
 
-export const metadata: Metadata = {
+const invitation = {
   title: "You have been invited to Mise",
   description: "A friend has invited you to join the waitlist for Mise, a Caribbean meal kit launching in Trinidad & Tobago.",
+};
+
+export const metadata: Metadata = {
+  ...invitation,
+  // What a messaging app shows when the invitation link is shared.
+  openGraph: { type: "website", siteName: site.name, locale: site.locale, ...invitation },
+  twitter: { card: "summary_large_image", ...invitation },
   // Every invitation URL is the same page; none should be indexed separately.
   robots: { index: false, follow: true },
   alternates: { canonical: "/" },

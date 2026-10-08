@@ -70,6 +70,7 @@ test("invalid details are explained in place and nothing is submitted", async ({
   await form.getByRole("button", { name: "Join the waitlist" }).click();
 
   await expect(form.getByText("Enter your first name.")).toBeVisible();
+  await expect(form.getByText("Enter your last name.")).toBeVisible();
   await expect(form.getByText("Enter your email address.")).toBeVisible();
   await expect(form.getByText("Choose where you would like delivery.")).toBeVisible();
   await expect(form.getByText("Tick the box so we can email you about the launch.")).toBeVisible();

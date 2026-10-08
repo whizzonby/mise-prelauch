@@ -12,6 +12,7 @@ export async function fillWaitlist(page: Page, { name, email }: { name: string; 
   const form = page.getByRole("form", { name: "Join the Mise waitlist" });
   await form.scrollIntoViewIfNeeded();
   await form.getByLabel("First name").fill(name);
+  await form.getByLabel("Last name").fill("Tester");
   await form.getByLabel("Email", { exact: true }).fill(email);
   await form.getByLabel("Where would you like delivery?").selectOption("port-of-spain");
   // Dietary options are label-tags over visually hidden checkboxes: click the tag, as a person does.
@@ -76,7 +77,7 @@ interface SignupResponse {
 export async function createLeadViaApi(request: APIRequestContext, { name, email, ip }: { name: string; email: string; ip: string }) {
   const res = await request.post(`${urls.api}/api/v1/leads`, {
     headers: { "X-Forwarded-For": ip },
-    data: { first_name: name, email, location: "port-of-spain", dietary_interests: [], consent: true, website: "", elapsed_ms: 9000 },
+    data: { first_name: name, last_name: "Tester", email, location: "port-of-spain", dietary_interests: [], consent: true, website: "", elapsed_ms: 9000 },
   });
   expect(res.status(), await res.text()).toBe(201);
   return ((await res.json()) as SignupResponse).data;

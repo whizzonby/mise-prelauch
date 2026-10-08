@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { EraseLeadForm, StatusForm } from "@/components/lead-actions";
 import { DetailList, Panel } from "@/components/panel";
-import { formatDateTime, humanize, packagingLabel, statusTone } from "@/lib/format";
+import { formatDateTime, fullName, humanize, packagingLabel, statusTone } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Lead" };
@@ -19,7 +19,7 @@ function ReferralRow({ entry }: { entry: ReferralEntry }) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-border py-2.5 last:border-0">
       <Link href={`/leads/${entry.lead_id}`} className="type-body-sm font-semibold underline underline-offset-4">
-        {entry.first_name}
+        {fullName(entry)}
       </Link>
       <span className="flex items-center gap-3">
         <Tag tone={statusTone(entry.status)}>{humanize(entry.status)}</Tag>
@@ -60,7 +60,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       </Link>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <Heading as="h1" size="h2">
-          {lead.first_name}
+          {fullName(lead)}
         </Heading>
         <Tag tone={statusTone(lead.status)}>{humanize(lead.status.toLowerCase())}</Tag>
       </div>
@@ -179,7 +179,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
         {can(admin, "leads:erase") ? (
           <Panel title="Delete this lead">
-            <EraseLeadForm id={lead.id} name={lead.first_name} />
+            <EraseLeadForm id={lead.id} name={fullName(lead)} />
           </Panel>
         ) : null}
       </div>

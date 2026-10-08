@@ -20,6 +20,7 @@ import { useAnonymousId, useTrack } from "./providers";
 /** API field names (snake_case) to form field names. */
 const apiFields: Record<string, keyof WaitlistValues> = {
   first_name: "firstName",
+  last_name: "lastName",
   email: "email",
   phone: "phone",
   location: "location",
@@ -80,6 +81,7 @@ export function WaitlistForm({ placement, referralCode }: WaitlistFormProps) {
     const attribution = readAttribution();
     const input: CreateLeadInput = {
       first_name: values.firstName,
+      last_name: values.lastName,
       email: values.email,
       phone: values.phone || undefined,
       location: values.location,
@@ -146,21 +148,32 @@ export function WaitlistForm({ placement, referralCode }: WaitlistFormProps) {
           />
         </Field>
 
-        <Field id={fid("email")} label="Email" error={errors.email?.message}>
+        <Field id={fid("lastName")} label="Last name" error={errors.lastName?.message}>
           <Input
-            id={fid("email")}
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            spellCheck={false}
+            id={fid("lastName")}
+            autoComplete="family-name"
             aria-required="true"
-            aria-invalid={errors.email ? true : undefined}
-            aria-describedby={describedBy(fid("email"), { error: errors.email })}
-            {...register("email")}
+            aria-invalid={errors.lastName ? true : undefined}
+            aria-describedby={describedBy(fid("lastName"), { error: errors.lastName })}
+            {...register("lastName")}
           />
         </Field>
       </div>
+
+      <Field id={fid("email")} label="Email" error={errors.email?.message}>
+        <Input
+          id={fid("email")}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          aria-required="true"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={describedBy(fid("email"), { error: errors.email })}
+          {...register("email")}
+        />
+      </Field>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Field id={fid("location")} label="Where would you like delivery?" error={errors.location?.message}>

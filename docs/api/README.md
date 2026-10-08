@@ -70,6 +70,7 @@ Join the waitlist.
 ```json
 {
   "first_name": "Asha",
+  "last_name": "Mohammed",
   "email": "asha@example.com",
   "phone": "+1 868 555 0100",
   "location": "port-of-spain",
@@ -87,7 +88,7 @@ Join the waitlist.
 }
 ```
 
-- Required: `first_name`, `email`, `location`, `consent: true`.
+- Required: `first_name`, `last_name`, `email`, `location`, `consent: true`.
 - `location`, `dietary_interests` are option values (lower-case letters, digits, hyphens).
 - `website` is a honeypot and must be empty; `elapsed_ms` is how long the form was open. A filled honeypot or a form submitted in under 1.5 seconds returns 422 `signup_rejected`.
 - An unknown `referral_code` is ignored, not an error.

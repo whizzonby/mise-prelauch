@@ -3,7 +3,7 @@ import { buttonClasses, Field, Heading, Input, Select, Tag, Text } from "@mise/u
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { formatDate, humanize, LEAD_STATUSES, number, PACKAGING_LABELS, statusTone } from "@/lib/format";
+import { formatDate, fullName, humanize, LEAD_STATUSES, number, PACKAGING_LABELS, statusTone } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -163,7 +163,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <tr key={lead.id} className="border-b border-border last:border-0 hover:bg-background">
                   <th scope="row" className="px-4 py-3 font-semibold">
                     <Link href={`/leads/${lead.id}`} className="underline underline-offset-4 hover:decoration-2">
-                      {lead.first_name}
+                      {fullName(lead)}
                     </Link>
                   </th>
                   <td className="px-4 py-3">{lead.email}</td>

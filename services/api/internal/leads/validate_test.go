@@ -66,5 +66,5 @@ func TestNameValidation(t *testing.T) {
 }
 
 func validInput(name string) SignupInput {
-	return SignupInput{FirstName: name, Email: "asha@example.com", Location: "port-of-spain", Consent: true, ElapsedMS: 5000}
+	return SignupInput{FirstName: name, LastName: "Mohammed", Email: "asha@example.com", Location: "port-of-spain", Consent: true, ElapsedMS: 5000}
 }

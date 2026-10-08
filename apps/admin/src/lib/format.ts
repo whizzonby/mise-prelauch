@@ -76,3 +76,8 @@ export function niceMax(value: number): number {
   }
   return 10 * magnitude;
 }
+
+/** A lead's name as written. Leads who joined before the form asked for a last name have none. */
+export function fullName(lead: { first_name: string; last_name: string }): string {
+  return [lead.first_name, lead.last_name].filter(Boolean).join(" ");
+}

@@ -196,6 +196,7 @@ func (h *harness) do(method, path string, body any, opts ...reqOpt) response {
 func signupBody(email string, extra map[string]any) map[string]any {
 	body := map[string]any{
 		"first_name":        "Asha",
+		"last_name":         "Mohammed",
 		"email":             email,
 		"location":          "port-of-spain",
 		"dietary_interests": []string{"vegetarian"},
@@ -377,6 +378,7 @@ func TestSignupValidation(t *testing.T) {
 	h := newHarness(t)
 	res := h.do("POST", "/api/v1/leads", map[string]any{
 		"first_name":           "Visit http://evil.example",
+		"last_name":            "<b>Mohammed</b>",
 		"email":                "not-an-email",
 		"phone":                "call me",
 		"location":             "",
@@ -394,7 +396,7 @@ func TestSignupValidation(t *testing.T) {
 	for _, f := range res.Error.Fields {
 		got[f.Field] = true
 	}
-	for _, field := range []string{"first_name", "email", "phone", "location", "dietary_interests", "household_size", "packaging_preference", "consent"} {
+	for _, field := range []string{"first_name", "last_name", "email", "phone", "location", "dietary_interests", "household_size", "packaging_preference", "consent"} {
 		if !got[field] {
 			t.Errorf("no validation error for %s", field)
 		}

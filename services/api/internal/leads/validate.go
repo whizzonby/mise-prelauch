@@ -36,6 +36,7 @@ func (f *fieldErrors) add(field, code, message string) {
 // normalizedSignup is a SignupInput that has passed validation.
 type normalizedSignup struct {
 	FirstName      string
+	LastName       string
 	Email          string
 	EmailCanonical string
 	Phone          *string
@@ -60,6 +61,16 @@ func validateSignup(in SignupInput) (normalizedSignup, error) {
 		errs.add("first_name", "too_long", "Use 80 characters or fewer.")
 	case !namePattern.MatchString(out.FirstName):
 		errs.add("first_name", "invalid", "Use letters only, with spaces, hyphens or apostrophes.")
+	}
+
+	out.LastName = strings.Join(strings.Fields(in.LastName), " ")
+	switch {
+	case out.LastName == "":
+		errs.add("last_name", "required", "Enter your last name.")
+	case utf8.RuneCountInString(out.LastName) > 80:
+		errs.add("last_name", "too_long", "Use 80 characters or fewer.")
+	case !namePattern.MatchString(out.LastName):
+		errs.add("last_name", "invalid", "Use letters only, with spaces, hyphens or apostrophes.")
 	}
 
 	email, canonical, ok := NormalizeEmail(in.Email)

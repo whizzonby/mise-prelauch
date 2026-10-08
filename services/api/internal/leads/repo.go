@@ -10,12 +10,12 @@ import (
 	"mise.tt/api/internal/platform/db"
 )
 
-const leadColumns = `id, first_name, email, phone, location, status, referral_code, referred_by,
+const leadColumns = `id, first_name, last_name, email, phone, location, status, referral_code, referred_by,
 	email_verified_at, consent_at, created_at, updated_at`
 
 func scanLead(row pgx.Row) (*Lead, error) {
 	var l Lead
-	err := row.Scan(&l.ID, &l.FirstName, &l.Email, &l.Phone, &l.Location, &l.Status, &l.ReferralCode,
+	err := row.Scan(&l.ID, &l.FirstName, &l.LastName, &l.Email, &l.Phone, &l.Location, &l.Status, &l.ReferralCode,
 		&l.ReferredBy, &l.EmailVerifiedAt, &l.ConsentAt, &l.CreatedAt, &l.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -54,11 +54,11 @@ func insert(ctx context.Context, q db.Querier, in insertLead) (*Lead, error) {
 		ipHash = &in.IPHash
 	}
 	lead, err := scanLead(q.QueryRow(ctx, `
-		INSERT INTO leads (first_name, email, email_canonical, phone, location, status, referral_code,
+		INSERT INTO leads (first_name, last_name, email, email_canonical, phone, location, status, referral_code,
 			referred_by, consent_at, consent_version, signup_ip_hash)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), $9, $10)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now(), $10, $11)
 		RETURNING `+leadColumns,
-		in.FirstName, in.Email, in.EmailCanonical, in.Phone, in.Location, in.Status, in.Code,
+		in.FirstName, in.LastName, in.Email, in.EmailCanonical, in.Phone, in.Location, in.Status, in.Code,
 		in.ReferredBy, in.ConsentVersion, ipHash))
 	if err != nil {
 		return nil, err

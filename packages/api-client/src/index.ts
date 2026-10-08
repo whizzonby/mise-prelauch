@@ -33,6 +33,7 @@ export interface AttributionTouch {
 
 export interface CreateLeadInput {
   first_name: string;
+  last_name: string;
   email: string;
   phone?: string;
   location: string;
@@ -124,6 +125,8 @@ export interface Overview {
 export interface LeadRow {
   id: string;
   first_name: string;
+  /** Empty for leads who joined before the form asked for it. */
+  last_name: string;
   email: string;
   status: LeadStatus;
   location: string;
@@ -158,6 +161,7 @@ export interface LeadFilter {
 export interface ReferralEntry {
   lead_id: string;
   first_name: string;
+  last_name: string;
   status: "pending" | "converted" | "flagged";
   created_at: string;
   converted_at: string | null;
@@ -166,6 +170,8 @@ export interface ReferralEntry {
 export interface LeadDetail {
   id: string;
   first_name: string;
+  /** Empty for leads who joined before the form asked for it. */
+  last_name: string;
   email: string;
   phone: string | null;
   location: string;

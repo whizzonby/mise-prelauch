@@ -323,7 +323,7 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.Pool.Query(r.Context(), `
-		SELECT l.id, l.first_name, l.email, COALESCE(l.phone, ''), l.location, l.status, l.referral_code,
+		SELECT l.id, l.first_name, l.last_name, l.email, COALESCE(l.phone, ''), l.location, l.status, l.referral_code,
 			`+sourceExpr+`, COALESCE(a.utm_medium, ''), COALESCE(a.utm_campaign, ''),
 			COALESCE(p.household_size::text, ''), COALESCE(p.meals_per_week::text, ''),
 			array_to_string(p.dietary_preferences, '|'), array_to_string(p.meal_interests, '|'),
@@ -343,20 +343,20 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 
 	cw := csv.NewWriter(w)
-	_ = cw.Write([]string{"id", "first_name", "email", "phone", "location", "status", "referral_code",
+	_ = cw.Write([]string{"id", "first_name", "last_name", "email", "phone", "location", "status", "referral_code",
 		"source", "utm_medium", "utm_campaign", "household_size", "meals_per_week", "dietary_preferences",
 		"meal_interests", "cooking_frequency", "packaging_preference", "referrals_converted", "email_verified_at", "consent_at", "created_at"})
 
 	for rows.Next() {
 		var (
-			id, firstName, email, phone, location, status, code, source, medium, campaign string
+			id, firstName, lastName, email, phone, location, status, code, source, medium, campaign string
 			household, meals, cooking, packaging                                          string
 			dietary, interests                                                            *string
 			converted                                                                     int
 			verifiedAt                                                                    *time.Time
 			consentAt, createdAt                                                          time.Time
 		)
-		if err := rows.Scan(&id, &firstName, &email, &phone, &location, &status, &code, &source, &medium,
+		if err := rows.Scan(&id, &firstName, &lastName, &email, &phone, &location, &status, &code, &source, &medium,
 			&campaign, &household, &meals, &dietary, &interests, &cooking, &packaging, &converted, &verifiedAt,
 			&consentAt, &createdAt); err != nil {
 			slog.ErrorContext(r.Context(), "export scan failed", "error", err.Error())
@@ -366,7 +366,7 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 		if verifiedAt != nil {
 			verified = verifiedAt.UTC().Format(time.RFC3339)
 		}
-		record := []string{id, firstName, email, phone, location, status, code, source, medium, campaign,
+		record := []string{id, firstName, lastName, email, phone, location, status, code, source, medium, campaign,
 			household, meals, deref(dietary), deref(interests), cooking, packaging, strconv.Itoa(converted), verified,
 			consentAt.UTC().Format(time.RFC3339), createdAt.UTC().Format(time.RFC3339)}
 		for i, cell := range record {

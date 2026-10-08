@@ -9,6 +9,7 @@ page.on("console", (m) => { if (m.type() === "error") failed.push("console: " + 
 await page.goto(url + "/#waitlist", { waitUntil: "networkidle" });
 const form = page.getByRole("form", { name: "Join the Mise waitlist" });
 await form.getByLabel("First name").fill("Remote");
+await form.getByLabel("Last name").fill("Check");
 await form.getByLabel("Email", { exact: true }).fill(`remote-check-${Date.now()}@example.com`);
 await form.getByLabel("Where would you like delivery?").selectOption("tobago");
 await form.getByRole("checkbox", { name: /Email me about the Mise launch/ }).check();

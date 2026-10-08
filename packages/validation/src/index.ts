@@ -22,6 +22,12 @@ export const waitlistSchema = z.object({
     .min(1, "Enter your first name.")
     .max(80, "Use 80 characters or fewer.")
     .regex(NAME_PATTERN, "Use letters only, with spaces, hyphens or apostrophes."),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, "Enter your last name.")
+    .max(80, "Use 80 characters or fewer.")
+    .regex(NAME_PATTERN, "Use letters only, with spaces, hyphens or apostrophes."),
   email: z
     .string()
     .trim()
@@ -45,6 +51,7 @@ export type WaitlistValues = z.infer<typeof waitlistSchema>;
 
 export const waitlistDefaults: WaitlistValues = {
   firstName: "",
+  lastName: "",
   email: "",
   phone: "",
   location: "",

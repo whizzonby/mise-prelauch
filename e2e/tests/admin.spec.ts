@@ -62,7 +62,7 @@ test("an admin signs in, reads the dashboard, finds a lead and exports the list"
   const stream = await file.createReadStream();
   let csv = "";
   for await (const chunk of stream) csv += chunk;
-  expect(csv.split("\n")[0]).toContain("id,first_name,email");
+  expect(csv.split("\n")[0]).toContain("id,first_name,last_name,email");
   expect(csv).toContain(email);
 
   // Signing out ends the session.

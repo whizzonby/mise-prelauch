@@ -33,6 +33,7 @@ type LeadFilter struct {
 type LeadRow struct {
 	ID                 string    `json:"id"`
 	FirstName          string    `json:"first_name"`
+	LastName           string    `json:"last_name"`
 	Email              string    `json:"email"`
 	Status             string    `json:"status"`
 	Location           string    `json:"location"`
@@ -70,7 +71,7 @@ func (f LeadFilter) where() (string, []any) {
 		// Escape LIKE wildcards so a search for "100%" means the literal text.
 		pattern := "%" + strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(strings.ToLower(q)) + "%"
 		p := arg(pattern)
-		clauses = append(clauses, "(lower(l.first_name) LIKE "+p+" OR l.email LIKE "+p+")")
+		clauses = append(clauses, "(lower(l.first_name || ' ' || l.last_name) LIKE "+p+" OR l.email LIKE "+p+")")
 	}
 	if f.Status != "" {
 		clauses = append(clauses, "l.status = "+arg(f.Status))
@@ -106,14 +107,14 @@ func (f LeadFilter) where() (string, []any) {
 	return " WHERE " + strings.Join(clauses, " AND "), args
 }
 
-const leadRowSelect = `SELECT l.id, l.first_name, l.email, l.status, l.location, ` + sourceExpr + `,
+const leadRowSelect = `SELECT l.id, l.first_name, l.last_name, l.email, l.status, l.location, ` + sourceExpr + `,
 	p.household_size,
 	(SELECT count(*) FROM referrals r WHERE r.referrer_lead_id = l.id AND r.status = 'converted'),
 	l.referred_by IS NOT NULL, l.created_at `
 
 func scanLeadRow(row pgx.CollectableRow) (LeadRow, error) {
 	var r LeadRow
-	err := row.Scan(&r.ID, &r.FirstName, &r.Email, &r.Status, &r.Location, &r.Source, &r.HouseholdSize,
+	err := row.Scan(&r.ID, &r.FirstName, &r.LastName, &r.Email, &r.Status, &r.Location, &r.Source, &r.HouseholdSize,
 		&r.ReferralsConverted, &r.WasReferred, &r.CreatedAt)
 	return r, err
 }
@@ -168,6 +169,7 @@ type AttributionTouch struct {
 type ReferralEntry struct {
 	LeadID      string     `json:"lead_id"`
 	FirstName   string     `json:"first_name"`
+	LastName    string     `json:"last_name"`
 	Status      string     `json:"status"`
 	CreatedAt   time.Time  `json:"created_at"`
 	ConvertedAt *time.Time `json:"converted_at"`
@@ -183,6 +185,7 @@ type TimelineEntry struct {
 type LeadDetail struct {
 	ID              string             `json:"id"`
 	FirstName       string             `json:"first_name"`
+	LastName        string             `json:"last_name"`
 	Email           string             `json:"email"`
 	Phone           *string            `json:"phone"`
 	Location        string             `json:"location"`
@@ -204,10 +207,10 @@ type LeadDetail struct {
 func leadDetail(ctx context.Context, q db.Querier, id string) (*LeadDetail, error) {
 	d := &LeadDetail{}
 	err := q.QueryRow(ctx, `
-		SELECT id, first_name, email, phone, location, status, referral_code, email_verified_at,
+		SELECT id, first_name, last_name, email, phone, location, status, referral_code, email_verified_at,
 			consent_at, consent_version, created_at, updated_at
 		FROM leads WHERE id = $1`, id,
-	).Scan(&d.ID, &d.FirstName, &d.Email, &d.Phone, &d.Location, &d.Status, &d.ReferralCode,
+	).Scan(&d.ID, &d.FirstName, &d.LastName, &d.Email, &d.Phone, &d.Location, &d.Status, &d.ReferralCode,
 		&d.EmailVerifiedAt, &d.ConsentAt, &d.ConsentVersion, &d.CreatedAt, &d.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -248,11 +251,11 @@ func leadDetail(ctx context.Context, q db.Querier, id string) (*LeadDetail, erro
 
 	scanReferral := func(row pgx.CollectableRow) (ReferralEntry, error) {
 		var e ReferralEntry
-		err := row.Scan(&e.LeadID, &e.FirstName, &e.Status, &e.CreatedAt, &e.ConvertedAt)
+		err := row.Scan(&e.LeadID, &e.FirstName, &e.LastName, &e.Status, &e.CreatedAt, &e.ConvertedAt)
 		return e, err
 	}
 	rows, err = q.Query(ctx, `
-		SELECT l.id, l.first_name, r.status, r.created_at, r.converted_at
+		SELECT l.id, l.first_name, l.last_name, r.status, r.created_at, r.converted_at
 		FROM referrals r JOIN leads l ON l.id = r.referred_lead_id
 		WHERE r.referrer_lead_id = $1 ORDER BY r.created_at DESC LIMIT 200`, id)
 	if err != nil {
@@ -262,7 +265,7 @@ func leadDetail(ctx context.Context, q db.Querier, id string) (*LeadDetail, erro
 		return nil, err
 	}
 	rows, err = q.Query(ctx, `
-		SELECT l.id, l.first_name, r.status, r.created_at, r.converted_at
+		SELECT l.id, l.first_name, l.last_name, r.status, r.created_at, r.converted_at
 		FROM referrals r JOIN leads l ON l.id = r.referrer_lead_id
 		WHERE r.referred_lead_id = $1`, id)
 	if err != nil {

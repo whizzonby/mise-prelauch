@@ -26,6 +26,7 @@ One row per person.
 |---|---|
 | `id` | UUID. Stable for the life of the person; becomes the link to their customer account. |
 | `first_name` | 1 to 80 characters. |
+| `last_name` | Up to 80 characters. Required on the form; empty for leads who joined before it was asked. |
 | `email` | As typed, trimmed and lower-cased. Where mail is sent. |
 | `email_canonical` | `email` with any `+tag` removed (and dots, for Gmail). **Unique.** This is what "the same person" means, and it stops one inbox joining or inviting itself repeatedly. |
 | `phone` | Optional. Digits with an optional leading `+`. |

@@ -23,6 +23,7 @@ function renderForm(props: Partial<Parameters<typeof WaitlistForm>[0]> = {}) {
 
 async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("First name"), "Asha");
+  await user.type(screen.getByLabelText("Last name"), "Mohammed");
   await user.type(screen.getByLabelText("Email"), "asha@example.com");
   await user.selectOptions(screen.getByLabelText("Where would you like delivery?"), "port-of-spain");
   await user.click(screen.getByRole("checkbox", { name: /Email me about the Mise launch/ }));
@@ -57,6 +58,7 @@ describe("WaitlistForm", () => {
     await user.click(screen.getByRole("button", { name: "Join the waitlist" }));
 
     expect(await screen.findByText("Enter your first name.")).toBeInTheDocument();
+    expect(screen.getByText("Enter your last name.")).toBeInTheDocument();
     expect(screen.getByText("Enter your email address.")).toBeInTheDocument();
     expect(screen.getByText("Choose where you would like delivery.")).toBeInTheDocument();
     expect(screen.getByText("Tick the box so we can email you about the launch.")).toBeInTheDocument();
@@ -90,6 +92,7 @@ describe("WaitlistForm", () => {
     expect(createLead).toHaveBeenCalledTimes(1);
     expect(createLead.mock.calls[0]![0]).toMatchObject({
       first_name: "Asha",
+      last_name: "Mohammed",
       email: "asha@example.com",
       location: "port-of-spain",
       dietary_interests: ["vegetarian"],

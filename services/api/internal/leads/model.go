@@ -45,6 +45,7 @@ type EmailJob struct {
 type Lead struct {
 	ID              string
 	FirstName       string
+	LastName        string
 	Email           string
 	Phone           *string
 	Location        string
@@ -87,6 +88,7 @@ type Attribution struct {
 
 type SignupInput struct {
 	FirstName        string   `json:"first_name"`
+	LastName         string   `json:"last_name"`
 	Email            string   `json:"email"`
 	Phone            string   `json:"phone"`
 	Location         string   `json:"location"`

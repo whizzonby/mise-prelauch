@@ -3,6 +3,8 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,19 +12,28 @@ import (
 
 	"mise.tt/api/internal/addresses"
 	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/billing"
 	"mise.tt/api/internal/catalog"
+	"mise.tt/api/internal/commerce"
 	"mise.tt/api/internal/customers"
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/leads"
+	"mise.tt/api/internal/menus"
+	"mise.tt/api/internal/orders"
+	"mise.tt/api/internal/payments"
+	"mise.tt/api/internal/payments/testpay"
+	"mise.tt/api/internal/plans"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/crypto"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/platform/token"
 	"mise.tt/api/internal/referrals"
+	"mise.tt/api/internal/subscriptions"
 )
 
 // NewLeadService builds the lead service from configuration. The worker uses
@@ -60,6 +71,122 @@ func NewIdentityService(cfg config.Config, pool *pgxpool.Pool) (*identity.Servic
 // too, to load demo content.
 func NewCatalogService(cfg config.Config, pool *pgxpool.Pool) *catalog.Service {
 	return catalog.NewService(pool, catalog.Options{AllowDemo: cfg.CatalogDemoEnabled, ImageHosts: cfg.CatalogImageHosts})
+}
+
+// Commerce is the subscription-commerce services, wired together. The API,
+// the worker and misectl build it the same way.
+type Commerce struct {
+	Plans    *plans.Service
+	Menus    *menus.Service
+	Subs     *subscriptions.Service
+	Billing  *billing.Service
+	Payments *payments.Service
+	Orders   *orders.Service
+	Service  *commerce.Service
+	// Testpay is the payment simulator, when PAYMENTS_TEST_PROVIDER is on.
+	Testpay *testpay.Provider
+}
+
+// NewCommerce builds the commerce services from configuration.
+func NewCommerce(cfg config.Config, pool *pgxpool.Pool, ids *identity.Service) (*Commerce, error) {
+	policy, err := menus.ParsePolicy(cfg.Commerce.CutoffWeekday, cfg.Commerce.CutoffTime)
+	if err != nil {
+		return nil, fmt.Errorf("MENU_CUTOFF_WEEKDAY/MENU_CUTOFF_TIME: %w", err)
+	}
+	billingPolicy := billing.Policy{
+		TaxMode: cfg.Commerce.TaxMode, TaxRateBps: cfg.Commerce.TaxRateBps, TaxLabel: cfg.Commerce.TaxLabel,
+		TaxRegistration: cfg.Commerce.TaxRegistration, DeliveryFeeMinor: cfg.Commerce.DeliveryFeeMinor,
+		BusinessName: cfg.Commerce.BusinessName, BusinessAddress: cfg.Commerce.BusinessAddress,
+		RenewalLead: cfg.Commerce.RenewalLead, RetryLimit: cfg.Commerce.RenewalRetries, RetryAfter: cfg.Commerce.RenewalRetryAfter,
+	}
+	if err := billingPolicy.Validate(); err != nil {
+		return nil, err
+	}
+	catalogService := NewCatalogService(cfg, pool)
+	c := &Commerce{
+		Plans:   plans.NewService(pool, plans.Options{AllowDemo: cfg.CatalogDemoEnabled}),
+		Menus:   menus.NewService(pool, catalogService, policy),
+		Subs:    subscriptions.NewService(pool, policy, subscriptions.Options{RenewalLead: cfg.Commerce.RenewalLead, MaxPauseWeeks: cfg.Commerce.MaxPauseWeeks}),
+		Billing: billing.NewService(pool, billingPolicy),
+		Orders:  orders.NewService(pool),
+	}
+	var providers []payments.Provider
+	if cfg.Commerce.TestProvider {
+		if cfg.IsProduction() {
+			return nil, errors.New("the test payment provider cannot run in production")
+		}
+		c.Testpay = testpay.New(pool, cfg.Commerce.TestProviderSecret, cfg.CustomerAppURL+"/test-checkout")
+		providers = append(providers, c.Testpay)
+	}
+	c.Payments = payments.NewService(pool, providers...)
+	if c.Testpay != nil {
+		p := c.Payments
+		// The simulator "sends" its webhooks straight into the same code a
+		// real provider's HTTP request reaches.
+		c.Testpay.Deliver = func(ctx context.Context, header http.Header, body []byte) error {
+			_, err := p.ReceiveWebhook(ctx, testpay.Name, header, body)
+			return err
+		}
+	}
+	svc := commerce.New(pool, commerce.Options{CustomerAppURL: cfg.CustomerAppURL, PendingTTL: cfg.Commerce.PendingTTL})
+	svc.Plans, svc.Menus, svc.Subs, svc.Billing, svc.Payments, svc.Orders = c.Plans, c.Menus, c.Subs, c.Billing, c.Payments, c.Orders
+	svc.Catalog, svc.Customers, svc.Identity, svc.Delivery = catalogService, customers.NewService(pool, ids), ids, delivery.Zones{DB: pool}
+	c.Service = svc
+	c.Menus.Usage = c.Subs
+	c.Menus.Hooks = commerce.MenuHooks{S: svc}
+	c.Billing.Issuer = c.Subs
+	c.Payments.Hooks = commerce.Hooks{S: svc}
+	return c, nil
+}
+
+// SeedDemoMenus creates and publishes menus for the next two open weeks
+// from the visible demo meals, unless those weeks already have a menu. It
+// returns the weeks it published.
+func SeedDemoMenus(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, c *Commerce) ([]string, error) {
+	page, err := NewCatalogService(cfg, pool).List(ctx, catalog.Filter{PageSize: 24})
+	if err != nil {
+		return nil, err
+	}
+	if len(page.Items) == 0 {
+		return nil, errors.New("no published meals: run misectl catalog seed-demo first")
+	}
+	var meals []menus.MealInput
+	for _, m := range page.Items {
+		meals = append(meals, menus.MealInput{MealID: m.ID})
+	}
+	var done []string
+	week := c.Menus.Policy.NextOpenWeek(c.Menus.Now())
+	for i := 0; i < 2; i++ {
+		w := week.AddDate(0, 0, 7*i)
+		if info, err := c.Menus.ForWeek(ctx, pool, w); err != nil {
+			return done, err
+		} else if info != nil {
+			continue
+		}
+		m, err := c.Menus.Create(ctx, "", menus.Input{Week: menus.FormatWeek(w), Title: "Demo menu", Meals: meals})
+		if err != nil {
+			return done, err
+		}
+		if _, err := c.Menus.Publish(ctx, "", m.ID, nil); err != nil {
+			return done, err
+		}
+		done = append(done, menus.FormatWeek(w))
+	}
+	return done, nil
+}
+
+// RegisterCommerceJobs wires the commerce and payment job kinds.
+func RegisterCommerceJobs(r *jobs.Runner, c *Commerce) {
+	r.Register(payments.JobProcessWebhook, c.Payments.ProcessWebhook)
+	r.Register(commerce.JobCharge, c.Service.HandleCharge)
+}
+
+// SetClock makes every commerce service read the time from now (tests).
+func (c *Commerce) SetClock(now func() time.Time) {
+	c.Plans.Now, c.Menus.Now, c.Subs.Now, c.Billing.Now, c.Payments.Now, c.Orders.Now, c.Service.Now = now, now, now, now, now, now, now
+	if c.Testpay != nil {
+		c.Testpay.Now = now
+	}
 }
 
 // Limits are per client IP. Signup is the expensive, abusable endpoint and
@@ -115,6 +242,16 @@ func Build(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, 
 	if err != nil {
 		return nil, nil, err
 	}
+	com, err := NewCommerce(cfg, pool, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	return BuildWith(cfg, pool, limits, ids, com)
+}
+
+// BuildWith is Build with services made by the caller (tests share them
+// with the job runner and control their clock).
+func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identity.Service, com *Commerce) (http.Handler, []string, error) {
 	leadService := NewLeadService(cfg, pool)
 	leadHandler := &leads.Handler{Service: leadService}
 	referralHandler := &referrals.Handler{DB: pool}
@@ -153,9 +290,16 @@ func Build(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, 
 	identityHandler.Routes(mux, identity.Limits{Auth: limits.AdminLogin.ByIP, Token: limits.Token.ByIP})
 	adminHandler.Routes(mux)
 	(&customers.Handler{Service: customerService}).Routes(mux)
-	(&addresses.Handler{Pool: pool, Identity: ids, Customers: customerService, Delivery: delivery.Zones{DB: pool}}).Routes(mux)
+	(&addresses.Handler{Pool: pool, Identity: ids, Customers: customerService, Delivery: delivery.Zones{DB: pool}, InUse: com.Subs}).Routes(mux)
 	(&catalog.Handler{Service: catalogService, Identity: ids, Tastes: customerService}).Routes(mux)
 	(&favorites.Handler{Pool: pool, Identity: ids, Customers: customerService, Catalog: catalogService}).Routes(mux)
+	(&plans.Handler{Service: com.Plans, Identity: ids}).Routes(mux)
+	(&menus.Handler{Service: com.Menus, Identity: ids}).Routes(mux)
+	(&payments.Handler{Service: com.Payments, Identity: ids}).Routes(mux)
+	(&commerce.Handler{S: com.Service, Limit: limits.Token.ByIP}).Routes(mux)
+	if com.Testpay != nil {
+		com.Testpay.Routes(mux, limits.Token.ByIP)
+	}
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

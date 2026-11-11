@@ -4,6 +4,8 @@
 //	misectl migrate status
 //	misectl migrate down                       (local only)
 //	misectl catalog seed-demo                  (needs CATALOG_DEMO_ENABLED)
+//	misectl commerce seed-demo                 (demo plans and menus; needs CATALOG_DEMO_ENABLED)
+//	misectl commerce tick [-at 2026-11-20T04:00:00Z]   (one scheduler run; -at only when local)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -44,7 +46,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -94,6 +96,62 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Printf("demo catalogue ready (%d new items)\n", n)
+		return nil
+
+	case "commerce seed-demo":
+		// The business-plan draft plans, as demo content, and published demo
+		// menus for the next two open weeks from the demo catalogue.
+		if !cfg.CatalogDemoEnabled {
+			return errors.New("demo content is off (CATALOG_DEMO_ENABLED=false)")
+		}
+		ids, err := server.NewIdentityService(cfg, pool)
+		if err != nil {
+			return err
+		}
+		com, err := server.NewCommerce(cfg, pool, ids)
+		if err != nil {
+			return err
+		}
+		n, err := com.Plans.SeedDemo(ctx)
+		if err != nil {
+			return err
+		}
+		weeks, err := server.SeedDemoMenus(ctx, cfg, pool, com)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("demo plans ready (%d new); demo menus published for %v\n", n, weeks)
+		return nil
+
+	case "commerce tick":
+		ids, err := server.NewIdentityService(cfg, pool)
+		if err != nil {
+			return err
+		}
+		com, err := server.NewCommerce(cfg, pool, ids)
+		if err != nil {
+			return err
+		}
+		fs := flag.NewFlagSet("tick", flag.ContinueOnError)
+		at := fs.String("at", "", "run as if it were this time (RFC 3339; local development only)")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		now := time.Now()
+		if *at != "" {
+			if cfg.Env != "local" {
+				return errors.New("-at is only allowed when MISE_ENV=local")
+			}
+			if now, err = time.Parse(time.RFC3339, *at); err != nil {
+				return fmt.Errorf("-at: %w", err)
+			}
+			com.SetClock(func() time.Time { return now })
+		}
+		rep, err := com.Service.Tick(ctx, now)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%+v\n", *rep)
 		return nil
 
 	case "doctor ":

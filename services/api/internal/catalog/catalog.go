@@ -27,6 +27,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mise.tt/api/internal/catalog/store"
+	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/vocab"
 )
@@ -505,4 +506,42 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// MealRef is what other modules record about a meal: its identity, its
+// version (it goes up on every edit) and its declared allergens.
+type MealRef struct {
+	ID             string   `json:"id"`
+	Slug           string   `json:"slug"`
+	Name           string   `json:"name"`
+	Status         string   `json:"status"`
+	IsDemo         bool     `json:"is_demo"`
+	Version        int      `json:"version"`
+	Servings       int      `json:"servings"`
+	Allergens      []string `json:"allergens"`
+	AllergenStatus string   `json:"allergen_status"`
+	DietaryTags    []string `json:"dietary_tags"`
+	// Visible: a customer may see and choose it now.
+	Visible bool `json:"visible"`
+}
+
+// MealRefs returns the meals among ids that exist, by id. q may be a
+// transaction, so an order can record exactly what it was made from.
+func (s *Service) MealRefs(ctx context.Context, q db.Querier, ids []string) (map[string]MealRef, error) {
+	out := map[string]MealRef{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := store.New(q).MealRefs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		out[r.ID] = MealRef{
+			ID: r.ID, Slug: r.Slug, Name: r.Name, Status: r.Status, IsDemo: r.IsDemo, Version: int(r.Version),
+			Servings: int(r.Servings), Allergens: r.Allergens, AllergenStatus: r.AllergenStatus, DietaryTags: r.DietaryTags,
+			Visible: r.Status == "published" && (!r.IsDemo || s.opts.AllowDemo),
+		}
+	}
+	return out, nil
 }

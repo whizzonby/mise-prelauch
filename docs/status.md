@@ -1,5 +1,18 @@
 # Status: what has been verified, and what has not
 
+## Sprint 3 (subscriptions, ordering and payments): 11 November 2026
+
+Built and verified; not committed yet. Full account: `docs/SPRINT_3_REPORT.md`.
+- **Go:** 104 tests pass against PostgreSQL, including 15 commerce integration tests.
+- **Unit tests:** Vitest 43/43.
+- **Browser tests:** Playwright 36/36; the 5 new journeys passed three times in a row.
+- **Static checks:** lint, typecheck, gofmt, vet, sqlc and the OpenAPI contract are clean.
+- **Migrations:** 00007 runs up, down and up cleanly.
+- **Payments:** test provider only. Real-money checkout is **blocked** until a provider is
+  chosen; the test provider is refused in production.
+- **Open decisions:** tax, delivery fees, refunds, retries and plan eligibility. They are
+  configurable and listed in the report.
+
 ## Sprint 2 (customer web platform): 11 November 2026
 
 Built and verified; not committed yet. Full account: `docs/SPRINT_2_REPORT.md`.

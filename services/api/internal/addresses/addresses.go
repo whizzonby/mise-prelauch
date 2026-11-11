@@ -39,11 +39,35 @@ type Customers interface {
 	CustomerID(ctx context.Context, p *identity.Principal) (string, error)
 }
 
+// InUse tells whether a live subscription delivers to an address; the
+// subscriptions module implements it. Such an address cannot be removed.
+type InUse interface {
+	AddressInUse(ctx context.Context, q db.Querier, addressID string) (bool, error)
+}
+
 type Handler struct {
 	Pool      *pgxpool.Pool
 	Identity  *identity.Service
 	Customers Customers
 	Delivery  delivery.Eligibility
+	InUse     InUse
+}
+
+// Lookup returns one of a customer's addresses, or not found (another
+// customer's address is not found too). q may be a transaction.
+func Lookup(ctx context.Context, q db.Querier, elig delivery.Eligibility, customerID, id string) (*Address, error) {
+	if !uuidPattern.MatchString(id) {
+		return nil, httpx.ErrNotFound
+	}
+	a, err := store.New(q).GetAddress(ctx, store.GetAddressParams{ID: id, CustomerID: customerID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, httpx.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	v, err := (&Handler{Delivery: elig}).view(ctx, a)
+	return &v, err
 }
 
 func (h *Handler) Routes(mux httpx.Router) {
@@ -381,6 +405,16 @@ func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	}
 	err := db.InTx(r.Context(), h.Pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
+		if h.InUse != nil {
+			used, err := h.InUse.AddressInUse(r.Context(), tx, id)
+			if err != nil {
+				return err
+			}
+			if used {
+				return httpx.NewError(http.StatusConflict, "address_in_use",
+					"Your subscription delivers to this address. Choose another delivery address for it first.")
+			}
+		}
 		wasDefault, err := q.DeleteAddress(r.Context(), store.DeleteAddressParams{ID: id, CustomerID: cid})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return httpx.ErrNotFound

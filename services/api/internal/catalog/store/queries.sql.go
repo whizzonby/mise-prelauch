@@ -1012,6 +1012,57 @@ func (q *Queries) ListPublishedMeals(ctx context.Context, arg ListPublishedMeals
 	return items, nil
 }
 
+const mealRefs = `-- name: MealRefs :many
+SELECT id, slug, name, status, is_demo, version, servings, allergens, allergen_status, dietary_tags
+FROM meals WHERE id = ANY($1::uuid[])
+`
+
+type MealRefsRow struct {
+	ID             string
+	Slug           string
+	Name           string
+	Status         string
+	IsDemo         bool
+	Version        int32
+	Servings       int16
+	Allergens      []string
+	AllergenStatus string
+	DietaryTags    []string
+}
+
+// The facts other modules record about a meal (weekly menus, orders),
+// whatever its status. Callers decide what a status means for them.
+func (q *Queries) MealRefs(ctx context.Context, ids []string) ([]MealRefsRow, error) {
+	rows, err := q.db.Query(ctx, mealRefs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MealRefsRow{}
+	for rows.Next() {
+		var i MealRefsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Name,
+			&i.Status,
+			&i.IsDemo,
+			&i.Version,
+			&i.Servings,
+			&i.Allergens,
+			&i.AllergenStatus,
+			&i.DietaryTags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setMealStatus = `-- name: SetMealStatus :one
 UPDATE meals SET
     status = $1::text,

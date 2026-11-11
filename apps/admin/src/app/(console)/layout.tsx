@@ -22,6 +22,11 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
             { href: "/", label: "Dashboard" },
             { href: "/leads", label: "Leads" },
             ...(can(admin, "catalog.read") ? [{ href: "/meals", label: "Meals" }] : []),
+            ...(can(admin, "menus.manage") ? [{ href: "/menus", label: "Weekly menus" }] : []),
+            ...(can(admin, "subscriptions.read") ? [{ href: "/plans", label: "Plans" }, { href: "/subscriptions", label: "Subscriptions" }] : []),
+            ...(can(admin, "orders.read") ? [{ href: "/orders", label: "Orders" }] : []),
+            ...(can(admin, "payments.read") ? [{ href: "/payments", label: "Payments" }] : []),
+            ...(can(admin, "promotions.manage") ? [{ href: "/promotions", label: "Promotions" }] : []),
           ]}
         />
 

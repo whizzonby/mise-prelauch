@@ -201,3 +201,9 @@ RETURNING *;
 
 -- name: GetMealBySlug :one
 SELECT * FROM meals WHERE slug = @slug;
+
+-- name: MealRefs :many
+-- The facts other modules record about a meal (weekly menus, orders),
+-- whatever its status. Callers decide what a status means for them.
+SELECT id, slug, name, status, is_demo, version, servings, allergens, allergen_status, dietary_tags
+FROM meals WHERE id = ANY(@ids::uuid[]);

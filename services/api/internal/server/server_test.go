@@ -78,6 +78,27 @@ type harness struct {
 	runner  *jobs.Runner
 	mailer  *captureMailer
 	cfg     config.Config
+	com     *server.Commerce
+	clock   *testClock
+}
+
+// testClock is the time the commerce services read. Tests move it forward
+// to reach renewals and cutoffs; it starts at the real time.
+type testClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func (c *testClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *testClock) Set(t time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = t
 }
 
 func openLimits() server.Limits {
@@ -101,7 +122,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		t.Fatalf("migrate: %v", err)
 	}
 	// Roles and permissions are reference data seeded by migrations; they stay.
-	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones RESTART IDENTITY CASCADE`); err != nil {
+	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 
@@ -120,6 +141,13 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		CustomerAppURL:              "http://app.test",
 		TermsVersion:                "test-terms",
 		DataEncryptionKey:           []byte("0123456789abcdef0123456789abcdef"),
+		CatalogDemoEnabled:          false,
+		Commerce: config.CommerceConfig{
+			CutoffWeekday: "thursday", CutoffTime: "23:59", TaxMode: "none", TaxLabel: "VAT", BusinessName: "Mise",
+			RenewalLead: 48 * time.Hour, RenewalRetryAfter: 24 * time.Hour, MaxPauseWeeks: 4, PendingTTL: 24 * time.Hour,
+			SchedulerInterval: time.Minute, TestProvider: true,
+			TestProviderSecret: []byte("test-provider-secret-test-provider-secret"),
+		},
 	}
 	limits := openLimits()
 	for _, m := range mutate {
@@ -136,11 +164,20 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	}
 	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
 
-	handler, routes, err := server.Build(cfg, pool, limits)
+	com, err := server.NewCommerce(cfg, pool, ids)
+	if err != nil {
+		t.Fatalf("commerce: %v", err)
+	}
+	clock := &testClock{now: time.Now()}
+	com.SetClock(clock.Now)
+	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender}).Register(runner)
+	server.RegisterCommerceJobs(runner, com)
+
+	handler, routes, err := server.BuildWith(cfg, pool, limits, ids, com)
 	if err != nil {
 		t.Fatalf("build server: %v", err)
 	}
-	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.

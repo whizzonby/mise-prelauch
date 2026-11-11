@@ -88,8 +88,10 @@ test("the dashboard suggests meals, and meals can be filtered, opened and saved"
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Kavita\.$/);
   await expect(page.getByRole("heading", { name: "Finish setting up your kitchen" })).toBeVisible();
-  // Nothing invented: no orders, deliveries or subscription figures.
-  await expect(page.getByText(/next delivery|your order|subscription/i)).toHaveCount(0);
+  // Nothing invented: no orders or deliveries for someone without a
+  // subscription, just a way to see the plans (Sprint 3).
+  await expect(page.locator("main").getByText(/next delivery|your order|your next week/i)).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Start cooking with Mise" })).toBeVisible();
 
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Explore meals" }).click();
   await expect(page).toHaveURL(/\/meals$/);

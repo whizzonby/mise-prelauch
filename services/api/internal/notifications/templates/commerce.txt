@@ -1,0 +1,10 @@
+Hi {{.FirstName}},
+{{range .Paragraphs}}
+{{.}}
+{{end}}{{if .Facts}}
+{{range .Facts}}{{.Label}}: {{.Value}}
+{{end}}{{end}}{{if .ButtonURL}}
+{{.ButtonLabel}}: {{.ButtonURL}}
+{{end}}
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago. You are getting this email about your Mise subscription.

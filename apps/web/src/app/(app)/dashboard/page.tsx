@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { DemoTag, EmptyState, MealCard, MealGrid, SectionHeading } from "@/components/meal-card";
+import { YourWeek } from "@/components/your-week";
 import { savedMealIds } from "@/lib/data";
 import { greeting, longDate } from "@/lib/greeting";
 import { api, requireCustomer } from "@/lib/session";
@@ -12,18 +13,24 @@ import { api, requireCustomer } from "@/lib/session";
 export const metadata: Metadata = { title: "Home" };
 
 /**
- * The customer's home. Discovery and next steps, nothing invented: no order
- * counts, delivery dates or subscription figures, because none exist yet.
+ * The customer's home. Discovery and next steps, nothing invented: the
+ * subscription panel shows only what the API reports (the next week, its
+ * deadline, whether meals are confirmed), and nothing about deliveries,
+ * which are arranged in a later stage.
  */
 export default async function Dashboard() {
   const { token, customer } = await requireCustomer();
-  const [onboarding, recs, categories, chefs, saved] = await Promise.all([
+  const [onboarding, recs, categories, chefs, saved, { subscription }] = await Promise.all([
     api.account.onboarding(token),
     api.account.recommendations(token, 6),
     api.catalog.categories(),
     api.catalog.chefs(),
     savedMealIds(token),
+    api.commerce.subscription(token),
   ]);
+  const nextWeek = subscription?.cycles
+    .filter((c) => c.state === "scheduled")
+    .sort((a, b) => a.week.localeCompare(b.week))[0];
   const spotlight = chefs.items[0] ? await api.catalog.chef(chefs.items[0].slug).catch(() => null) : null;
   const now = new Date();
   const browsable = categories.items.filter((c) => c.meal_count > 0);
@@ -52,6 +59,8 @@ export default async function Dashboard() {
             </Link>
           </aside>
         ) : null}
+
+        <YourWeek subscription={subscription} nextWeek={nextWeek} />
       </Container>
 
       {/* Editorial hero: photograph beside a solid panel. No overlays, no gradients. */}
@@ -79,7 +88,7 @@ export default async function Dashboard() {
                 Explore meals <ArrowRight aria-hidden="true" className="size-5" strokeWidth={1.75} />
               </Link>
               <p className="type-caption mt-5 text-primary-foreground/75">
-                Weekly ordering opens soon. For now, browse the menu and save what you would like to cook.
+                Choose a plan, then pick your meals from each week&apos;s menu.
               </p>
             </div>
           </div>

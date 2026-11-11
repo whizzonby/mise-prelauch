@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.2.0
+  version: 1.3.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -39,6 +39,24 @@ tags:
   - name: admin-catalog
     description: Catalogue management for staff (Sprint 2).
 
+  - name: plans
+    description: Subscription plans and their prices (Sprint 3).
+  - name: menus
+    description: Published weekly menus (Sprint 3).
+  - name: subscriptions
+    description: The customer's subscription (Sprint 3).
+  - name: selections
+    description: Choosing meals for a week (Sprint 3).
+  - name: orders
+    description: Orders made at each cutoff (Sprint 3).
+  - name: billing
+    description: Checkout, billing history and invoices (Sprint 3).
+  - name: payments
+    description: Payment provider webhooks (Sprint 3).
+  - name: test-payments
+    description: The test payment simulator. Never served in production.
+  - name: admin-commerce
+    description: Restricted commerce administration (Sprint 3).
 paths:
   /api/v1/health:
     get:
@@ -1485,6 +1503,1388 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
 
+  /api/v1/plans:
+    get:
+      tags: [plans]
+      operationId: listPlans
+      description: "Plans customers can see, with their current price. Prices are data, never hard-coded."
+      responses:
+        "200":
+          description: Plans.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Plan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+  /api/v1/plans/{slug}:
+    get:
+      tags: [plans]
+      operationId: getPlan
+      description: One visible plan.
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: The plan.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Plan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/weekly-menus:
+    get:
+      tags: [menus]
+      operationId: listWeeklyMenus
+      description: Published (and recently closed) menus from the current week on.
+      responses:
+        "200":
+          description: Menus.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/MenuSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+  /api/v1/weekly-menus/{week}:
+    get:
+      tags: [menus]
+      operationId: getWeeklyMenu
+      description: A published menu by the Monday of its week. Unpublished menus are not found.
+      parameters:
+        - name: week
+          in: path
+          required: true
+          schema: { type: string, format: date }
+          description: "YYYY-MM-DD, a Monday."
+      responses:
+        "200":
+          description: The menu.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/WeeklyMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/subscription-info:
+    get:
+      tags: [subscriptions]
+      operationId: subscriptionInfo
+      description: "Whether payments are available (and in test mode), and the cutoff rule."
+      responses:
+        "200":
+          description: Info.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionInfo" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+  /api/v1/me/subscription:
+    get:
+      tags: [subscriptions]
+      operationId: getMySubscription
+      description: "The customer's subscription in progress, or null."
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: The subscription.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions/quote:
+    post:
+      tags: [subscriptions]
+      operationId: quoteSubscription
+      description: "Everything shown before payment, computed on the server: first week, amount due now, renewal amount and terms."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QuoteInput" }
+      responses:
+        "200":
+          description: The quote.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Quote" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions:
+    post:
+      tags: [subscriptions]
+      operationId: createSubscription
+      description: "Creates a subscription waiting for payment and opens the provider's hosted checkout. It becomes active only when the provider confirms the payment (webhook, then a status lookup); the browser returning is not proof."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubscribeInput" }
+      responses:
+        "201":
+          description: Created; redirect the customer to checkout.redirect_url.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscribeResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions/{id}/change-plan:
+    post:
+      tags: [subscriptions]
+      operationId: changeSubscriptionPlan
+      description: From the first week not yet billed. No proration.
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePlanInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions/{id}/pause:
+    post:
+      tags: [subscriptions]
+      operationId: pauseSubscription
+      description: "Skips 1 to max_pause_weeks weeks, from the first week not yet paid."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PauseInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions/{id}/resume:
+    post:
+      tags: [subscriptions]
+      operationId: resumeSubscription
+      description: "Ends a pause early, or withdraws a cancellation not yet in effect."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscriptions/{id}/cancel:
+    post:
+      tags: [subscriptions]
+      operationId: cancelSubscription
+      description: From the first week not yet paid; paid weeks are still delivered. No automatic refunds. History is kept.
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelInput" }
+  /api/v1/me/subscriptions/{id}/address:
+    put:
+      tags: [subscriptions]
+      operationId: setSubscriptionAddress
+      description: Where future orders are delivered.
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubscriptionAddressInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/subscription-cycles:
+    get:
+      tags: [subscriptions]
+      operationId: listMyWeeks
+      description: "The customer's recent and upcoming weeks."
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Weeks.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SubscriptionCycle" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/meal-selections/{cycleId}:
+    get:
+      tags: [selections]
+      operationId: getMealSelection
+      description: "The selection screen for one of the customer's weeks: menu, allowance, choices, allergy and preference notes."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: cycleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: The page.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SelectionPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [selections]
+      operationId: saveMealSelection
+      description: "Saves a draft. Checked on the server: menu, allowance, per-meal limits and the cutoff (409 selection_closed after it). Another device's newer version answers 409 version_conflict."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: cycleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelectionInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SelectionPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/meal-selections/{cycleId}/finalize:
+    post:
+      tags: [selections]
+      operationId: finalizeMealSelection
+      description: "Confirms the choice (the whole allowance). With items, saves and confirms in one step. Still changeable until the cutoff."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: cycleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Confirmed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SelectionPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelectionInput" }
+  /api/v1/me/orders:
+    get:
+      tags: [orders]
+      operationId: listMyOrders
+      description: Newest first.
+      security: [{ customerSession: [] }]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/OrderSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/orders/{id}:
+    get:
+      tags: [orders]
+      operationId: getMyOrder
+      description: "Another customer's order answers 404."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: The order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Order" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/me/billing:
+    get:
+      tags: [billing]
+      operationId: getMyBilling
+      description: "Payment method, anything payable now, and billing history."
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Billing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/BillingSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/invoices:
+    get:
+      tags: [billing]
+      operationId: listMyInvoices
+      description: Newest first.
+      security: [{ customerSession: [] }]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Invoices.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InvoiceSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/invoices/{id}:
+    get:
+      tags: [billing]
+      operationId: getMyInvoice
+      description: "Another customer's invoice answers 404."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: The invoice.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Invoice" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/me/invoices/{id}/pdf:
+    get:
+      tags: [billing]
+      operationId: getMyInvoicePdf
+      description: The invoice as a PDF (deterministic).
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: PDF.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/checkout/sessions:
+    post:
+      tags: [billing]
+      operationId: createCheckoutSession
+      description: "Opens the provider's hosted checkout for one of the customer's unpaid weeks (until its cutoff). The amount is the server-computed total."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PayInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Checkout" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/checkout/sessions/{id}:
+    get:
+      tags: [billing]
+      operationId: getCheckoutResult
+      description: What the server knows about a checkout. The result page polls this.
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Result.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CheckoutResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/webhooks/payments/{provider}:
+    post:
+      tags: [payments]
+      operationId: receivePaymentWebhook
+      description: "Authenticated by the provider's signature (never a session). Stored once per provider event id; repeats are acknowledged and ignored. Processing re-reads the payment's status from the provider."
+      parameters: [{ name: provider, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: Received.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [received, duplicate]
+                    properties:
+                      received: { type: boolean }
+                      duplicate: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+  /api/v1/test-payments/sessions/{ref}:
+    get:
+      tags: [test-payments]
+      operationId: getTestpaySession
+      description: "Test mode only (refused in production): the simulated provider's hosted checkout."
+      parameters: [{ name: ref, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/TestpaySession" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/test-payments/sessions/{ref}/complete:
+    post:
+      tags: [test-payments]
+      operationId: completeTestpaySession
+      description: "Test mode only: approve, decline or cancel. The simulator then sends a signed webhook."
+      parameters: [{ name: ref, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TestpayComplete" }
+      responses:
+        "200":
+          description: Session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/TestpaySession" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/plans:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListPlans
+      description: Needs subscriptions.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Plans.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-commerce]
+      operationId: adminCreatePlan
+      description: Needs plans.manage. Created as a draft.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlanInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/plans/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetPlan
+      description: With every price version.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Plan.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-commerce]
+      operationId: adminUpdatePlan
+      description: Needs plans.manage. Optimistic concurrency on version.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlanInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/plans/{id}/prices:
+    post:
+      tags: [admin-commerce]
+      operationId: adminAddPlanPrice
+      description: "A new price version, now or later. Price rows are never edited."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PriceInput" }
+      responses:
+        "201":
+          description: Added.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/plans/{id}/activate:
+    post:
+      tags: [admin-commerce]
+      operationId: adminActivatePlan
+      description: Needs a price.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/plans/{id}/retire:
+    post:
+      tags: [admin-commerce]
+      operationId: adminRetirePlan
+      description: Stops new sales; subscribers keep their plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/menus:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListMenus
+      description: Needs menus.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: Menus.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, next_open_week, time_zone]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/MenuSummary" }
+                      next_open_week: { type: string, format: date }
+                      time_zone: { type: string }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-commerce]
+      operationId: adminCreateMenu
+      description: A draft menu for a week. The cutoff defaults to the policy.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MenuInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/menus/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetMenu
+      description: ""
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Menu.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-commerce]
+      operationId: adminUpdateMenu
+      description: Once published the cutoff is fixed and chosen meals stay.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MenuInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/menus/{id}/publish:
+    post:
+      tags: [admin-commerce]
+      operationId: adminPublishMenu
+      description: "Needs menus.publish. Now, or at publish_at (scheduled)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                publish_at: { type: [string, "null"], format: date-time }
+  /api/v1/admin/menus/{id}/unpublish:
+    post:
+      tags: [admin-commerce]
+      operationId: adminUnpublishMenu
+      description: Refused once customers have chosen from it.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMenu" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/subscriptions:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListSubscriptions
+      description: Needs subscriptions.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Subscriptions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AdminSubscriptionRow" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/subscriptions/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetSubscription
+      description: "With history, billing and every week."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Subscription.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminSubscription" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/orders:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListOrders
+      description: Needs orders.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: week
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/OrderSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/orders/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetOrder
+      description: With its status history.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Order" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/demand:
+    get:
+      tags: [admin-commerce]
+      operationId: adminWeekDemand
+      description: "Confirmed kits per meal version for a delivery week: the interface later production modules read. Plans nothing."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: week, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: Demand.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Demand" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/invoices/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetInvoice
+      description: Needs payments.read. ?format=pdf for the PDF.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invoice.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Invoice" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payments:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListPayments
+      description: "Needs payments.read. There is no endpoint that sets a payment's status."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: attention
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Payments.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Payment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payments/{id}:
+    get:
+      tags: [admin-commerce]
+      operationId: adminGetPayment
+      description: With status history and refunds.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Payment.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PaymentDetail" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payments/{id}/refunds:
+    post:
+      tags: [admin-commerce]
+      operationId: adminRefundPayment
+      description: Needs payments.refund. Through the provider; idempotent per request_key.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefundInput" }
+      responses:
+        "201":
+          description: Refunded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PaymentDetail" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payment-webhooks:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListWebhooks
+      description: "Received webhooks, without payloads."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: Webhooks.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StoredWebhook" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/promotions:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListPromotions
+      description: Needs promotions.manage.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Promotions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Promotion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-commerce]
+      operationId: adminCreatePromotion
+      description: Created as a draft; it applies only once activated.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Promotion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/promotions/{id}/activate:
+    post:
+      tags: [admin-commerce]
+      operationId: adminActivatePromotion
+      description: ""
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Promotion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/promotions/{id}/archive:
+    post:
+      tags: [admin-commerce]
+      operationId: adminArchivePromotion
+      description: ""
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Promotion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/commerce/jobs:
+    get:
+      tags: [admin-commerce]
+      operationId: adminFailedCommerceJobs
+      description: Commerce and payment jobs that failed or are retrying (no payloads).
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Jobs.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/FailedJob" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -1794,7 +3194,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -2436,3 +3836,873 @@ components:
         image_alt: { type: [string, "null"] }
         status: { type: string, enum: [draft, published, unpublished] }
         is_demo: { type: boolean }
+    # ---------------- Sprint 3: subscription commerce
+    Price:
+      type: object
+      required: [id, amount_minor, currency, effective_from, formatted]
+      properties:
+        id: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        effective_from: { type: string, format: date-time }
+        formatted: { type: string }
+    Plan:
+      type: object
+      required: [id, slug, name, summary, description, meals_per_week, billing_interval, segment, benefits, self_serve, price, per_meal_minor, next_price, purchasable, is_demo]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        summary: { type: string }
+        description: { type: string }
+        meals_per_week: { type: integer }
+        billing_interval: { type: string, enum: [week] }
+        segment: { $ref: "#/components/schemas/Term" }
+        benefits:
+          type: array
+          items: { type: string }
+        self_serve: { type: boolean }
+        price:
+          oneOf: [{ $ref: "#/components/schemas/Price" }, { type: "null" }]
+        per_meal_minor: { type: integer }
+        next_price:
+          oneOf: [{ $ref: "#/components/schemas/Price" }, { type: "null" }]
+        purchasable: { type: boolean }
+        unavailable_reason: { type: string, description: Why it cannot be bought online; absent when it can. }
+        is_demo: { type: boolean }
+    AdminPlan:
+      allOf:
+        - $ref: "#/components/schemas/Plan"
+        - type: object
+          required: [status, available_from, available_until, sort_order, version, updated_at]
+          properties:
+            status: { type: string, enum: [draft, active, retired] }
+            available_from: { type: [string, "null"], format: date-time }
+            available_until: { type: [string, "null"], format: date-time }
+            sort_order: { type: integer }
+            version: { type: integer }
+            prices:
+              type: array
+              items: { $ref: "#/components/schemas/Price" }
+            updated_at: { type: string, format: date-time }
+    PlanInput:
+      type: object
+      required: [name, summary, meals_per_week, segment]
+      additionalProperties: false
+      properties:
+        slug: { type: string }
+        name: { type: string, maxLength: 60 }
+        summary: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        meals_per_week: { type: integer, minimum: 1, maximum: 14 }
+        segment: { type: string }
+        benefits:
+          type: array
+          items: { type: string }
+        self_serve: { type: boolean }
+        available_from: { type: [string, "null"], format: date-time }
+        available_until: { type: [string, "null"], format: date-time }
+        sort_order: { type: integer }
+        version: { type: integer }
+    PriceInput:
+      type: object
+      required: [amount_minor]
+      additionalProperties: false
+      properties:
+        amount_minor: { type: integer, minimum: 1 }
+        effective_from: { type: [string, "null"], format: date-time }
+        note: { type: string }
+    MenuSummary:
+      type: object
+      required: [id, week, week_label, title, status, cutoff_at, is_open, meal_count]
+      properties:
+        id: { type: string, format: uuid }
+        week: { type: string, format: date }
+        week_label: { type: string }
+        title: { type: [string, "null"] }
+        status: { type: string, enum: [draft, scheduled, published, closed, archived] }
+        cutoff_at: { type: string, format: date-time }
+        is_open: { type: boolean }
+        meal_count: { type: integer }
+    MenuMeal:
+      allOf:
+        - $ref: "#/components/schemas/MealCard"
+        - type: object
+          required: [max_per_customer]
+          properties:
+            max_per_customer: { type: [integer, "null"] }
+    WeeklyMenu:
+      allOf:
+        - $ref: "#/components/schemas/MenuSummary"
+        - type: object
+          required: [note, time_zone, published_at, eligible_plan_ids, meals]
+          properties:
+            note: { type: [string, "null"] }
+            time_zone: { type: string }
+            published_at: { type: [string, "null"], format: date-time }
+            eligible_plan_ids:
+              type: array
+              items: { type: string, format: uuid }
+            meals:
+              type: array
+              items: { $ref: "#/components/schemas/MenuMeal" }
+    AdminMenuMeal:
+      type: object
+      required: [meal_id, name, slug, status, visible, selected, max_per_customer]
+      properties:
+        meal_id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        status: { type: string }
+        visible: { type: boolean }
+        selected: { type: boolean }
+        max_per_customer: { type: [integer, "null"] }
+    AdminMenu:
+      allOf:
+        - $ref: "#/components/schemas/MenuSummary"
+        - type: object
+          required: [note, time_zone, publish_at, published_at, eligible_plan_ids, version, meals, default_cutoff_at, updated_at]
+          properties:
+            note: { type: [string, "null"] }
+            time_zone: { type: string }
+            publish_at: { type: [string, "null"], format: date-time }
+            published_at: { type: [string, "null"], format: date-time }
+            eligible_plan_ids:
+              type: array
+              items: { type: string, format: uuid }
+            version: { type: integer }
+            meals:
+              type: array
+              items: { $ref: "#/components/schemas/AdminMenuMeal" }
+            default_cutoff_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+    MenuInput:
+      type: object
+      required: [meals]
+      additionalProperties: false
+      properties:
+        week: { type: string, format: date, description: The Monday of the delivery week. }
+        title: { type: string }
+        note: { type: string }
+        cutoff_at: { type: [string, "null"], format: date-time }
+        eligible_plan_ids:
+          type: array
+          items: { type: string, format: uuid }
+        meals:
+          type: array
+          items:
+            type: object
+            required: [meal_id]
+            additionalProperties: false
+            properties:
+              meal_id: { type: string, format: uuid }
+              max_per_customer: { type: [integer, "null"] }
+        version: { type: integer }
+    TaxSnapshot:
+      type: object
+      required: [mode, rate_bps, label]
+      properties:
+        mode: { type: string, enum: [none, inclusive, exclusive] }
+        rate_bps: { type: integer }
+        label: { type: string }
+        registration: { type: string }
+    DiscountSnapshot:
+      type: object
+      required: [promotion_id, code, name, kind]
+      properties:
+        promotion_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [percent, fixed] }
+        percent_bps: { type: integer }
+        amount_minor: { type: integer }
+    Amounts:
+      type: object
+      required: [currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, tax, discount]
+      properties:
+        currency: { type: string }
+        subtotal_minor: { type: integer }
+        discount_minor: { type: integer }
+        delivery_fee_minor: { type: integer }
+        tax_minor: { type: integer }
+        total_minor: { type: integer }
+        tax: { $ref: "#/components/schemas/TaxSnapshot" }
+        discount:
+          oneOf: [{ $ref: "#/components/schemas/DiscountSnapshot" }, { type: "null" }]
+    PaymentsInfo:
+      type: object
+      required: [available, test]
+      properties:
+        available: { type: boolean }
+        test: { type: boolean }
+        provider: { type: string }
+    Quote:
+      type: object
+      required: [plan, first_week, first_week_label, first_week_cutoff_at, due_now, renewal, promotion, terms, tax_note, payments]
+      properties:
+        plan: { $ref: "#/components/schemas/Plan" }
+        first_week: { type: string, format: date }
+        first_week_label: { type: string }
+        first_week_cutoff_at: { type: string, format: date-time }
+        due_now: { $ref: "#/components/schemas/Amounts" }
+        renewal: { $ref: "#/components/schemas/Amounts" }
+        promotion: { type: [string, "null"] }
+        terms: { type: string }
+        tax_note: { type: string }
+        payments: { $ref: "#/components/schemas/PaymentsInfo" }
+    QuoteInput:
+      type: object
+      required: [plan_id]
+      additionalProperties: false
+      properties:
+        plan_id: { type: string, format: uuid }
+        promotion_code: { type: string }
+    SubscribeInput:
+      type: object
+      required: [plan_id, address_id]
+      additionalProperties: false
+      properties:
+        plan_id: { type: string, format: uuid }
+        address_id: { type: string, format: uuid }
+        promotion_code: { type: string }
+    Checkout:
+      type: object
+      required: [id, status, expires_at, billing_cycle_id, amount_minor, currency, provider, test]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [open, completed, failed, expired, cancelled] }
+        redirect_url: { type: string, description: "The provider's hosted page; only while open." }
+        expires_at: { type: string, format: date-time }
+        billing_cycle_id: { type: string, format: uuid }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        provider: { type: string }
+        test: { type: boolean, description: "True for the test provider: no real money moves." }
+    SubscribeResult:
+      type: object
+      required: [subscription_id, checkout, activated]
+      properties:
+        subscription_id: { type: string, format: uuid }
+        checkout:
+          oneOf: [{ $ref: "#/components/schemas/Checkout" }, { type: "null" }]
+        activated: { type: boolean }
+    CheckoutResult:
+      type: object
+      required: [checkout, outcome, subscription_status, week, week_label, invoice_id]
+      properties:
+        checkout: { $ref: "#/components/schemas/Checkout" }
+        outcome: { type: string, enum: [pending, succeeded, failed, expired] }
+        subscription_status: { type: string }
+        week: { type: string, format: date }
+        week_label: { type: string }
+        invoice_id: { type: [string, "null"], format: uuid }
+    PayInput:
+      type: object
+      required: [billing_cycle_id]
+      additionalProperties: false
+      properties:
+        billing_cycle_id: { type: string, format: uuid }
+    PlanRef:
+      type: object
+      required: [id, name, meals_per_week]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        meals_per_week: { type: integer }
+    BillingRef:
+      type: object
+      required: [id, status, total_minor, currency, invoice_id, invoice_number]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, due, paid, failed, void] }
+        total_minor: { type: integer }
+        currency: { type: string }
+        invoice_id: { type: [string, "null"], format: uuid }
+        invoice_number: { type: [string, "null"] }
+    SubscriptionCycle:
+      type: object
+      required: [id, week, week_label, cutoff_at, renewal_at, state, state_label, plan, amount_minor, currency, selection_open, menu_published, selection_status, selected_count, billing, order_id]
+      properties:
+        id: { type: string, format: uuid }
+        week: { type: string, format: date }
+        week_label: { type: string }
+        cutoff_at: { type: string, format: date-time }
+        renewal_at: { type: string, format: date-time }
+        state: { type: string, enum: [scheduled, finalized, unpaid, needs_resolution, paused, cancelled] }
+        state_label: { type: string }
+        plan: { $ref: "#/components/schemas/PlanRef" }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        selection_open: { type: boolean }
+        menu_published: { type: boolean }
+        selection_status: { type: [string, "null"], enum: [draft, confirmed, locked, null] }
+        selected_count: { type: integer }
+        billing:
+          oneOf: [{ $ref: "#/components/schemas/BillingRef" }, { type: "null" }]
+        order_id: { type: [string, "null"], format: uuid }
+    WeekRange:
+      type: object
+      required: [from_week, until_week, label]
+      properties:
+        from_week: { type: string, format: date }
+        until_week: { type: string, format: date }
+        label: { type: string }
+    CancelInfo:
+      type: object
+      required: [effective_week, requested_at, label]
+      properties:
+        effective_week: { type: string, format: date }
+        requested_at: { type: [string, "null"], format: date-time }
+        label: { type: string }
+    SubscriptionActions:
+      type: object
+      required: [change_plan, pause, resume, cancel, undo_cancel, change_address, max_pause_weeks]
+      properties:
+        change_plan: { type: boolean }
+        pause: { type: boolean }
+        resume: { type: boolean }
+        cancel: { type: boolean }
+        undo_cancel: { type: boolean }
+        change_address: { type: boolean }
+        max_pause_weeks: { type: integer }
+    Subscription:
+      type: object
+      required: [id, status, status_label, plan, amount_minor, currency, price_formatted, address, payment_method, auto_renew, first_week, activated_at, pause, cancel, cycles, actions, outstanding, terms, test_payments]
+      properties:
+        id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending_payment, active, pause_scheduled, paused, past_due, cancel_scheduled, cancelled, expired]
+        status_label: { type: string }
+        plan: { $ref: "#/components/schemas/PlanRef" }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        price_formatted: { type: string }
+        address:
+          oneOf: [{ $ref: "#/components/schemas/Address" }, { type: "null" }]
+        payment_method: { type: [string, "null"] }
+        auto_renew: { type: boolean }
+        first_week: { type: string, format: date }
+        activated_at: { type: [string, "null"], format: date-time }
+        pause:
+          oneOf: [{ $ref: "#/components/schemas/WeekRange" }, { type: "null" }]
+        cancel:
+          oneOf: [{ $ref: "#/components/schemas/CancelInfo" }, { type: "null" }]
+        cycles:
+          type: array
+          items: { $ref: "#/components/schemas/SubscriptionCycle" }
+        actions: { $ref: "#/components/schemas/SubscriptionActions" }
+        outstanding:
+          oneOf: [{ $ref: "#/components/schemas/SubscriptionCycle" }, { type: "null" }]
+        terms: { type: string }
+        test_payments: { type: boolean }
+    SubscriptionEnvelope:
+      type: object
+      required: [subscription]
+      properties:
+        subscription:
+          oneOf: [{ $ref: "#/components/schemas/Subscription" }, { type: "null" }]
+    ChangePlanInput:
+      type: object
+      required: [plan_id]
+      additionalProperties: false
+      properties:
+        plan_id: { type: string, format: uuid }
+    PauseInput:
+      type: object
+      required: [weeks]
+      additionalProperties: false
+      properties:
+        weeks: { type: integer, minimum: 1, maximum: 12 }
+    CancelInput:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: { type: string, enum: [too_expensive, not_enough_time, meals_not_for_me, moving, temporary, other] }
+    SubscriptionAddressInput:
+      type: object
+      required: [address_id]
+      additionalProperties: false
+      properties:
+        address_id: { type: string, format: uuid }
+    SelectionItem:
+      type: object
+      required: [meal_id, quantity]
+      properties:
+        meal_id: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 0, maximum: 14 }
+    MealSelection:
+      type: object
+      required: [id, status, version, items, count, confirmed_at, locked_at, updated_at, menu_id]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [draft, confirmed, locked] }
+        version: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SelectionItem" }
+        count: { type: integer }
+        confirmed_at: { type: [string, "null"], format: date-time }
+        locked_at: { type: [string, "null"], format: date-time }
+        was_confirmed: { type: boolean }
+        updated_at: { type: string, format: date-time }
+        menu_id: { type: string, format: uuid }
+    MealNote:
+      type: object
+      required: [contains_your_allergens, allergens_unconfirmed, matches_preferences]
+      properties:
+        contains_your_allergens:
+          type: array
+          items: { $ref: "#/components/schemas/Term" }
+        allergens_unconfirmed: { type: boolean }
+        matches_preferences:
+          type: array
+          items: { $ref: "#/components/schemas/Term" }
+      description: Allergy notes are safety warnings; preference matches are a convenience. Never a statement that a meal is free of anything.
+    SelectionPage:
+      type: object
+      required: [cycle, menu, selection, allowance, selected, remaining, open, confirmed, notes, has_allergies, allergies_reviewed, cross_contact_notice, server_time]
+      properties:
+        cycle: { $ref: "#/components/schemas/SubscriptionCycle" }
+        menu:
+          oneOf: [{ $ref: "#/components/schemas/WeeklyMenu" }, { type: "null" }]
+        selection:
+          oneOf: [{ $ref: "#/components/schemas/MealSelection" }, { type: "null" }]
+        allowance: { type: integer }
+        selected: { type: integer }
+        remaining: { type: integer }
+        open: { type: boolean }
+        confirmed: { type: boolean }
+        notes:
+          type: object
+          additionalProperties: { $ref: "#/components/schemas/MealNote" }
+        has_allergies: { type: boolean }
+        allergies_reviewed: { type: boolean }
+        cross_contact_notice: { type: string }
+        server_time: { type: string, format: date-time }
+    SelectionInput:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SelectionItem" }
+        version: { type: [integer, "null"] }
+    OrderAddress:
+      type: object
+      required: [recipient_name, line1, city, region, region_label, country]
+      properties:
+        recipient_name: { type: string }
+        phone: { type: string }
+        line1: { type: string }
+        line2: { type: string }
+        area: { type: string }
+        city: { type: string }
+        region: { type: string }
+        region_label: { type: string }
+        country: { type: string }
+        instructions: { type: string }
+    OrderItem:
+      type: object
+      required: [meal_id, meal_version, name, slug, quantity, servings, allergens, allergen_status, dietary_tags]
+      properties:
+        meal_id: { type: string, format: uuid }
+        meal_version: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        quantity: { type: integer }
+        servings: { type: integer }
+        allergens:
+          type: array
+          items: { type: string }
+        allergen_status: { type: string }
+        dietary_tags:
+          type: array
+          items: { type: string }
+    OrderSummary:
+      type: object
+      required: [id, number, status, week, plan_name, meals_count, total_minor, currency, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status: { type: string }
+        week: { type: string, format: date }
+        plan_name: { type: string }
+        meals_count: { type: integer }
+        total_minor: { type: integer }
+        currency: { type: string }
+        created_at: { type: string, format: date-time }
+        customer_id: { type: string, format: uuid }
+    Order:
+      type: object
+      required: [id, number, status, week, plan_name, meals_count, currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, address, delivery_window, created_at, items, subscription_id, billing_cycle_id, payment_id, subscription_cycle_id]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status:
+          type: string
+          enum: [pending, confirmed, awaiting_production, in_production, ready_for_fulfillment, out_for_delivery, delivered, cancelled]
+        week: { type: string, format: date }
+        plan_name: { type: string }
+        meals_count: { type: integer }
+        currency: { type: string }
+        subtotal_minor: { type: integer }
+        discount_minor: { type: integer }
+        delivery_fee_minor: { type: integer }
+        tax_minor: { type: integer }
+        total_minor: { type: integer }
+        address: { $ref: "#/components/schemas/OrderAddress" }
+        delivery_window: { description: Set when a delivery window is configured (a later sprint). }
+        created_at: { type: string, format: date-time }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        history:
+          type: array
+          items:
+            type: object
+            required: [from, to, reason, created_at]
+            properties:
+              from: { type: [string, "null"] }
+              to: { type: string }
+              reason: { type: [string, "null"] }
+              created_at: { type: string, format: date-time }
+        customer_id: { type: string, format: uuid }
+        subscription_id: { type: string, format: uuid }
+        billing_cycle_id: { type: string, format: uuid }
+        payment_id: { type: [string, "null"], format: uuid }
+        subscription_cycle_id: { type: string, format: uuid }
+    BillingCycle:
+      type: object
+      required: [id, subscription_id, subscription_cycle_id, kind, period_start, period_end, due_at, status, attempts, next_attempt_at, paid_at, void_reason, currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, tax, discount]
+      properties:
+        id: { type: string, format: uuid }
+        subscription_id: { type: string, format: uuid }
+        subscription_cycle_id: { type: string, format: uuid }
+        kind: { type: string, enum: [initial, renewal] }
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        due_at: { type: string, format: date-time }
+        status: { type: string, enum: [pending, due, paid, failed, void] }
+        attempts: { type: integer }
+        next_attempt_at: { type: [string, "null"], format: date-time }
+        paid_at: { type: [string, "null"], format: date-time }
+        void_reason: { type: [string, "null"] }
+        currency: { type: string }
+        subtotal_minor: { type: integer }
+        discount_minor: { type: integer }
+        delivery_fee_minor: { type: integer }
+        tax_minor: { type: integer }
+        total_minor: { type: integer }
+        tax: { $ref: "#/components/schemas/TaxSnapshot" }
+        discount:
+          oneOf: [{ $ref: "#/components/schemas/DiscountSnapshot" }, { type: "null" }]
+        invoice_id: { type: string, format: uuid }
+        invoice_number: { type: string }
+    BillingSummary:
+      type: object
+      required: [payment_method, auto_renew, outstanding, history, terms, test_payments]
+      properties:
+        payment_method: { type: [string, "null"] }
+        auto_renew: { type: boolean }
+        outstanding:
+          oneOf: [{ $ref: "#/components/schemas/SubscriptionCycle" }, { type: "null" }]
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/BillingCycle" }
+        terms: { type: [string, "null"] }
+        test_payments: { type: boolean }
+    InvoiceLine:
+      type: object
+      required: [kind, description, quantity, unit_amount_minor, amount_minor]
+      properties:
+        kind: { type: string, enum: [plan, discount, delivery, tax] }
+        description: { type: string }
+        quantity: { type: integer }
+        unit_amount_minor: { type: integer }
+        amount_minor: { type: integer }
+    InvoiceSummary:
+      type: object
+      required: [id, number, status, issued_at, period_start, total_minor, currency]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status: { type: string, enum: [open, paid, void] }
+        issued_at: { type: string, format: date-time }
+        period_start: { type: string, format: date }
+        total_minor: { type: integer }
+        currency: { type: string }
+    Invoice:
+      type: object
+      required: [id, number, status, issued_at, due_at, paid_at, voided_at, period_start, period_end, customer, business, currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, tax, discount, lines, tax_note, subscription_id, billing_cycle_id]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status: { type: string, enum: [open, paid, void] }
+        issued_at: { type: string, format: date-time }
+        due_at: { type: string, format: date-time }
+        paid_at: { type: [string, "null"], format: date-time }
+        voided_at: { type: [string, "null"], format: date-time }
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        customer:
+          type: object
+          required: [name, email, address]
+          properties:
+            name: { type: string }
+            email: { type: string }
+            address:
+              type: array
+              items: { type: string }
+        business:
+          type: object
+          required: [name]
+          properties:
+            name: { type: string }
+            address: { type: string }
+            tax_registration: { type: string }
+        currency: { type: string }
+        subtotal_minor: { type: integer }
+        discount_minor: { type: integer }
+        delivery_fee_minor: { type: integer }
+        tax_minor: { type: integer }
+        total_minor: { type: integer }
+        tax: { $ref: "#/components/schemas/TaxSnapshot" }
+        discount:
+          oneOf: [{ $ref: "#/components/schemas/DiscountSnapshot" }, { type: "null" }]
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/InvoiceLine" }
+        tax_note: { type: string }
+        subscription_id: { type: string, format: uuid }
+        billing_cycle_id: { type: string, format: uuid }
+    SubscriptionInfo:
+      type: object
+      required: [payments, next_open_week, cutoff_rule, time_zone, max_pause_weeks, cancel_reasons]
+      properties:
+        payments: { $ref: "#/components/schemas/PaymentsInfo" }
+        next_open_week: { type: string, format: date }
+        cutoff_rule: { type: string }
+        time_zone: { type: string }
+        max_pause_weeks: { type: integer }
+        cancel_reasons:
+          type: array
+          items: { type: string }
+    AdminSubscriptionRow:
+      type: object
+      required: [id, customer_id, status, plan_name, amount_minor, currency, first_week, activated_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending_payment, active, pause_scheduled, paused, past_due, cancel_scheduled, cancelled, expired]
+        plan_name: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        first_week: { type: string, format: date }
+        activated_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    SubscriptionEvent:
+      type: object
+      required: [type, from_status, to_status, effective_week, metadata, created_at]
+      properties:
+        type: { type: string }
+        from_status: { type: [string, "null"] }
+        to_status: { type: [string, "null"] }
+        effective_week: { type: [string, "null"] }
+        metadata: { type: [object, "null"] }
+        created_at: { type: string, format: date-time }
+    AdminSubscription:
+      allOf:
+        - $ref: "#/components/schemas/Subscription"
+        - type: object
+          required: [customer_id, customer_name, customer_email, created_at, history, billing, all_cycles]
+          properties:
+            customer_id: { type: string, format: uuid }
+            customer_name: { type: string }
+            customer_email: { type: string }
+            created_at: { type: string, format: date-time }
+            history:
+              type: array
+              items: { $ref: "#/components/schemas/SubscriptionEvent" }
+            billing:
+              type: array
+              items: { $ref: "#/components/schemas/BillingCycle" }
+            all_cycles:
+              type: array
+              items: { $ref: "#/components/schemas/SubscriptionCycle" }
+    Payment:
+      type: object
+      required: [id, customer_id, billing_cycle_id, provider, provider_ref, kind, amount_minor, refunded_minor, currency, status, failure_message, needs_attention, attention_reason, succeeded_at, created_at, test]
+      properties:
+        id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        billing_cycle_id: { type: string, format: uuid }
+        provider: { type: string }
+        provider_ref: { type: [string, "null"] }
+        kind: { type: string, enum: [checkout, off_session] }
+        amount_minor: { type: integer }
+        refunded_minor: { type: integer }
+        currency: { type: string }
+        status:
+          type: string
+          enum: [pending, requires_action, processing, succeeded, failed, cancelled, refunded, partially_refunded]
+        failure_message: { type: [string, "null"] }
+        needs_attention: { type: boolean }
+        attention_reason: { type: [string, "null"] }
+        succeeded_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+        test: { type: boolean }
+    Refund:
+      type: object
+      required: [id, amount_minor, currency, reason, status, created_at, completed_at]
+      properties:
+        id: { type: string, format: uuid }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        reason: { type: string }
+        status: { type: string, enum: [pending, succeeded, failed] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+    PaymentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Payment"
+        - type: object
+          required: [history, refunds]
+          properties:
+            history:
+              type: array
+              items:
+                type: object
+                required: [from, to, source, created_at]
+                properties:
+                  from: { type: [string, "null"] }
+                  to: { type: string }
+                  source: { type: string }
+                  created_at: { type: string, format: date-time }
+            refunds:
+              type: array
+              items: { $ref: "#/components/schemas/Refund" }
+    RefundInput:
+      type: object
+      required: [amount_minor, reason, request_key]
+      additionalProperties: false
+      properties:
+        amount_minor: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 300 }
+        request_key:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: "A random key per form shown: submitting the same form twice makes one refund."
+    StoredWebhook:
+      type: object
+      required: [id, provider, event_id, event_type, provider_ref, status, error, attempts, received_at, processed_at]
+      properties:
+        id: { type: integer }
+        provider: { type: string }
+        event_id: { type: string }
+        event_type: { type: string }
+        provider_ref: { type: [string, "null"] }
+        status: { type: string, enum: [received, processed, ignored, failed] }
+        error: { type: [string, "null"] }
+        attempts: { type: integer }
+        received_at: { type: string, format: date-time }
+        processed_at: { type: [string, "null"], format: date-time }
+    DemandLine:
+      type: object
+      required: [meal_id, meal_version, meal_name, servings, quantity, orders, order_numbers, customer_allergies]
+      properties:
+        meal_id: { type: string, format: uuid }
+        meal_version: { type: integer }
+        meal_name: { type: string }
+        servings: { type: integer }
+        quantity: { type: integer }
+        orders: { type: integer }
+        order_numbers:
+          type: array
+          items: { type: string }
+        customer_allergies:
+          type: object
+          additionalProperties: { type: integer }
+    Demand:
+      type: object
+      required: [week, status, lines, kits, orders]
+      properties:
+        week: { type: string, format: date }
+        status: { type: string, enum: [provisional, final] }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/DemandLine" }
+        kits: { type: integer }
+        orders: { type: integer }
+    Promotion:
+      type: object
+      required: [id, code, name, kind, percent_bps, amount_minor, currency, cycles, max_redemptions, redemptions, valid_from, valid_until, plan_ids, status, activated_at, created_at, description]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [percent, fixed] }
+        percent_bps: { type: [integer, "null"] }
+        amount_minor: { type: [integer, "null"] }
+        currency: { type: string }
+        cycles: { type: integer }
+        max_redemptions: { type: [integer, "null"] }
+        redemptions: { type: integer }
+        valid_from: { type: [string, "null"], format: date-time }
+        valid_until: { type: [string, "null"], format: date-time }
+        plan_ids:
+          type: array
+          items: { type: string, format: uuid }
+        status: { type: string, enum: [draft, active, archived] }
+        activated_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+        description: { type: string }
+    PromotionInput:
+      type: object
+      required: [code, name, kind]
+      additionalProperties: false
+      properties:
+        code: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [percent, fixed] }
+        percent_bps: { type: [integer, "null"] }
+        amount_minor: { type: [integer, "null"] }
+        cycles: { type: integer }
+        max_redemptions: { type: [integer, "null"] }
+        valid_from: { type: [string, "null"], format: date-time }
+        valid_until: { type: [string, "null"], format: date-time }
+        plan_ids:
+          type: array
+          items: { type: string, format: uuid }
+    FailedJob:
+      type: object
+      required: [id, kind, status, attempts, last_error, created_at, finished_at]
+      properties:
+        id: { type: integer }
+        kind: { type: string }
+        status: { type: string }
+        attempts: { type: integer }
+        last_error: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        finished_at: { type: [string, "null"], format: date-time }
+    TestpaySession:
+      type: object
+      required: [ref, amount_minor, currency, description, status, return_url]
+      properties:
+        ref: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [open, approved, declined, cancelled] }
+        return_url: { type: string }
+      description: "The simulated provider's hosted checkout (test mode only)."
+    TestpayComplete:
+      type: object
+      required: [outcome]
+      additionalProperties: false
+      properties:
+        outcome: { type: string, enum: [approve, decline, cancel] }
+        card: { type: string, enum: [approve, decline] }

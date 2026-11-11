@@ -6,6 +6,8 @@ package store
 
 import (
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AdminSession struct {
@@ -50,6 +52,50 @@ type AuthToken struct {
 	ConsumedAt *time.Time
 	CreatedAt  time.Time
 	NewEmail   *string
+}
+
+type BillingCycle struct {
+	ID                  string
+	SubscriptionID      string
+	SubscriptionCycleID string
+	CustomerID          string
+	Kind                string
+	PeriodStart         pgtype.Date
+	PeriodEnd           pgtype.Date
+	DueAt               time.Time
+	Currency            string
+	SubtotalMinor       int64
+	DiscountMinor       int64
+	DeliveryFeeMinor    int64
+	TaxMinor            int64
+	TotalMinor          int64
+	TaxSnapshot         []byte
+	DiscountSnapshot    []byte
+	PromotionID         *string
+	Status              string
+	Attempts            int16
+	NextAttemptAt       *time.Time
+	PaidAt              *time.Time
+	VoidedAt            *time.Time
+	VoidReason          *string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type CheckoutSession struct {
+	ID             string
+	CustomerID     string
+	BillingCycleID string
+	Provider       string
+	ProviderRef    *string
+	RedirectUrl    *string
+	AmountMinor    int64
+	Currency       string
+	Status         string
+	ExpiresAt      time.Time
+	CompletedAt    *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type ChefProfile struct {
@@ -144,6 +190,46 @@ type DeliveryZone struct {
 	Status    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type Invoice struct {
+	ID               string
+	Number           string
+	CustomerID       string
+	SubscriptionID   string
+	BillingCycleID   string
+	Status           string
+	Currency         string
+	SubtotalMinor    int64
+	DiscountMinor    int64
+	DeliveryFeeMinor int64
+	TaxMinor         int64
+	TotalMinor       int64
+	PeriodStart      pgtype.Date
+	PeriodEnd        pgtype.Date
+	IssuedAt         time.Time
+	DueAt            time.Time
+	PaidAt           *time.Time
+	VoidedAt         *time.Time
+	CustomerSnapshot []byte
+	BusinessSnapshot []byte
+	TaxSnapshot      []byte
+	CreatedAt        time.Time
+}
+
+type InvoiceCounter struct {
+	Year int32
+	Last int64
+}
+
+type InvoiceItem struct {
+	InvoiceID       string
+	Position        int16
+	Kind            string
+	Description     string
+	Quantity        int32
+	UnitAmountMinor int64
+	AmountMinor     int64
 }
 
 type Job struct {
@@ -288,6 +374,26 @@ type MealNutrition struct {
 	UpdatedAt  time.Time
 }
 
+type MealSelection struct {
+	ID                  string
+	SubscriptionCycleID string
+	CustomerID          string
+	MenuID              string
+	Status              string
+	ConfirmedAt         *time.Time
+	LockedAt            *time.Time
+	WasConfirmed        *bool
+	Version             int32
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type MealSelectionItem struct {
+	SelectionID string
+	MealID      string
+	Quantity    int16
+}
+
 type MfaTotp struct {
 	UserID           string
 	SecretCiphertext []byte
@@ -295,6 +401,13 @@ type MfaTotp struct {
 	LastUsedStep     *int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+type NotificationDelivery struct {
+	DedupeKey  string
+	Kind       string
+	CustomerID *string
+	CreatedAt  time.Time
 }
 
 type NotificationPreference struct {
@@ -314,16 +427,163 @@ type OnboardingProgress struct {
 	UpdatedAt   time.Time
 }
 
+type Order struct {
+	ID                  string
+	Number              string
+	CustomerID          string
+	SubscriptionID      string
+	SubscriptionCycleID string
+	BillingCycleID      string
+	PaymentID           *string
+	MenuID              string
+	WeekStart           pgtype.Date
+	Status              string
+	Currency            string
+	SubtotalMinor       int64
+	DiscountMinor       int64
+	DeliveryFeeMinor    int64
+	TaxMinor            int64
+	TotalMinor          int64
+	MealsCount          int16
+	PlanName            string
+	AddressSnapshot     []byte
+	CustomerAllergens   []string
+	DeliveryWindow      []byte
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type OrderCounter struct {
+	Year int32
+	Last int64
+}
+
+type OrderItem struct {
+	OrderID        string
+	MealID         string
+	MealVersion    int32
+	MealName       string
+	MealSlug       string
+	Quantity       int16
+	Servings       int16
+	Allergens      []string
+	AllergenStatus string
+	DietaryTags    []string
+}
+
+type OrderStatusHistory struct {
+	ID          int64
+	OrderID     string
+	FromStatus  *string
+	ToStatus    string
+	Reason      *string
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
 type PasswordCredential struct {
 	UserID       string
 	PasswordHash string
 	UpdatedAt    time.Time
 }
 
+type Payment struct {
+	ID                string
+	CustomerID        string
+	BillingCycleID    string
+	CheckoutSessionID *string
+	PaymentMethodID   *string
+	Provider          string
+	ProviderRef       *string
+	Kind              string
+	AmountMinor       int64
+	Currency          string
+	Status            string
+	RefundedMinor     int64
+	FailureCode       *string
+	FailureMessage    *string
+	IdempotencyKey    string
+	NeedsAttention    bool
+	AttentionReason   *string
+	SucceededAt       *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+type PaymentMethod struct {
+	ID          string
+	CustomerID  string
+	Provider    string
+	ProviderRef string
+	Label       string
+	Status      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type PaymentStatusHistory struct {
+	ID              int64
+	PaymentID       string
+	FromStatus      *string
+	ToStatus        string
+	Source          string
+	ProviderEventID *string
+	CreatedAt       time.Time
+}
+
+type PaymentWebhookEvent struct {
+	ID          int64
+	Provider    string
+	EventID     string
+	EventType   string
+	RefKind     string
+	ProviderRef *string
+	Payload     []byte
+	Status      string
+	Error       *string
+	Attempts    int32
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
+}
+
 type Permission struct {
 	Key         string
 	Description string
 	CreatedAt   time.Time
+}
+
+type Promotion struct {
+	ID             string
+	Code           string
+	Name           string
+	Kind           string
+	PercentBps     *int32
+	AmountMinor    *int64
+	Currency       string
+	Cycles         int16
+	MaxRedemptions *int32
+	Redemptions    int32
+	ValidFrom      *time.Time
+	ValidUntil     *time.Time
+	PlanIds        []string
+	Status         string
+	CreatedBy      *string
+	ActivatedBy    *string
+	ActivatedAt    *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type PromotionRedemption struct {
+	ID             string
+	PromotionID    string
+	SubscriptionID string
+	CustomerID     string
+	CyclesTotal    int16
+	CyclesUsed     int16
+	Status         string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type Referral struct {
@@ -334,6 +594,20 @@ type Referral struct {
 	Status         string
 	CreatedAt      time.Time
 	ConvertedAt    *time.Time
+}
+
+type Refund struct {
+	ID             string
+	PaymentID      string
+	AmountMinor    int64
+	Currency       string
+	Reason         string
+	Status         string
+	ProviderRef    *string
+	IdempotencyKey string
+	RequestedBy    *string
+	CreatedAt      time.Time
+	CompletedAt    *time.Time
 }
 
 type Role struct {
@@ -364,6 +638,143 @@ type Session struct {
 	RevokedReason *string
 }
 
+type Subscription struct {
+	ID                  string
+	CustomerID          string
+	Status              string
+	PlanID              string
+	PlanPriceID         string
+	MealsPerWeek        int16
+	AmountMinor         int64
+	Currency            string
+	DeliveryAddressID   *string
+	PaymentMethodID     *string
+	FirstWeek           pgtype.Date
+	ActivatedAt         *time.Time
+	PauseFromWeek       pgtype.Date
+	PauseUntilWeek      pgtype.Date
+	CancelRequestedAt   *time.Time
+	CancelEffectiveWeek pgtype.Date
+	CancelReason        *string
+	CancelledAt         *time.Time
+	ExpiredAt           *time.Time
+	Version             int32
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type SubscriptionChange struct {
+	ID              string
+	SubscriptionID  string
+	FromPlanPriceID string
+	ToPlanPriceID   string
+	EffectiveWeek   pgtype.Date
+	RequestedBy     *string
+	CreatedAt       time.Time
+}
+
+type SubscriptionCycle struct {
+	ID             string
+	SubscriptionID string
+	CustomerID     string
+	WeekStart      pgtype.Date
+	CutoffAt       time.Time
+	RenewalAt      time.Time
+	PlanID         string
+	PlanPriceID    string
+	MealsPerWeek   int16
+	AmountMinor    int64
+	Currency       string
+	State          string
+	StateReason    *string
+	FinalizedAt    *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SubscriptionEvent struct {
+	ID             int64
+	SubscriptionID string
+	Type           string
+	FromStatus     *string
+	ToStatus       *string
+	EffectiveWeek  pgtype.Date
+	ActorUserID    *string
+	Metadata       []byte
+	CreatedAt      time.Time
+}
+
+type SubscriptionPause struct {
+	ID             string
+	SubscriptionID string
+	FromWeek       pgtype.Date
+	UntilWeek      pgtype.Date
+	Status         string
+	RequestedBy    *string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SubscriptionPlan struct {
+	ID              string
+	Slug            string
+	Name            string
+	Summary         string
+	Description     string
+	MealsPerWeek    int16
+	BillingInterval string
+	Segment         string
+	Benefits        []string
+	SelfServe       bool
+	Status          string
+	AvailableFrom   *time.Time
+	AvailableUntil  *time.Time
+	SortOrder       int16
+	IsDemo          bool
+	Version         int32
+	CreatedBy       *string
+	UpdatedBy       *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type SubscriptionPlanPrice struct {
+	ID            string
+	PlanID        string
+	AmountMinor   int64
+	Currency      string
+	EffectiveFrom time.Time
+	Note          *string
+	CreatedBy     *string
+	CreatedAt     time.Time
+}
+
+type TestpaySession struct {
+	Ref            string
+	AmountMinor    int64
+	Currency       string
+	Description    string
+	ReturnUrl      string
+	Reference      string
+	Status         string
+	TransactionRef *string
+	CreatedAt      time.Time
+	CompletedAt    *time.Time
+}
+
+type TestpayTransaction struct {
+	Ref            string
+	Kind           string
+	SessionRef     *string
+	ParentRef      *string
+	CardToken      *string
+	AmountMinor    int64
+	Currency       string
+	Status         string
+	IdempotencyKey string
+	CreatedAt      time.Time
+}
+
 type User struct {
 	ID              string
 	Email           string
@@ -385,4 +796,29 @@ type UserRole struct {
 	ScopeID   *string
 	GrantedBy *string
 	GrantedAt time.Time
+}
+
+type WeeklyMenu struct {
+	ID              string
+	WeekStart       pgtype.Date
+	TimeZone        string
+	Title           *string
+	Note            *string
+	Status          string
+	CutoffAt        time.Time
+	PublishAt       *time.Time
+	PublishedAt     *time.Time
+	EligiblePlanIds []string
+	Version         int32
+	CreatedBy       *string
+	UpdatedBy       *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type WeeklyMenuMeal struct {
+	MenuID         string
+	MealID         string
+	Position       int16
+	MaxPerCustomer *int16
 }

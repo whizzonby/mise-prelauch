@@ -5,6 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const sections = [
+  { href: "/subscription", label: "Subscription" },
+  { href: "/orders", label: "Orders" },
+  { href: "/billing", label: "Billing" },
   { href: "/profile", label: "Profile" },
   { href: "/profile/preferences", label: "Food and allergies" },
   { href: "/profile/household", label: "Household" },

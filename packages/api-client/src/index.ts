@@ -157,6 +157,58 @@ export type CategoryInput = S["CategoryInput"];
 export type AdminChef = S["AdminChef"];
 export type ChefInput = S["ChefInput"];
 
+// ---------- Sprint 3: subscription commerce (generated types) ----------
+
+export type Plan = S["Plan"];
+export type PlanPrice = S["Price"];
+export type AdminPlan = S["AdminPlan"];
+export type PlanInput = S["PlanInput"];
+export type PriceInput = S["PriceInput"];
+export type MenuSummary = S["MenuSummary"];
+export type WeeklyMenu = S["WeeklyMenu"];
+export type MenuMeal = S["MenuMeal"];
+export type AdminMenu = S["AdminMenu"];
+export type MenuInput = S["MenuInput"];
+export type Amounts = S["Amounts"];
+export type Quote = S["Quote"];
+export type SubscribeInput = S["SubscribeInput"];
+export type SubscribeResult = S["SubscribeResult"];
+export type Checkout = S["Checkout"];
+export type CheckoutResult = S["CheckoutResult"];
+export type Subscription = S["Subscription"];
+export type SubscriptionStatus = Subscription["status"];
+export type SubscriptionCycle = S["SubscriptionCycle"];
+export type SubscriptionInfo = S["SubscriptionInfo"];
+export type SelectionItem = S["SelectionItem"];
+export type MealSelection = S["MealSelection"];
+export type MealNote = S["MealNote"];
+export type SelectionPage = S["SelectionPage"];
+export type Order = S["Order"];
+export type OrderSummary = S["OrderSummary"];
+export type BillingCycle = S["BillingCycle"];
+export type BillingSummary = S["BillingSummary"];
+export type Invoice = S["Invoice"];
+export type InvoiceSummary = S["InvoiceSummary"];
+export type AdminSubscriptionRow = S["AdminSubscriptionRow"];
+export type AdminSubscription = S["AdminSubscription"];
+export type Payment = S["Payment"];
+export type PaymentDetail = S["PaymentDetail"];
+export type RefundInput = S["RefundInput"];
+export type StoredWebhook = S["StoredWebhook"];
+export type Demand = S["Demand"];
+export type Promotion = S["Promotion"];
+export type PromotionInput = S["PromotionInput"];
+export type FailedJob = S["FailedJob"];
+export type TestpaySession = S["TestpaySession"];
+
+/** Formats minor units: 33000 TTD is "TTD 330.00". Display only; amounts come from the API. */
+export function formatMoney(minor: number, currency = "TTD"): string {
+  const sign = minor < 0 ? "-" : "";
+  const abs = Math.abs(minor);
+  const whole = Math.floor(abs / 100).toLocaleString("en-US");
+  return `${sign}${currency} ${whole}.${String(abs % 100).padStart(2, "0")}`;
+}
+
 export interface MealFilter {
   category?: string;
   /** Dietary keys; a meal must suit every one. */
@@ -578,6 +630,161 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
       /** Returns the raw CSV response so it can be streamed to the browser. */
       exportLeads: (token: string, filter: LeadFilter = {}) =>
         send("/admin/leads/export.csv", { token, query: filter, cache: "no-store" }),
+
+      // Sprint 3: commerce administration.
+      plans: (token: string) => request<{ items: AdminPlan[] }>("/admin/plans", { token, cache: "no-store" }),
+      plan: (token: string, id: string) => request<AdminPlan>(`/admin/plans/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createPlan: (token: string, input: PlanInput) =>
+        request<AdminPlan>("/admin/plans", { method: "POST", body: input, token, cache: "no-store" }),
+      updatePlan: (token: string, id: string, input: PlanInput) =>
+        request<AdminPlan>(`/admin/plans/${encodeURIComponent(id)}`, { method: "PUT", body: input, token, cache: "no-store" }),
+      addPlanPrice: (token: string, id: string, input: PriceInput) =>
+        request<AdminPlan>(`/admin/plans/${encodeURIComponent(id)}/prices`, { method: "POST", body: input, token, cache: "no-store" }),
+      setPlanStatus: (token: string, id: string, action: "activate" | "retire") =>
+        request<AdminPlan>(`/admin/plans/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
+      menus: (token: string, status?: string) =>
+        request<{ items: MenuSummary[]; next_open_week: string; time_zone: string }>("/admin/menus", {
+          token,
+          query: { status },
+          cache: "no-store",
+        }),
+      menu: (token: string, id: string) => request<AdminMenu>(`/admin/menus/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createMenu: (token: string, input: MenuInput) =>
+        request<AdminMenu>("/admin/menus", { method: "POST", body: input, token, cache: "no-store" }),
+      updateMenu: (token: string, id: string, input: MenuInput) =>
+        request<AdminMenu>(`/admin/menus/${encodeURIComponent(id)}`, { method: "PUT", body: input, token, cache: "no-store" }),
+      publishMenu: (token: string, id: string, publishAt?: string) =>
+        request<AdminMenu>(`/admin/menus/${encodeURIComponent(id)}/publish`, {
+          method: "POST",
+          body: publishAt ? { publish_at: publishAt } : undefined,
+          token,
+          cache: "no-store",
+        }),
+      unpublishMenu: (token: string, id: string) =>
+        request<AdminMenu>(`/admin/menus/${encodeURIComponent(id)}/unpublish`, { method: "POST", token, cache: "no-store" }),
+      subscriptions: (token: string, query: { status?: string; customer_id?: string; page?: number } = {}) =>
+        request<{ items: AdminSubscriptionRow[] }>("/admin/subscriptions", { token, query, cache: "no-store" }),
+      subscription: (token: string, id: string) =>
+        request<AdminSubscription>(`/admin/subscriptions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      orders: (token: string, query: { week?: string; status?: string; customer_id?: string } = {}) =>
+        request<{ items: OrderSummary[] }>("/admin/orders", { token, query, cache: "no-store" }),
+      order: (token: string, id: string) => request<Order>(`/admin/orders/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      demand: (token: string, week?: string) => request<Demand>("/admin/demand", { token, query: { week }, cache: "no-store" }),
+      invoice: (token: string, id: string) => request<Invoice>(`/admin/invoices/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      payments: (token: string, query: { status?: string; attention?: boolean; customer_id?: string } = {}) =>
+        request<{ items: Payment[] }>("/admin/payments", { token, query, cache: "no-store" }),
+      payment: (token: string, id: string) =>
+        request<PaymentDetail>(`/admin/payments/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      refund: (token: string, id: string, input: RefundInput) =>
+        request<PaymentDetail>(`/admin/payments/${encodeURIComponent(id)}/refunds`, { method: "POST", body: input, token, cache: "no-store" }),
+      webhooks: (token: string, status?: string) =>
+        request<{ items: StoredWebhook[] }>("/admin/payment-webhooks", { token, query: { status }, cache: "no-store" }),
+      promotions: (token: string) => request<{ items: Promotion[] }>("/admin/promotions", { token, cache: "no-store" }),
+      createPromotion: (token: string, input: PromotionInput) =>
+        request<Promotion>("/admin/promotions", { method: "POST", body: input, token, cache: "no-store" }),
+      setPromotionStatus: (token: string, id: string, action: "activate" | "archive") =>
+        request<Promotion>(`/admin/promotions/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
+      failedJobs: (token: string) => request<{ items: FailedJob[] }>("/admin/commerce/jobs", { token, cache: "no-store" }),
+    },
+
+    /** Plans and published menus. Public: the same for everyone. */
+    shop: {
+      info: () => request<SubscriptionInfo>("/subscription-info", { cache: "no-store" }),
+      plans: () => request<{ items: Plan[] }>("/plans", { cache: "no-store" }),
+      plan: (slug: string) => request<Plan>(`/plans/${encodeURIComponent(slug)}`, { cache: "no-store" }),
+      menus: () => request<{ items: MenuSummary[] }>("/weekly-menus", { cache: "no-store" }),
+      menu: (week: string) => request<WeeklyMenu>(`/weekly-menus/${encodeURIComponent(week)}`, { cache: "no-store" }),
+    },
+
+    /** The signed-in customer's subscription, meals, orders and billing. Server-side only. */
+    commerce: {
+      subscription: (token: string) =>
+        request<{ subscription: Subscription | null }>("/me/subscription", { token, cache: "no-store" }),
+      quote: (token: string, planId: string, promotionCode?: string) =>
+        request<Quote>("/me/subscriptions/quote", {
+          method: "POST",
+          body: { plan_id: planId, ...(promotionCode ? { promotion_code: promotionCode } : {}) },
+          token,
+          cache: "no-store",
+        }),
+      subscribe: (token: string, input: SubscribeInput) =>
+        request<SubscribeResult>("/me/subscriptions", { method: "POST", body: input, token, cache: "no-store" }),
+      changePlan: (token: string, id: string, planId: string) =>
+        request<{ subscription: Subscription | null }>(`/me/subscriptions/${encodeURIComponent(id)}/change-plan`, {
+          method: "POST",
+          body: { plan_id: planId },
+          token,
+          cache: "no-store",
+        }),
+      pause: (token: string, id: string, weeks: number) =>
+        request<{ subscription: Subscription | null }>(`/me/subscriptions/${encodeURIComponent(id)}/pause`, {
+          method: "POST",
+          body: { weeks },
+          token,
+          cache: "no-store",
+        }),
+      resume: (token: string, id: string) =>
+        request<{ subscription: Subscription | null }>(`/me/subscriptions/${encodeURIComponent(id)}/resume`, {
+          method: "POST",
+          token,
+          cache: "no-store",
+        }),
+      cancel: (token: string, id: string, reason?: string) =>
+        request<{ subscription: Subscription | null }>(`/me/subscriptions/${encodeURIComponent(id)}/cancel`, {
+          method: "POST",
+          body: reason ? { reason } : undefined,
+          token,
+          cache: "no-store",
+        }),
+      setAddress: (token: string, id: string, addressId: string) =>
+        request<{ subscription: Subscription | null }>(`/me/subscriptions/${encodeURIComponent(id)}/address`, {
+          method: "PUT",
+          body: { address_id: addressId },
+          token,
+          cache: "no-store",
+        }),
+      weeks: (token: string) => request<{ items: SubscriptionCycle[] }>("/me/subscription-cycles", { token, cache: "no-store" }),
+      selection: (token: string, cycleId: string) =>
+        request<SelectionPage>(`/me/meal-selections/${encodeURIComponent(cycleId)}`, { token, cache: "no-store" }),
+      saveSelection: (token: string, cycleId: string, items: SelectionItem[], version?: number | null) =>
+        request<SelectionPage>(`/me/meal-selections/${encodeURIComponent(cycleId)}`, {
+          method: "PUT",
+          body: { items, version: version ?? null },
+          token,
+          cache: "no-store",
+        }),
+      finalizeSelection: (token: string, cycleId: string, items?: SelectionItem[], version?: number | null) =>
+        request<SelectionPage>(`/me/meal-selections/${encodeURIComponent(cycleId)}/finalize`, {
+          method: "POST",
+          body: items ? { items, version: version ?? null } : undefined,
+          token,
+          cache: "no-store",
+        }),
+      orders: (token: string, page = 1) =>
+        request<{ items: OrderSummary[] }>("/me/orders", { token, query: { page }, cache: "no-store" }),
+      order: (token: string, id: string) => request<Order>(`/me/orders/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      billing: (token: string) => request<BillingSummary>("/me/billing", { token, cache: "no-store" }),
+      invoices: (token: string, page = 1) =>
+        request<{ items: InvoiceSummary[] }>("/me/invoices", { token, query: { page }, cache: "no-store" }),
+      invoice: (token: string, id: string) => request<Invoice>(`/me/invoices/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      /** The raw PDF response, to stream to the browser. */
+      invoicePdf: (token: string, id: string) =>
+        send(`/me/invoices/${encodeURIComponent(id)}/pdf`, { token, cache: "no-store" }),
+      pay: (token: string, billingCycleId: string) =>
+        request<Checkout>("/checkout/sessions", { method: "POST", body: { billing_cycle_id: billingCycleId }, token, cache: "no-store" }),
+      checkout: (token: string, id: string) =>
+        request<CheckoutResult>(`/checkout/sessions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+    },
+
+    /** The test payment simulator (never available in production). */
+    testpay: {
+      session: (ref: string) => request<TestpaySession>(`/test-payments/sessions/${encodeURIComponent(ref)}`, { cache: "no-store" }),
+      complete: (ref: string, outcome: "approve" | "decline" | "cancel", card: "approve" | "decline") =>
+        request<TestpaySession>(`/test-payments/sessions/${encodeURIComponent(ref)}/complete`, {
+          method: "POST",
+          body: { outcome, card },
+          cache: "no-store",
+        }),
     },
   };
 }

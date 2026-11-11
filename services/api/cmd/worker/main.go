@@ -1,5 +1,5 @@
-// Command worker runs background jobs: today, transactional email for the
-// waitlist and for customer accounts.
+// Command worker runs background jobs (transactional email, payment webhook
+// processing, renewal charges) and the commerce scheduler.
 package main
 
 import (
@@ -61,7 +61,17 @@ func run() error {
 	}
 	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
 
-	slog.Info("worker started", "mail_driver", cfg.Mail.Driver)
+	com, err := server.NewCommerce(cfg, pool, ids)
+	if err != nil {
+		return err
+	}
+	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender}).Register(runner)
+	server.RegisterCommerceJobs(runner, com)
+	// The commerce scheduler: weekly cycles, renewals, cutoffs, reminders.
+	// Safe on several workers (it takes a database advisory lock).
+	go com.Service.RunScheduler(ctx, cfg.Commerce.SchedulerInterval)
+
+	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
 	err = runner.Run(ctx)
 	slog.Info("worker stopped")
 	return err

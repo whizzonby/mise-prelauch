@@ -49,7 +49,15 @@ flowchart TD
 | `admin` | nothing of its own | back-office lead features; asks identity for access |
 | `audit` (new) | audit_log | `Record(ctx, q, Entry)` |
 | `notifications` | email templates | job handlers for lead and account emails |
-| `server` | nothing | wiring and the route table |
+| `server` | nothing | wiring and the route table; `NewCommerce` builds the commerce services for the API, the worker and misectl |
+| `plans` (Sprint 3) | subscription_plans, subscription_plan_prices | public plans, `ForPurchase` (the exact price row a sale uses), admin, demo seed |
+| `menus` (Sprint 3) | weekly_menus, weekly_menu_meals | the cutoff `Policy` and week arithmetic, publishing, `ForWeek`; `Usage` interface (implemented by subscriptions), `Hooks` (implemented by commerce) |
+| `subscriptions` (Sprint 3) | subscriptions, subscription_events/changes/pauses, subscription_cycles, meal_selections, meal_selection_items | the state machine, `EnsureCycle`, selection `Save` and `Lock` |
+| `billing` (Sprint 3) | billing_cycles, invoices, invoice_items, invoice_counters, promotions, promotion_redemptions | `Policy.Quote`, `CreateCycle`, `MarkPaid`, `Void`, invoices and PDF; `Issuer` interface (implemented by subscriptions) |
+| `payments` (Sprint 3) | checkout_sessions, payments, payment_status_history, payment_webhook_events, refunds, payment_methods | the `Provider` interface, checkout, webhooks, reconciliation, charges, refunds; `Hooks` interface (implemented by commerce) |
+| `payments/testpay` (Sprint 3) | testpay_sessions, testpay_transactions | the payment simulator; never in production |
+| `orders` (Sprint 3) | orders, order_items, order_status_history, order_counters | `Create` (once per cycle), history, `Demand` |
+| `commerce` (Sprint 3) | notification_deliveries | the workflows across those modules, each in one transaction: subscribe, pay, payment outcomes, pause, cancel and plan change, selection, and the scheduler `Tick` |
 
 `admin_users` and `admin_sessions` are owned by no module now; they are kept for rollback
 and will be removed by a later, approved migration.
@@ -60,10 +68,6 @@ Created when their sprint starts, not before (no empty packages):
 
 | Module | Will own | Depends on |
 |---|---|---|
-| `catalog` | plans, meals, weekly menus, menu items | recipes (read) |
-| `subscriptions` | subscriptions, billing cycles, pauses, plan changes | customers, catalog, payments (interface) |
-| `orders` | orders, items, state transitions | subscriptions, catalog, customers |
-| `payments` | payment intents, refunds, provider references; provider adapter | — (others call it) |
 | `recipes`, `nutrition` | recipes, ingredients, allergens, reviews | — |
 | `suppliers`, `procurement`, `inventory` | suppliers (scoped roles), purchase orders, lots | recipes (read) |
 | `production`, `fulfillment` | batches, consumption, packing | orders, inventory |

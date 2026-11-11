@@ -335,3 +335,9 @@ func derefString(s *string) string {
 	}
 	return *s
 }
+
+// PreferencesOf returns a customer's preferences and allergies by customer
+// id, for work done without a signed-in person (an order made at the cutoff).
+func PreferencesOf(ctx context.Context, q db.Querier, customerID string) (*Preferences, error) {
+	return loadPreferences(ctx, q, customerID)
+}

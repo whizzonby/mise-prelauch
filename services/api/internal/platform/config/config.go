@@ -77,6 +77,38 @@ type Config struct {
 	// RateLimitsDisabled turns off per-IP and per-account limits so end-to-end tests can sign up
 	// repeatedly. Refused outside the local environment.
 	RateLimitsDisabled bool
+
+	// Sprint 3: subscription commerce.
+	Commerce CommerceConfig
+}
+
+// CommerceConfig holds the subscription, billing and payment settings.
+// Several of these encode business decisions that are still open; each is
+// documented in .env.example.
+type CommerceConfig struct {
+	// Selection cutoff: weekday and local time (Trinidad and Tobago).
+	CutoffWeekday string
+	CutoffTime    string
+	// Tax: none, inclusive or exclusive; rate in basis points.
+	TaxMode         string
+	TaxRateBps      int64
+	TaxLabel        string
+	TaxRegistration string
+	// Delivery fee per week, in minor units.
+	DeliveryFeeMinor  int64
+	BusinessName      string
+	BusinessAddress   string
+	RenewalLead       time.Duration
+	RenewalRetries    int
+	RenewalRetryAfter time.Duration
+	MaxPauseWeeks     int
+	PendingTTL        time.Duration
+	// TestProvider enables testpay, the payment simulator. Refused in production.
+	TestProvider bool
+	// TestProviderSecret signs testpay webhooks.
+	TestProviderSecret []byte
+	// SchedulerInterval: how often the worker runs the commerce scheduler.
+	SchedulerInterval time.Duration
 }
 
 type MailConfig struct {
@@ -193,6 +225,62 @@ func Load() (Config, error) {
 		cfg.ReferralMilestones = append(cfg.ReferralMilestones, n)
 	}
 
+	cfg.Commerce = CommerceConfig{
+		CutoffWeekday:   get("MENU_CUTOFF_WEEKDAY", "thursday"),
+		CutoffTime:      get("MENU_CUTOFF_TIME", "23:59"),
+		TaxMode:         get("BILLING_TAX_MODE", "none"),
+		TaxLabel:        get("BILLING_TAX_LABEL", "VAT"),
+		TaxRegistration: strings.TrimSpace(os.Getenv("BILLING_TAX_REGISTRATION")),
+		BusinessName:    get("BILLING_BUSINESS_NAME", "Mise"),
+		// Lines separated by "\n" in the environment value.
+		BusinessAddress: strings.ReplaceAll(strings.TrimSpace(os.Getenv("BILLING_BUSINESS_ADDRESS")), `\n`, "\n"),
+	}
+	var n int
+	if n, err = getInt("BILLING_TAX_RATE_BPS", 0); err != nil {
+		errs = append(errs, err)
+	}
+	cfg.Commerce.TaxRateBps = int64(n)
+	if n, err = getInt("BILLING_DELIVERY_FEE_MINOR", 0); err != nil {
+		errs = append(errs, err)
+	}
+	cfg.Commerce.DeliveryFeeMinor = int64(n)
+	if cfg.Commerce.RenewalLead, err = getDuration("BILLING_RENEWAL_LEAD", 48*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.RenewalRetries, err = getInt("BILLING_RENEWAL_RETRIES", 0); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.RenewalRetryAfter, err = getDuration("BILLING_RENEWAL_RETRY_AFTER", 24*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.MaxPauseWeeks, err = getInt("SUBSCRIPTION_MAX_PAUSE_WEEKS", 4); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.PendingTTL, err = getDuration("SUBSCRIPTION_PENDING_TTL", 24*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.SchedulerInterval, err = getDuration("COMMERCE_SCHEDULER_INTERVAL", time.Minute); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.Commerce.TestProvider, err = getBool("PAYMENTS_TEST_PROVIDER", isLocal); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.IsProduction() && cfg.Commerce.TestProvider {
+		errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER cannot be true in production: the test provider never takes real money"))
+	}
+	if v := strings.TrimSpace(os.Getenv("PAYMENTS_TEST_PROVIDER_SECRET")); v != "" {
+		if len(v) < 32 {
+			errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER_SECRET must be at least 32 characters"))
+		}
+		cfg.Commerce.TestProviderSecret = []byte(v)
+	}
+	if cfg.Commerce.MaxPauseWeeks < 1 || cfg.Commerce.MaxPauseWeeks > 12 {
+		errs = append(errs, errors.New("SUBSCRIPTION_MAX_PAUSE_WEEKS must be between 1 and 12"))
+	}
+	if cfg.Commerce.SchedulerInterval < 5*time.Second {
+		errs = append(errs, errors.New("COMMERCE_SCHEDULER_INTERVAL must be at least 5s"))
+	}
+
 	if len(cfg.TokenSigningKey) > 0 && len(cfg.TokenSigningKey) < 32 {
 		errs = append(errs, errors.New("TOKEN_SIGNING_KEY must be at least 32 bytes"))
 	}
@@ -228,6 +316,14 @@ func Load() (Config, error) {
 			errs = append(errs, hkdfErr)
 		}
 		cfg.DataEncryptionKey = key
+	}
+
+	if cfg.Commerce.TestProviderSecret == nil && len(cfg.TokenSigningKey) >= 32 {
+		key, hkdfErr := hkdf.Key(sha256.New, cfg.TokenSigningKey, nil, "mise/testpay-webhook/v1", 32)
+		if hkdfErr != nil {
+			errs = append(errs, hkdfErr)
+		}
+		cfg.Commerce.TestProviderSecret = key
 	}
 
 	return cfg, errors.Join(errs...)

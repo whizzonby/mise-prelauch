@@ -1,20 +1,24 @@
 "use client";
 
 import { cx } from "@mise/ui";
-import { Heart, Home, UtensilsCrossed, UserRound } from "lucide-react";
+import { CalendarDays, Heart, Home, UtensilsCrossed, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /*
- * The customer app's navigation. Three destinations and the account. Future
- * destinations (subscription, orders, deliveries, billing, rewards) are not
- * listed until they exist: a link that leads nowhere is worse than none.
+ * The customer app's navigation: four destinations and the account.
+ * Subscription, orders and billing live under the account. Deliveries and
+ * rewards are not listed until they exist: a link that leads nowhere is
+ * worse than none.
  */
 const items = [
   { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/menu", label: "This week", short: "Menu", icon: CalendarDays },
   { href: "/meals", label: "Explore meals", short: "Meals", icon: UtensilsCrossed },
   { href: "/favorites", label: "Saved", icon: Heart },
 ] as const;
+
+const desktopExtra = [{ href: "/subscription", label: "Subscription" }] as const;
 
 function isCurrent(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
@@ -24,8 +28,8 @@ export function DesktopNav() {
   const pathname = usePathname();
   return (
     <nav aria-label="Main" className="hidden md:block">
-      <ul className="flex items-center gap-8">
-        {items.map((item) => {
+      <ul className="flex items-center gap-7">
+        {[...items, ...desktopExtra].map((item) => {
           const current = isCurrent(pathname, item.href);
           return (
             <li key={item.href}>
@@ -83,7 +87,7 @@ export function MobileTabBar() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {all.map((item) => {
           const current = isCurrent(pathname, item.href);
           const Icon = item.icon;

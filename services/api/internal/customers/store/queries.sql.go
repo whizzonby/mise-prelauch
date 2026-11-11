@@ -53,6 +53,31 @@ func (q *Queries) DeleteAllergies(ctx context.Context, customerID string) error 
 	return err
 }
 
+const getByID = `-- name: GetByID :one
+SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region FROM customers WHERE id = $1
+`
+
+func (q *Queries) GetByID(ctx context.Context, id string) (Customer, error) {
+	row := q.db.QueryRow(ctx, getByID, id)
+	var i Customer
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.LeadID,
+		&i.LeadLinkedAt,
+		&i.TermsVersion,
+		&i.TermsAcceptedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Phone,
+		&i.ContactChannel,
+		&i.Language,
+		&i.DeliveryCountry,
+		&i.DeliveryRegion,
+	)
+	return i, err
+}
+
 const getByLeadID = `-- name: GetByLeadID :one
 SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region FROM customers WHERE lead_id = $1
 `

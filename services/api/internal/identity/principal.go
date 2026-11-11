@@ -21,6 +21,15 @@ const (
 	PermCatalogManage   Permission = "catalog.manage"
 	PermCatalogPublish  Permission = "catalog.publish"
 	PermNutritionVerify Permission = "nutrition.verify"
+	// Sprint 3: subscription commerce.
+	PermPlansManage       Permission = "plans.manage"
+	PermMenusManage       Permission = "menus.manage"
+	PermMenusPublish      Permission = "menus.publish"
+	PermSubscriptionsRead Permission = "subscriptions.read"
+	PermOrdersRead        Permission = "orders.read"
+	PermPaymentsRead      Permission = "payments.read"
+	PermPaymentsRefund    Permission = "payments.refund"
+	PermPromotionsManage  Permission = "promotions.manage"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -28,6 +37,8 @@ var AllPermissions = []Permission{
 	PermAdminAccess, PermAnalyticsView, PermLeadsRead, PermLeadsUpdate,
 	PermLeadsExport, PermLeadsErase, PermUsersRead, PermUsersManage,
 	PermCatalogRead, PermCatalogManage, PermCatalogPublish, PermNutritionVerify,
+	PermPlansManage, PermMenusManage, PermMenusPublish, PermSubscriptionsRead,
+	PermOrdersRead, PermPaymentsRead, PermPaymentsRefund, PermPromotionsManage,
 }
 
 // RoleCustomer is the role every registered customer holds.

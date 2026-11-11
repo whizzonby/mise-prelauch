@@ -81,3 +81,47 @@ export function niceMax(value: number): number {
 export function fullName(lead: { first_name: string; last_name: string }): string {
   return [lead.first_name, lead.last_name].filter(Boolean).join(" ");
 }
+
+/** Minor units to "TTD 330.00". */
+export function money(minor: number, currency = "TTD"): string {
+  const sign = minor < 0 ? "-" : "";
+  const abs = Math.abs(minor);
+  return `${sign}${currency} ${Math.floor(abs / 100).toLocaleString("en-US")}.${String(abs % 100).padStart(2, "0")}`;
+}
+
+/** An instant as the value of a datetime-local input, in Trinidad and Tobago time. */
+export function localInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(new Date(iso).getTime() - 4 * 3600 * 1000);
+  return d.toISOString().slice(0, 16);
+}
+
+export function commerceTone(status: string): "neutral" | "success" | "warning" | "error" | "accent" {
+  switch (status) {
+    case "active":
+    case "published":
+    case "paid":
+    case "succeeded":
+    case "confirmed":
+    case "finalized":
+    case "processed":
+      return "success";
+    case "past_due":
+    case "failed":
+    case "needs_resolution":
+    case "unpaid":
+      return "error";
+    case "draft":
+    case "pending_payment":
+    case "scheduled":
+    case "due":
+    case "pending":
+    case "paused":
+    case "pause_scheduled":
+    case "cancel_scheduled":
+    case "partially_refunded":
+      return "warning";
+    default:
+      return "neutral";
+  }
+}

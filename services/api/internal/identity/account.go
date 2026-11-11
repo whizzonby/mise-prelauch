@@ -228,3 +228,21 @@ func MaskEmail(address string) string {
 	}
 	return string([]rune(local)[0]) + "•••@" + domain
 }
+
+// Contact is how to address a person in an email.
+type Contact struct {
+	FirstName string
+	LastName  string
+	Email     string
+	Active    bool
+}
+
+// ContactOf returns a user's name and email address. Only send to Active
+// users: a disabled account gets no more email.
+func (s *Service) ContactOf(ctx context.Context, userID string) (*Contact, error) {
+	u, err := store.New(s.pool).GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &Contact{FirstName: u.FirstName, LastName: u.LastName, Email: u.Email, Active: u.Status == "active"}, nil
+}

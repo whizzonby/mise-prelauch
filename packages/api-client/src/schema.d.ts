@@ -962,6 +962,859 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Plans customers can see, with their current price. Prices are data, never hard-coded. */
+        get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plans/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One visible plan. */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/weekly-menus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Published (and recently closed) menus from the current week on. */
+        get: operations["listWeeklyMenus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/weekly-menus/{week}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A published menu by the Monday of its week. Unpublished menus are not found. */
+        get: operations["getWeeklyMenu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subscription-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Whether payments are available (and in test mode), and the cutoff rule. */
+        get: operations["subscriptionInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The customer's subscription in progress, or null. */
+        get: operations["getMySubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Everything shown before payment, computed on the server: first week, amount due now, renewal amount and terms. */
+        post: operations["quoteSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Creates a subscription waiting for payment and opens the provider's hosted checkout. It becomes active only when the provider confirms the payment (webhook, then a status lookup); the browser returning is not proof. */
+        post: operations["createSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/{id}/change-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description From the first week not yet billed. No proration. */
+        post: operations["changeSubscriptionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/{id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Skips 1 to max_pause_weeks weeks, from the first week not yet paid. */
+        post: operations["pauseSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Ends a pause early, or withdraws a cancellation not yet in effect. */
+        post: operations["resumeSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description From the first week not yet paid; paid weeks are still delivered. No automatic refunds. History is kept. */
+        post: operations["cancelSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscriptions/{id}/address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Where future orders are delivered. */
+        put: operations["setSubscriptionAddress"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/subscription-cycles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The customer's recent and upcoming weeks. */
+        get: operations["listMyWeeks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/meal-selections/{cycleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The selection screen for one of the customer's weeks: menu, allowance, choices, allergy and preference notes. */
+        get: operations["getMealSelection"];
+        /** @description Saves a draft. Checked on the server: menu, allowance, per-meal limits and the cutoff (409 selection_closed after it). Another device's newer version answers 409 version_conflict. */
+        put: operations["saveMealSelection"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/meal-selections/{cycleId}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Confirms the choice (the whole allowance). With items, saves and confirms in one step. Still changeable until the cutoff. */
+        post: operations["finalizeMealSelection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Newest first. */
+        get: operations["listMyOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Another customer's order answers 404. */
+        get: operations["getMyOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Payment method, anything payable now, and billing history. */
+        get: operations["getMyBilling"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Newest first. */
+        get: operations["listMyInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Another customer's invoice answers 404. */
+        get: operations["getMyInvoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The invoice as a PDF (deterministic). */
+        get: operations["getMyInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkout/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Opens the provider's hosted checkout for one of the customer's unpaid weeks (until its cutoff). The amount is the server-computed total. */
+        post: operations["createCheckoutSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkout/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What the server knows about a checkout. The result page polls this. */
+        get: operations["getCheckoutResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/payments/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Authenticated by the provider's signature (never a session). Stored once per provider event id; repeats are acknowledged and ignored. Processing re-reads the payment's status from the provider. */
+        post: operations["receivePaymentWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-payments/sessions/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Test mode only (refused in production): the simulated provider's hosted checkout. */
+        get: operations["getTestpaySession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/test-payments/sessions/{ref}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Test mode only: approve, decline or cancel. The simulator then sends a signed webhook. */
+        post: operations["completeTestpaySession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs subscriptions.read. */
+        get: operations["adminListPlans"];
+        put?: never;
+        /** @description Needs plans.manage. Created as a draft. */
+        post: operations["adminCreatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With every price version. */
+        get: operations["adminGetPlan"];
+        /** @description Needs plans.manage. Optimistic concurrency on version. */
+        put: operations["adminUpdatePlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A new price version, now or later. Price rows are never edited. */
+        post: operations["adminAddPlanPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs a price. */
+        post: operations["adminActivatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans/{id}/retire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Stops new sales; subscribers keep their plan. */
+        post: operations["adminRetirePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/menus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs menus.manage. */
+        get: operations["adminListMenus"];
+        put?: never;
+        /** @description A draft menu for a week. The cutoff defaults to the policy. */
+        post: operations["adminCreateMenu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/menus/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminGetMenu"];
+        /** @description Once published the cutoff is fixed and chosen meals stay. */
+        put: operations["adminUpdateMenu"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/menus/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs menus.publish. Now, or at publish_at (scheduled). */
+        post: operations["adminPublishMenu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/menus/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Refused once customers have chosen from it. */
+        post: operations["adminUnpublishMenu"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs subscriptions.read. */
+        get: operations["adminListSubscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With history, billing and every week. */
+        get: operations["adminGetSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs orders.read. */
+        get: operations["adminListOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With its status history. */
+        get: operations["adminGetOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Confirmed kits per meal version for a delivery week: the interface later production modules read. Plans nothing. */
+        get: operations["adminWeekDemand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs payments.read. ?format=pdf for the PDF. */
+        get: operations["adminGetInvoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs payments.read. There is no endpoint that sets a payment's status. */
+        get: operations["adminListPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With status history and refunds. */
+        get: operations["adminGetPayment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payments/{id}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs payments.refund. Through the provider; idempotent per request_key. */
+        post: operations["adminRefundPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Received webhooks, without payloads. */
+        get: operations["adminListWebhooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs promotions.manage. */
+        get: operations["adminListPromotions"];
+        put?: never;
+        /** @description Created as a draft; it applies only once activated. */
+        post: operations["adminCreatePromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminActivatePromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminArchivePromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/commerce/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Commerce and payment jobs that failed or are retrying (no payloads). */
+        get: operations["adminFailedCommerceJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1113,7 +1966,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -1673,6 +2526,785 @@ export interface components {
             /** @enum {string} */
             status?: "draft" | "published" | "unpublished";
             is_demo?: boolean;
+        };
+        Price: {
+            id: string;
+            amount_minor: number;
+            currency: string;
+            /** Format: date-time */
+            effective_from: string;
+            formatted: string;
+        };
+        Plan: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            summary: string;
+            description: string;
+            meals_per_week: number;
+            /** @enum {string} */
+            billing_interval: "week";
+            segment: components["schemas"]["Term"];
+            benefits: string[];
+            self_serve: boolean;
+            price: components["schemas"]["Price"] | null;
+            per_meal_minor: number;
+            next_price: components["schemas"]["Price"] | null;
+            purchasable: boolean;
+            /** @description Why it cannot be bought online; absent when it can. */
+            unavailable_reason?: string;
+            is_demo: boolean;
+        };
+        AdminPlan: components["schemas"]["Plan"] & {
+            /** @enum {string} */
+            status: "draft" | "active" | "retired";
+            /** Format: date-time */
+            available_from: string | null;
+            /** Format: date-time */
+            available_until: string | null;
+            sort_order: number;
+            version: number;
+            prices?: components["schemas"]["Price"][];
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PlanInput: {
+            slug?: string;
+            name: string;
+            summary: string;
+            description?: string;
+            meals_per_week: number;
+            segment: string;
+            benefits?: string[];
+            self_serve?: boolean;
+            /** Format: date-time */
+            available_from?: string | null;
+            /** Format: date-time */
+            available_until?: string | null;
+            sort_order?: number;
+            version?: number;
+        };
+        PriceInput: {
+            amount_minor: number;
+            /** Format: date-time */
+            effective_from?: string | null;
+            note?: string;
+        };
+        MenuSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            week: string;
+            week_label: string;
+            title: string | null;
+            /** @enum {string} */
+            status: "draft" | "scheduled" | "published" | "closed" | "archived";
+            /** Format: date-time */
+            cutoff_at: string;
+            is_open: boolean;
+            meal_count: number;
+        };
+        MenuMeal: components["schemas"]["MealCard"] & {
+            max_per_customer: number | null;
+        };
+        WeeklyMenu: components["schemas"]["MenuSummary"] & {
+            note: string | null;
+            time_zone: string;
+            /** Format: date-time */
+            published_at: string | null;
+            eligible_plan_ids: string[];
+            meals: components["schemas"]["MenuMeal"][];
+        };
+        AdminMenuMeal: {
+            /** Format: uuid */
+            meal_id: string;
+            name: string;
+            slug: string;
+            status: string;
+            visible: boolean;
+            selected: boolean;
+            max_per_customer: number | null;
+        };
+        AdminMenu: components["schemas"]["MenuSummary"] & {
+            note: string | null;
+            time_zone: string;
+            /** Format: date-time */
+            publish_at: string | null;
+            /** Format: date-time */
+            published_at: string | null;
+            eligible_plan_ids: string[];
+            version: number;
+            meals: components["schemas"]["AdminMenuMeal"][];
+            /** Format: date-time */
+            default_cutoff_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        MenuInput: {
+            /**
+             * Format: date
+             * @description The Monday of the delivery week.
+             */
+            week?: string;
+            title?: string;
+            note?: string;
+            /** Format: date-time */
+            cutoff_at?: string | null;
+            eligible_plan_ids?: string[];
+            meals: {
+                /** Format: uuid */
+                meal_id: string;
+                max_per_customer?: number | null;
+            }[];
+            version?: number;
+        };
+        TaxSnapshot: {
+            /** @enum {string} */
+            mode: "none" | "inclusive" | "exclusive";
+            rate_bps: number;
+            label: string;
+            registration?: string;
+        };
+        DiscountSnapshot: {
+            /** Format: uuid */
+            promotion_id: string;
+            code: string;
+            name: string;
+            /** @enum {string} */
+            kind: "percent" | "fixed";
+            percent_bps?: number;
+            amount_minor?: number;
+        };
+        Amounts: {
+            currency: string;
+            subtotal_minor: number;
+            discount_minor: number;
+            delivery_fee_minor: number;
+            tax_minor: number;
+            total_minor: number;
+            tax: components["schemas"]["TaxSnapshot"];
+            discount: components["schemas"]["DiscountSnapshot"] | null;
+        };
+        PaymentsInfo: {
+            available: boolean;
+            test: boolean;
+            provider?: string;
+        };
+        Quote: {
+            plan: components["schemas"]["Plan"];
+            /** Format: date */
+            first_week: string;
+            first_week_label: string;
+            /** Format: date-time */
+            first_week_cutoff_at: string;
+            due_now: components["schemas"]["Amounts"];
+            renewal: components["schemas"]["Amounts"];
+            promotion: string | null;
+            terms: string;
+            tax_note: string;
+            payments: components["schemas"]["PaymentsInfo"];
+        };
+        QuoteInput: {
+            /** Format: uuid */
+            plan_id: string;
+            promotion_code?: string;
+        };
+        SubscribeInput: {
+            /** Format: uuid */
+            plan_id: string;
+            /** Format: uuid */
+            address_id: string;
+            promotion_code?: string;
+        };
+        Checkout: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "open" | "completed" | "failed" | "expired" | "cancelled";
+            /** @description The provider's hosted page; only while open. */
+            redirect_url?: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: uuid */
+            billing_cycle_id: string;
+            amount_minor: number;
+            currency: string;
+            provider: string;
+            /** @description True for the test provider: no real money moves. */
+            test: boolean;
+        };
+        SubscribeResult: {
+            /** Format: uuid */
+            subscription_id: string;
+            checkout: components["schemas"]["Checkout"] | null;
+            activated: boolean;
+        };
+        CheckoutResult: {
+            checkout: components["schemas"]["Checkout"];
+            /** @enum {string} */
+            outcome: "pending" | "succeeded" | "failed" | "expired";
+            subscription_status: string;
+            /** Format: date */
+            week: string;
+            week_label: string;
+            /** Format: uuid */
+            invoice_id: string | null;
+        };
+        PayInput: {
+            /** Format: uuid */
+            billing_cycle_id: string;
+        };
+        PlanRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            meals_per_week: number;
+        };
+        BillingRef: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "due" | "paid" | "failed" | "void";
+            total_minor: number;
+            currency: string;
+            /** Format: uuid */
+            invoice_id: string | null;
+            invoice_number: string | null;
+        };
+        SubscriptionCycle: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            week: string;
+            week_label: string;
+            /** Format: date-time */
+            cutoff_at: string;
+            /** Format: date-time */
+            renewal_at: string;
+            /** @enum {string} */
+            state: "scheduled" | "finalized" | "unpaid" | "needs_resolution" | "paused" | "cancelled";
+            state_label: string;
+            plan: components["schemas"]["PlanRef"];
+            amount_minor: number;
+            currency: string;
+            selection_open: boolean;
+            menu_published: boolean;
+            /** @enum {string|null} */
+            selection_status: "draft" | "confirmed" | "locked" | null;
+            selected_count: number;
+            billing: components["schemas"]["BillingRef"] | null;
+            /** Format: uuid */
+            order_id: string | null;
+        };
+        WeekRange: {
+            /** Format: date */
+            from_week: string;
+            /** Format: date */
+            until_week: string;
+            label: string;
+        };
+        CancelInfo: {
+            /** Format: date */
+            effective_week: string;
+            /** Format: date-time */
+            requested_at: string | null;
+            label: string;
+        };
+        SubscriptionActions: {
+            change_plan: boolean;
+            pause: boolean;
+            resume: boolean;
+            cancel: boolean;
+            undo_cancel: boolean;
+            change_address: boolean;
+            max_pause_weeks: number;
+        };
+        Subscription: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending_payment" | "active" | "pause_scheduled" | "paused" | "past_due" | "cancel_scheduled" | "cancelled" | "expired";
+            status_label: string;
+            plan: components["schemas"]["PlanRef"];
+            amount_minor: number;
+            currency: string;
+            price_formatted: string;
+            address: components["schemas"]["Address"] | null;
+            payment_method: string | null;
+            auto_renew: boolean;
+            /** Format: date */
+            first_week: string;
+            /** Format: date-time */
+            activated_at: string | null;
+            pause: components["schemas"]["WeekRange"] | null;
+            cancel: components["schemas"]["CancelInfo"] | null;
+            cycles: components["schemas"]["SubscriptionCycle"][];
+            actions: components["schemas"]["SubscriptionActions"];
+            outstanding: components["schemas"]["SubscriptionCycle"] | null;
+            terms: string;
+            test_payments: boolean;
+        };
+        SubscriptionEnvelope: {
+            subscription: components["schemas"]["Subscription"] | null;
+        };
+        ChangePlanInput: {
+            /** Format: uuid */
+            plan_id: string;
+        };
+        PauseInput: {
+            weeks: number;
+        };
+        CancelInput: {
+            /** @enum {string} */
+            reason?: "too_expensive" | "not_enough_time" | "meals_not_for_me" | "moving" | "temporary" | "other";
+        };
+        SubscriptionAddressInput: {
+            /** Format: uuid */
+            address_id: string;
+        };
+        SelectionItem: {
+            /** Format: uuid */
+            meal_id: string;
+            quantity: number;
+        };
+        MealSelection: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "draft" | "confirmed" | "locked";
+            version: number;
+            items: components["schemas"]["SelectionItem"][];
+            count: number;
+            /** Format: date-time */
+            confirmed_at: string | null;
+            /** Format: date-time */
+            locked_at: string | null;
+            was_confirmed?: boolean;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            menu_id: string;
+        };
+        /** @description Allergy notes are safety warnings; preference matches are a convenience. Never a statement that a meal is free of anything. */
+        MealNote: {
+            contains_your_allergens: components["schemas"]["Term"][];
+            allergens_unconfirmed: boolean;
+            matches_preferences: components["schemas"]["Term"][];
+        };
+        SelectionPage: {
+            cycle: components["schemas"]["SubscriptionCycle"];
+            menu: components["schemas"]["WeeklyMenu"] | null;
+            selection: components["schemas"]["MealSelection"] | null;
+            allowance: number;
+            selected: number;
+            remaining: number;
+            open: boolean;
+            confirmed: boolean;
+            notes: {
+                [key: string]: components["schemas"]["MealNote"];
+            };
+            has_allergies: boolean;
+            allergies_reviewed: boolean;
+            cross_contact_notice: string;
+            /** Format: date-time */
+            server_time: string;
+        };
+        SelectionInput: {
+            items?: components["schemas"]["SelectionItem"][];
+            version?: number | null;
+        };
+        OrderAddress: {
+            recipient_name: string;
+            phone?: string;
+            line1: string;
+            line2?: string;
+            area?: string;
+            city: string;
+            region: string;
+            region_label: string;
+            country: string;
+            instructions?: string;
+        };
+        OrderItem: {
+            /** Format: uuid */
+            meal_id: string;
+            meal_version: number;
+            name: string;
+            slug: string;
+            quantity: number;
+            servings: number;
+            allergens: string[];
+            allergen_status: string;
+            dietary_tags: string[];
+        };
+        OrderSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            status: string;
+            /** Format: date */
+            week: string;
+            plan_name: string;
+            meals_count: number;
+            total_minor: number;
+            currency: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            customer_id?: string;
+        };
+        Order: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** @enum {string} */
+            status: "pending" | "confirmed" | "awaiting_production" | "in_production" | "ready_for_fulfillment" | "out_for_delivery" | "delivered" | "cancelled";
+            /** Format: date */
+            week: string;
+            plan_name: string;
+            meals_count: number;
+            currency: string;
+            subtotal_minor: number;
+            discount_minor: number;
+            delivery_fee_minor: number;
+            tax_minor: number;
+            total_minor: number;
+            address: components["schemas"]["OrderAddress"];
+            /** @description Set when a delivery window is configured (a later sprint). */
+            delivery_window: unknown;
+            /** Format: date-time */
+            created_at: string;
+            items: components["schemas"]["OrderItem"][];
+            history?: {
+                from: string | null;
+                to: string;
+                reason: string | null;
+                /** Format: date-time */
+                created_at: string;
+            }[];
+            /** Format: uuid */
+            customer_id?: string;
+            /** Format: uuid */
+            subscription_id: string;
+            /** Format: uuid */
+            billing_cycle_id: string;
+            /** Format: uuid */
+            payment_id: string | null;
+            /** Format: uuid */
+            subscription_cycle_id: string;
+        };
+        BillingCycle: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            subscription_id: string;
+            /** Format: uuid */
+            subscription_cycle_id: string;
+            /** @enum {string} */
+            kind: "initial" | "renewal";
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            /** Format: date-time */
+            due_at: string;
+            /** @enum {string} */
+            status: "pending" | "due" | "paid" | "failed" | "void";
+            attempts: number;
+            /** Format: date-time */
+            next_attempt_at: string | null;
+            /** Format: date-time */
+            paid_at: string | null;
+            void_reason: string | null;
+            currency: string;
+            subtotal_minor: number;
+            discount_minor: number;
+            delivery_fee_minor: number;
+            tax_minor: number;
+            total_minor: number;
+            tax: components["schemas"]["TaxSnapshot"];
+            discount: components["schemas"]["DiscountSnapshot"] | null;
+            /** Format: uuid */
+            invoice_id?: string;
+            invoice_number?: string;
+        };
+        BillingSummary: {
+            payment_method: string | null;
+            auto_renew: boolean;
+            outstanding: components["schemas"]["SubscriptionCycle"] | null;
+            history: components["schemas"]["BillingCycle"][];
+            terms: string | null;
+            test_payments: boolean;
+        };
+        InvoiceLine: {
+            /** @enum {string} */
+            kind: "plan" | "discount" | "delivery" | "tax";
+            description: string;
+            quantity: number;
+            unit_amount_minor: number;
+            amount_minor: number;
+        };
+        InvoiceSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** @enum {string} */
+            status: "open" | "paid" | "void";
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date */
+            period_start: string;
+            total_minor: number;
+            currency: string;
+        };
+        Invoice: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** @enum {string} */
+            status: "open" | "paid" | "void";
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date-time */
+            due_at: string;
+            /** Format: date-time */
+            paid_at: string | null;
+            /** Format: date-time */
+            voided_at: string | null;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            customer: {
+                name: string;
+                email: string;
+                address: string[];
+            };
+            business: {
+                name: string;
+                address?: string;
+                tax_registration?: string;
+            };
+            currency: string;
+            subtotal_minor: number;
+            discount_minor: number;
+            delivery_fee_minor: number;
+            tax_minor: number;
+            total_minor: number;
+            tax: components["schemas"]["TaxSnapshot"];
+            discount: components["schemas"]["DiscountSnapshot"] | null;
+            lines: components["schemas"]["InvoiceLine"][];
+            tax_note: string;
+            /** Format: uuid */
+            subscription_id: string;
+            /** Format: uuid */
+            billing_cycle_id: string;
+        };
+        SubscriptionInfo: {
+            payments: components["schemas"]["PaymentsInfo"];
+            /** Format: date */
+            next_open_week: string;
+            cutoff_rule: string;
+            time_zone: string;
+            max_pause_weeks: number;
+            cancel_reasons: string[];
+        };
+        AdminSubscriptionRow: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** @enum {string} */
+            status: "pending_payment" | "active" | "pause_scheduled" | "paused" | "past_due" | "cancel_scheduled" | "cancelled" | "expired";
+            plan_name: string;
+            amount_minor: number;
+            currency: string;
+            /** Format: date */
+            first_week: string;
+            /** Format: date-time */
+            activated_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SubscriptionEvent: {
+            type: string;
+            from_status: string | null;
+            to_status: string | null;
+            effective_week: string | null;
+            metadata: Record<string, never> | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminSubscription: components["schemas"]["Subscription"] & {
+            /** Format: uuid */
+            customer_id: string;
+            customer_name: string;
+            customer_email: string;
+            /** Format: date-time */
+            created_at: string;
+            history: components["schemas"]["SubscriptionEvent"][];
+            billing: components["schemas"]["BillingCycle"][];
+            all_cycles: components["schemas"]["SubscriptionCycle"][];
+        };
+        Payment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** Format: uuid */
+            billing_cycle_id: string;
+            provider: string;
+            provider_ref: string | null;
+            /** @enum {string} */
+            kind: "checkout" | "off_session";
+            amount_minor: number;
+            refunded_minor: number;
+            currency: string;
+            /** @enum {string} */
+            status: "pending" | "requires_action" | "processing" | "succeeded" | "failed" | "cancelled" | "refunded" | "partially_refunded";
+            failure_message: string | null;
+            needs_attention: boolean;
+            attention_reason: string | null;
+            /** Format: date-time */
+            succeeded_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            test: boolean;
+        };
+        Refund: {
+            /** Format: uuid */
+            id: string;
+            amount_minor: number;
+            currency: string;
+            reason: string;
+            /** @enum {string} */
+            status: "pending" | "succeeded" | "failed";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+        };
+        PaymentDetail: components["schemas"]["Payment"] & {
+            history: {
+                from: string | null;
+                to: string;
+                source: string;
+                /** Format: date-time */
+                created_at: string;
+            }[];
+            refunds: components["schemas"]["Refund"][];
+        };
+        RefundInput: {
+            amount_minor: number;
+            reason: string;
+            /** @description A random key per form shown: submitting the same form twice makes one refund. */
+            request_key: string;
+        };
+        StoredWebhook: {
+            id: number;
+            provider: string;
+            event_id: string;
+            event_type: string;
+            provider_ref: string | null;
+            /** @enum {string} */
+            status: "received" | "processed" | "ignored" | "failed";
+            error: string | null;
+            attempts: number;
+            /** Format: date-time */
+            received_at: string;
+            /** Format: date-time */
+            processed_at: string | null;
+        };
+        DemandLine: {
+            /** Format: uuid */
+            meal_id: string;
+            meal_version: number;
+            meal_name: string;
+            servings: number;
+            quantity: number;
+            orders: number;
+            order_numbers: string[];
+            customer_allergies: {
+                [key: string]: number;
+            };
+        };
+        Demand: {
+            /** Format: date */
+            week: string;
+            /** @enum {string} */
+            status: "provisional" | "final";
+            lines: components["schemas"]["DemandLine"][];
+            kits: number;
+            orders: number;
+        };
+        Promotion: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** @enum {string} */
+            kind: "percent" | "fixed";
+            percent_bps: number | null;
+            amount_minor: number | null;
+            currency: string;
+            cycles: number;
+            max_redemptions: number | null;
+            redemptions: number;
+            /** Format: date-time */
+            valid_from: string | null;
+            /** Format: date-time */
+            valid_until: string | null;
+            plan_ids: string[];
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            /** Format: date-time */
+            activated_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            description: string;
+        };
+        PromotionInput: {
+            code: string;
+            name: string;
+            /** @enum {string} */
+            kind: "percent" | "fixed";
+            percent_bps?: number | null;
+            amount_minor?: number | null;
+            cycles?: number;
+            max_redemptions?: number | null;
+            /** Format: date-time */
+            valid_from?: string | null;
+            /** Format: date-time */
+            valid_until?: string | null;
+            plan_ids?: string[];
+        };
+        FailedJob: {
+            id: number;
+            kind: string;
+            status: string;
+            attempts: number;
+            last_error: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        /** @description The simulated provider's hosted checkout (test mode only). */
+        TestpaySession: {
+            ref: string;
+            amount_minor: number;
+            currency: string;
+            description: string;
+            /** @enum {string} */
+            status: "open" | "approved" | "declined" | "cancelled";
+            return_url: string;
+        };
+        TestpayComplete: {
+            /** @enum {string} */
+            outcome: "approve" | "decline" | "cancel";
+            /** @enum {string} */
+            card?: "approve" | "decline";
         };
     };
     responses: {
@@ -3597,6 +5229,1650 @@ export interface operations {
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             422: components["responses"]["Error"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plans. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Plan"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Plan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    listWeeklyMenus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Menus. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["MenuSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    getWeeklyMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description YYYY-MM-DD, a Monday. */
+                week: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The menu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["WeeklyMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    subscriptionInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Info. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionInfo"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    getMySubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    quoteSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteInput"];
+            };
+        };
+        responses: {
+            /** @description The quote. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Quote"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    createSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscribeInput"];
+            };
+        };
+        responses: {
+            /** @description Created; redirect the customer to checkout.redirect_url. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscribeResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    changeSubscriptionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePlanInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    pauseSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PauseInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    resumeSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    cancelSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CancelInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    setSubscriptionAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionAddressInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    listMyWeeks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Weeks. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SubscriptionCycle"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    getMealSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cycleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SelectionPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    saveMealSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cycleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SelectionPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    finalizeMealSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cycleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SelectionInput"];
+            };
+        };
+        responses: {
+            /** @description Confirmed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SelectionPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    listMyOrders: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Orders. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["OrderSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    getMyOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Order"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getMyBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Billing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BillingSummary"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    listMyInvoices: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InvoiceSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    getMyInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invoice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Invoice"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getMyInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    createCheckoutSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Checkout"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    getCheckoutResult: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CheckoutResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    receivePaymentWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Received. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            received: boolean;
+                            duplicate: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+        };
+    };
+    getTestpaySession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TestpaySession"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    completeTestpaySession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestpayComplete"];
+            };
+        };
+        responses: {
+            /** @description Session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TestpaySession"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plans. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AdminPlan"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAddPlanPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminActivatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminRetirePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListMenus: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Menus. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["MenuSummary"][];
+                            /** Format: date */
+                            next_open_week: string;
+                            time_zone: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Menu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPublishMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: date-time */
+                    publish_at?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUnpublishMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMenu"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminListSubscriptions: {
+        parameters: {
+            query?: {
+                status?: string;
+                customer_id?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Subscriptions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AdminSubscriptionRow"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminGetSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Subscription. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminSubscription"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListOrders: {
+        parameters: {
+            query?: {
+                week?: string;
+                status?: string;
+                customer_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Orders. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["OrderSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminGetOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Order"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminWeekDemand: {
+        parameters: {
+            query?: {
+                week?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demand. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Demand"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminGetInvoice: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Invoice"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListPayments: {
+        parameters: {
+            query?: {
+                status?: string;
+                attention?: boolean;
+                customer_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payments. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Payment"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminGetPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentDetail"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminRefundPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundInput"];
+            };
+        };
+        responses: {
+            /** @description Refunded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentDetail"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+        };
+    };
+    adminListWebhooks: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Webhooks. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StoredWebhook"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminListPromotions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Promotions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Promotion"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreatePromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Promotion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminActivatePromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Promotion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminArchivePromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Promotion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminFailedCommerceJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jobs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["FailedJob"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
         };
     };
 }

@@ -251,3 +251,13 @@ func emptyToNil(s string) *string {
 	}
 	return &s
 }
+
+// UserIDOf returns the identity user behind a customer, for work done
+// without a signed-in person (emails sent by the scheduler).
+func UserIDOf(ctx context.Context, q db.Querier, customerID string) (string, error) {
+	c, err := store.New(q).GetByID(ctx, customerID)
+	if err != nil {
+		return "", err
+	}
+	return c.UserID, nil
+}

@@ -97,6 +97,22 @@ pnpm misectl catalog seed-demo
 
 Real meals are added and published by staff in the admin, under Meals.
 
+Demo subscription plans (the business plan's draft figures, marked as demo) and published
+demo menus for the next two weeks. Needs the demo catalogue first:
+
+```sh
+pnpm misectl commerce seed-demo
+```
+
+Subscriptions take payment through **testpay**, a local payment simulator (no card fields,
+no real money; refused in production) until a real provider is chosen. The worker runs
+the weekly scheduler (cycles, renewals, cutoffs, reminders) every minute. To run it once,
+or as if it were another time (local only):
+
+```sh
+pnpm misectl commerce tick -at 2026-11-13T04:30:00Z
+```
+
 ## Tests
 
 ```sh
@@ -116,7 +132,8 @@ It covers: visitor → signup → email verification → welcome page; invitatio
 referral credit; duplicate and invalid signups; admin sign-in → dashboard → lead → export;
 mobile navigation; reduced motion; keyboard use; automated accessibility scans; SEO essentials.
 
-The customer-platform tests also need the demo meal catalogue (`pnpm misectl catalog seed-demo`).
+The customer-platform tests also need the demo meal catalogue (`pnpm misectl catalog seed-demo`),
+and the subscription tests the demo plans and menus (`pnpm misectl commerce seed-demo`).
 
 Two local-only settings in `.env.example` exist for these tests: `RATE_LIMITS_DISABLED=true`
 (the API refuses to start with it outside `MISE_ENV=local`) and `TRUSTED_PROXY_HOPS=1`.

@@ -133,3 +133,28 @@ func TestIdentityConfigurationIsChecked(t *testing.T) {
 		t.Errorf("explicit data key: %q, %v", cfg.DataEncryptionKey, err)
 	}
 }
+
+func TestCommercePaymentSafety(t *testing.T) {
+	// Locally the test provider is on by default; nothing else is.
+	setEnv(t, map[string]string{"PAYMENTS_TEST_PROVIDER": ""})
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Commerce.TestProvider || cfg.Commerce.TaxMode != "none" || cfg.Commerce.DeliveryFeeMinor != 0 {
+		t.Errorf("local commerce defaults = %+v", cfg.Commerce)
+	}
+	if len(cfg.Commerce.TestProviderSecret) != 32 {
+		t.Error("the test provider has no derived webhook secret")
+	}
+	// Staging: off unless asked for.
+	setEnv(t, map[string]string{"MISE_ENV": "staging", "MAIL_DRIVER": "smtp", "PAYMENTS_TEST_PROVIDER": ""})
+	if cfg, err = Load(); err != nil || cfg.Commerce.TestProvider {
+		t.Errorf("staging test provider = %v (%v)", cfg.Commerce.TestProvider, err)
+	}
+	// Production: the test provider is refused outright.
+	setEnv(t, map[string]string{"MISE_ENV": "production", "MAIL_DRIVER": "smtp", "PAYMENTS_TEST_PROVIDER": "true"})
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "PAYMENTS_TEST_PROVIDER cannot be true in production") {
+		t.Fatalf("production with the test provider: %v", err)
+	}
+}

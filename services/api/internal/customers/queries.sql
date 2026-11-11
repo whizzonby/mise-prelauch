@@ -15,6 +15,9 @@ WHERE cu.user_id = @user_id
 -- name: GetByUserID :one
 SELECT * FROM customers WHERE user_id = @user_id;
 
+-- name: GetByID :one
+SELECT * FROM customers WHERE id = @id;
+
 -- name: GetByLeadID :one
 SELECT * FROM customers WHERE lead_id = @lead_id;
 

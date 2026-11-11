@@ -7,13 +7,14 @@ package store
 
 import (
 	"context"
+	"time"
 )
 
 const createCustomer = `-- name: CreateCustomer :one
 
 INSERT INTO customers (user_id, terms_version, terms_accepted_at)
 VALUES ($1, $2, now())
-RETURNING id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at
+RETURNING id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region
 `
 
 type CreateCustomerParams struct {
@@ -34,12 +35,26 @@ func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) 
 		&i.TermsAcceptedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Phone,
+		&i.ContactChannel,
+		&i.Language,
+		&i.DeliveryCountry,
+		&i.DeliveryRegion,
 	)
 	return i, err
 }
 
+const deleteAllergies = `-- name: DeleteAllergies :exec
+DELETE FROM customer_allergies WHERE customer_id = $1
+`
+
+func (q *Queries) DeleteAllergies(ctx context.Context, customerID string) error {
+	_, err := q.db.Exec(ctx, deleteAllergies, customerID)
+	return err
+}
+
 const getByLeadID = `-- name: GetByLeadID :one
-SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at FROM customers WHERE lead_id = $1
+SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region FROM customers WHERE lead_id = $1
 `
 
 func (q *Queries) GetByLeadID(ctx context.Context, leadID *string) (Customer, error) {
@@ -54,12 +69,17 @@ func (q *Queries) GetByLeadID(ctx context.Context, leadID *string) (Customer, er
 		&i.TermsAcceptedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Phone,
+		&i.ContactChannel,
+		&i.Language,
+		&i.DeliveryCountry,
+		&i.DeliveryRegion,
 	)
 	return i, err
 }
 
 const getByUserID = `-- name: GetByUserID :one
-SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at FROM customers WHERE user_id = $1
+SELECT id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region FROM customers WHERE user_id = $1
 `
 
 func (q *Queries) GetByUserID(ctx context.Context, userID string) (Customer, error) {
@@ -74,8 +94,153 @@ func (q *Queries) GetByUserID(ctx context.Context, userID string) (Customer, err
 		&i.TermsAcceptedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Phone,
+		&i.ContactChannel,
+		&i.Language,
+		&i.DeliveryCountry,
+		&i.DeliveryRegion,
 	)
 	return i, err
+}
+
+const getHousehold = `-- name: GetHousehold :one
+
+SELECT customer_id, name, size, adults, children, source, created_at, updated_at FROM customer_households WHERE customer_id = $1
+`
+
+// ---------------------------------------------------------------- household
+func (q *Queries) GetHousehold(ctx context.Context, customerID string) (CustomerHousehold, error) {
+	row := q.db.QueryRow(ctx, getHousehold, customerID)
+	var i CustomerHousehold
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Name,
+		&i.Size,
+		&i.Adults,
+		&i.Children,
+		&i.Source,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOnboarding = `-- name: GetOnboarding :one
+
+SELECT customer_id, step, skipped, completed_at, created_at, updated_at FROM onboarding_progress WHERE customer_id = $1
+`
+
+// ---------------------------------------------------------------- onboarding
+func (q *Queries) GetOnboarding(ctx context.Context, customerID string) (OnboardingProgress, error) {
+	row := q.db.QueryRow(ctx, getOnboarding, customerID)
+	var i OnboardingProgress
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Step,
+		&i.Skipped,
+		&i.CompletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPreferences = `-- name: GetPreferences :one
+
+SELECT customer_id, dietary, meal_interests, proteins, max_cook_minutes, other_restrictions, source, allergies_reviewed_at, created_at, updated_at FROM customer_preferences WHERE customer_id = $1
+`
+
+// ---------------------------------------------------------------- preferences
+func (q *Queries) GetPreferences(ctx context.Context, customerID string) (CustomerPreference, error) {
+	row := q.db.QueryRow(ctx, getPreferences, customerID)
+	var i CustomerPreference
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Dietary,
+		&i.MealInterests,
+		&i.Proteins,
+		&i.MaxCookMinutes,
+		&i.OtherRestrictions,
+		&i.Source,
+		&i.AllergiesReviewedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const insertAllergy = `-- name: InsertAllergy :exec
+INSERT INTO customer_allergies (customer_id, allergen, detail) VALUES ($1, $2, $3)
+`
+
+type InsertAllergyParams struct {
+	CustomerID string
+	Allergen   string
+	Detail     *string
+}
+
+func (q *Queries) InsertAllergy(ctx context.Context, arg InsertAllergyParams) error {
+	_, err := q.db.Exec(ctx, insertAllergy, arg.CustomerID, arg.Allergen, arg.Detail)
+	return err
+}
+
+const insertConsentTopicIfMissing = `-- name: InsertConsentTopicIfMissing :execrows
+INSERT INTO notification_preferences (customer_id, topic, enabled, source)
+VALUES ($1, $2, true, 'waitlist_consent')
+ON CONFLICT (customer_id, topic) DO NOTHING
+`
+
+type InsertConsentTopicIfMissingParams struct {
+	CustomerID string
+	Topic      string
+}
+
+func (q *Queries) InsertConsentTopicIfMissing(ctx context.Context, arg InsertConsentTopicIfMissingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertConsentTopicIfMissing, arg.CustomerID, arg.Topic)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertHouseholdIfMissing = `-- name: InsertHouseholdIfMissing :execrows
+INSERT INTO customer_households (customer_id, size, source)
+VALUES ($1, $2, 'waitlist')
+ON CONFLICT (customer_id) DO NOTHING
+`
+
+type InsertHouseholdIfMissingParams struct {
+	CustomerID string
+	Size       int16
+}
+
+func (q *Queries) InsertHouseholdIfMissing(ctx context.Context, arg InsertHouseholdIfMissingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertHouseholdIfMissing, arg.CustomerID, arg.Size)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const insertWaitlistPreferencesIfMissing = `-- name: InsertWaitlistPreferencesIfMissing :execrows
+INSERT INTO customer_preferences (customer_id, dietary, meal_interests, source)
+VALUES ($1, $2, $3, 'waitlist')
+ON CONFLICT (customer_id) DO NOTHING
+`
+
+type InsertWaitlistPreferencesIfMissingParams struct {
+	CustomerID    string
+	Dietary       []string
+	MealInterests []string
+}
+
+// Copies waitlist answers only into a customer who has no preferences yet.
+func (q *Queries) InsertWaitlistPreferencesIfMissing(ctx context.Context, arg InsertWaitlistPreferencesIfMissingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertWaitlistPreferencesIfMissing, arg.CustomerID, arg.Dietary, arg.MealInterests)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const linkLead = `-- name: LinkLead :execrows
@@ -97,4 +262,261 @@ func (q *Queries) LinkLead(ctx context.Context, arg LinkLeadParams) (int64, erro
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const listAllergies = `-- name: ListAllergies :many
+SELECT customer_id, allergen, detail, created_at FROM customer_allergies WHERE customer_id = $1 ORDER BY allergen
+`
+
+func (q *Queries) ListAllergies(ctx context.Context, customerID string) ([]CustomerAllergy, error) {
+	rows, err := q.db.Query(ctx, listAllergies, customerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CustomerAllergy{}
+	for rows.Next() {
+		var i CustomerAllergy
+		if err := rows.Scan(
+			&i.CustomerID,
+			&i.Allergen,
+			&i.Detail,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNotificationPreferences = `-- name: ListNotificationPreferences :many
+
+SELECT customer_id, topic, enabled, source, updated_at FROM notification_preferences WHERE customer_id = $1
+`
+
+// ---------------------------------------------------------------- notifications
+func (q *Queries) ListNotificationPreferences(ctx context.Context, customerID string) ([]NotificationPreference, error) {
+	rows, err := q.db.Query(ctx, listNotificationPreferences, customerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NotificationPreference{}
+	for rows.Next() {
+		var i NotificationPreference
+		if err := rows.Scan(
+			&i.CustomerID,
+			&i.Topic,
+			&i.Enabled,
+			&i.Source,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setNotificationPreference = `-- name: SetNotificationPreference :exec
+INSERT INTO notification_preferences (customer_id, topic, enabled, source)
+VALUES ($1, $2, $3, 'customer')
+ON CONFLICT (customer_id, topic) DO UPDATE SET
+    enabled = EXCLUDED.enabled, source = 'customer', updated_at = now()
+WHERE notification_preferences.enabled IS DISTINCT FROM EXCLUDED.enabled
+`
+
+type SetNotificationPreferenceParams struct {
+	CustomerID string
+	Topic      string
+	Enabled    bool
+}
+
+func (q *Queries) SetNotificationPreference(ctx context.Context, arg SetNotificationPreferenceParams) error {
+	_, err := q.db.Exec(ctx, setNotificationPreference, arg.CustomerID, arg.Topic, arg.Enabled)
+	return err
+}
+
+const updateProfile = `-- name: UpdateProfile :one
+
+UPDATE customers SET
+    phone = $1,
+    contact_channel = $2,
+    language = $3,
+    delivery_country = $4,
+    delivery_region = $5,
+    updated_at = now()
+WHERE id = $6
+RETURNING id, user_id, lead_id, lead_linked_at, terms_version, terms_accepted_at, created_at, updated_at, phone, contact_channel, language, delivery_country, delivery_region
+`
+
+type UpdateProfileParams struct {
+	Phone           *string
+	ContactChannel  string
+	Language        string
+	DeliveryCountry *string
+	DeliveryRegion  *string
+	ID              string
+}
+
+// ---------------------------------------------------------------- profile
+func (q *Queries) UpdateProfile(ctx context.Context, arg UpdateProfileParams) (Customer, error) {
+	row := q.db.QueryRow(ctx, updateProfile,
+		arg.Phone,
+		arg.ContactChannel,
+		arg.Language,
+		arg.DeliveryCountry,
+		arg.DeliveryRegion,
+		arg.ID,
+	)
+	var i Customer
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.LeadID,
+		&i.LeadLinkedAt,
+		&i.TermsVersion,
+		&i.TermsAcceptedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Phone,
+		&i.ContactChannel,
+		&i.Language,
+		&i.DeliveryCountry,
+		&i.DeliveryRegion,
+	)
+	return i, err
+}
+
+const upsertHousehold = `-- name: UpsertHousehold :one
+INSERT INTO customer_households (customer_id, name, size, adults, children, source)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (customer_id) DO UPDATE SET
+    name = EXCLUDED.name, size = EXCLUDED.size, adults = EXCLUDED.adults,
+    children = EXCLUDED.children, source = EXCLUDED.source, updated_at = now()
+RETURNING customer_id, name, size, adults, children, source, created_at, updated_at
+`
+
+type UpsertHouseholdParams struct {
+	CustomerID string
+	Name       *string
+	Size       int16
+	Adults     *int16
+	Children   *int16
+	Source     string
+}
+
+func (q *Queries) UpsertHousehold(ctx context.Context, arg UpsertHouseholdParams) (CustomerHousehold, error) {
+	row := q.db.QueryRow(ctx, upsertHousehold,
+		arg.CustomerID,
+		arg.Name,
+		arg.Size,
+		arg.Adults,
+		arg.Children,
+		arg.Source,
+	)
+	var i CustomerHousehold
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Name,
+		&i.Size,
+		&i.Adults,
+		&i.Children,
+		&i.Source,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const upsertOnboarding = `-- name: UpsertOnboarding :one
+INSERT INTO onboarding_progress (customer_id, step, skipped, completed_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (customer_id) DO UPDATE SET
+    step = EXCLUDED.step, skipped = EXCLUDED.skipped,
+    -- Completing is remembered: going back over a step later keeps the date.
+    completed_at = COALESCE(onboarding_progress.completed_at, EXCLUDED.completed_at),
+    updated_at = now()
+RETURNING customer_id, step, skipped, completed_at, created_at, updated_at
+`
+
+type UpsertOnboardingParams struct {
+	CustomerID  string
+	Step        string
+	Skipped     []string
+	CompletedAt *time.Time
+}
+
+func (q *Queries) UpsertOnboarding(ctx context.Context, arg UpsertOnboardingParams) (OnboardingProgress, error) {
+	row := q.db.QueryRow(ctx, upsertOnboarding,
+		arg.CustomerID,
+		arg.Step,
+		arg.Skipped,
+		arg.CompletedAt,
+	)
+	var i OnboardingProgress
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Step,
+		&i.Skipped,
+		&i.CompletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const upsertPreferences = `-- name: UpsertPreferences :one
+INSERT INTO customer_preferences (customer_id, dietary, meal_interests, proteins, max_cook_minutes, other_restrictions, source, allergies_reviewed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (customer_id) DO UPDATE SET
+    dietary = EXCLUDED.dietary, meal_interests = EXCLUDED.meal_interests, proteins = EXCLUDED.proteins,
+    max_cook_minutes = EXCLUDED.max_cook_minutes, other_restrictions = EXCLUDED.other_restrictions,
+    source = EXCLUDED.source, allergies_reviewed_at = EXCLUDED.allergies_reviewed_at, updated_at = now()
+RETURNING customer_id, dietary, meal_interests, proteins, max_cook_minutes, other_restrictions, source, allergies_reviewed_at, created_at, updated_at
+`
+
+type UpsertPreferencesParams struct {
+	CustomerID          string
+	Dietary             []string
+	MealInterests       []string
+	Proteins            []string
+	MaxCookMinutes      *int16
+	OtherRestrictions   *string
+	Source              string
+	AllergiesReviewedAt *time.Time
+}
+
+func (q *Queries) UpsertPreferences(ctx context.Context, arg UpsertPreferencesParams) (CustomerPreference, error) {
+	row := q.db.QueryRow(ctx, upsertPreferences,
+		arg.CustomerID,
+		arg.Dietary,
+		arg.MealInterests,
+		arg.Proteins,
+		arg.MaxCookMinutes,
+		arg.OtherRestrictions,
+		arg.Source,
+		arg.AllergiesReviewedAt,
+	)
+	var i CustomerPreference
+	err := row.Scan(
+		&i.CustomerID,
+		&i.Dietary,
+		&i.MealInterests,
+		&i.Proteins,
+		&i.MaxCookMinutes,
+		&i.OtherRestrictions,
+		&i.Source,
+		&i.AllergiesReviewedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

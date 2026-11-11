@@ -123,6 +123,63 @@ export function mfaComplete(state: MFAState): boolean {
   return state === "verified" || state === "not_enrolled" || state === "not_applicable";
 }
 
+// ---------- Sprint 2: the customer's records and the catalogue (generated types) ----------
+
+type S = components["schemas"];
+export type Term = S["Term"];
+export type Profile = S["Profile"];
+export type ProfileInput = S["ProfileInput"];
+export type Household = S["Household"];
+export type HouseholdInput = S["HouseholdInput"];
+export type Preferences = S["Preferences"];
+export type PreferencesUpdate = S["PreferencesUpdate"];
+export type Onboarding = S["Onboarding"];
+export type OnboardingStep = Onboarding["step"];
+export type NotificationPreferences = S["NotificationPreferences"];
+export type Address = S["Address"];
+export type AddressInput = S["AddressInput"];
+export type DeliveryAvailability = S["DeliveryAvailability"];
+export type MealCard = S["MealCard"];
+export type MealDetail = S["MealDetail"];
+export type MealPage = S["MealPage"];
+export type MealCategory = S["MealCategory"];
+export type ChefRef = S["Ref"];
+export type ChefProfile = S["ChefProfile"];
+export type Recommendations = S["Recommendations"];
+export type Reference = S["Reference"];
+export type FavoriteList = S["FavoriteList"];
+export type AdminMeal = S["AdminMeal"];
+export type AdminMealPage = S["AdminMealPage"];
+export type MealInput = S["MealInput"];
+export type NutritionInput = S["NutritionInput"];
+export type AdminCategory = S["AdminCategory"];
+export type CategoryInput = S["CategoryInput"];
+export type AdminChef = S["AdminChef"];
+export type ChefInput = S["ChefInput"];
+
+export interface MealFilter {
+  category?: string;
+  /** Dietary keys; a meal must suit every one. */
+  diet?: string[];
+  max_minutes?: number;
+  protein?: string;
+  chef?: string;
+  q?: string;
+  exclude_allergens?: string[];
+  sort?: "newest" | "quickest" | "name";
+  page?: number;
+  page_size?: number;
+}
+
+/** Query parameters for GET /meals: lists become comma-separated values. */
+export function mealQuery(filter: MealFilter): Record<string, string | number | undefined> {
+  return {
+    ...filter,
+    diet: filter.diet?.length ? filter.diet.join(",") : undefined,
+    exclude_allergens: filter.exclude_allergens?.length ? filter.exclude_allergens.join(",") : undefined,
+  };
+}
+
 // ---------- admin ----------
 
 export interface Bucket {
@@ -277,6 +334,8 @@ interface RequestOptions {
   keepalive?: boolean;
   /** Passed through to Next.js fetch on the server. */
   cache?: RequestCache;
+  /** Next.js data cache options (revalidation), on the server. */
+  next?: { revalidate?: number };
 }
 
 function toQuery(query?: object): string {
@@ -304,7 +363,8 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
         keepalive: opts.keepalive,
         cache: opts.cache,
-      },
+        ...(opts.next ? { next: opts.next } : {}),
+      } as RequestInit,
     ];
   }
 
@@ -377,6 +437,84 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<{ revoked: number }>("/me/sessions", { method: "DELETE", token, cache: "no-store" }),
     },
 
+    /** The signed-in customer's own records. Server-side only. */
+    account: {
+      profile: (token: string) => request<Profile>("/me/profile", { token, cache: "no-store" }),
+      updateProfile: (token: string, input: ProfileInput) =>
+        request<Profile>("/me/profile", { method: "PATCH", body: input, token, cache: "no-store" }),
+      changePassword: (token: string, current_password: string, new_password: string) =>
+        request<{ password_changed: boolean }>("/me/password", {
+          method: "PUT",
+          body: { current_password, new_password },
+          token,
+          cache: "no-store",
+        }),
+      requestEmailChange: (token: string, new_email: string, current_password: string) =>
+        request<{ status: "check_email" }>("/me/email", {
+          method: "POST",
+          body: { new_email, current_password },
+          token,
+          cache: "no-store",
+        }),
+      confirmEmailChange: (emailToken: string) =>
+        request<{ email_changed: boolean }>("/auth/confirm-email-change", {
+          method: "POST",
+          body: { token: emailToken },
+          cache: "no-store",
+        }),
+      household: (token: string) => request<{ household: Household | null }>("/me/household", { token, cache: "no-store" }),
+      putHousehold: (token: string, input: HouseholdInput) =>
+        request<{ household: Household }>("/me/household", { method: "PUT", body: input, token, cache: "no-store" }),
+      preferences: (token: string) => request<Preferences>("/me/preferences", { token, cache: "no-store" }),
+      putPreferences: (token: string, input: PreferencesUpdate) =>
+        request<Preferences>("/me/preferences", { method: "PUT", body: input, token, cache: "no-store" }),
+      onboarding: (token: string) => request<Onboarding>("/me/onboarding", { token, cache: "no-store" }),
+      putOnboarding: (token: string, step: OnboardingStep, skipped: string[]) =>
+        request<Onboarding>("/me/onboarding", { method: "PUT", body: { step, skipped }, token, cache: "no-store" }),
+      notifications: (token: string) =>
+        request<NotificationPreferences>("/me/notification-preferences", { token, cache: "no-store" }),
+      putNotifications: (token: string, topics: Record<string, boolean>) =>
+        request<NotificationPreferences>("/me/notification-preferences", {
+          method: "PUT",
+          body: { topics },
+          token,
+          cache: "no-store",
+        }),
+      addresses: (token: string) => request<{ items: Address[] }>("/me/addresses", { token, cache: "no-store" }),
+      createAddress: (token: string, input: AddressInput) =>
+        request<Address>("/me/addresses", { method: "POST", body: input, token, cache: "no-store" }),
+      updateAddress: (token: string, id: string, input: AddressInput) =>
+        request<Address>(`/me/addresses/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      deleteAddress: (token: string, id: string) =>
+        request<{ removed: boolean }>(`/me/addresses/${encodeURIComponent(id)}`, { method: "DELETE", token, cache: "no-store" }),
+      favorites: (token: string) => request<FavoriteList>("/me/favorites", { token, cache: "no-store" }),
+      addFavorite: (token: string, mealId: string) =>
+        request<{ meal_id: string; saved: boolean }>("/me/favorites", {
+          method: "POST",
+          body: { meal_id: mealId },
+          token,
+          cache: "no-store",
+        }),
+      removeFavorite: (token: string, mealId: string) =>
+        request<{ meal_id: string; saved: boolean }>(`/me/favorites/${encodeURIComponent(mealId)}`, {
+          method: "DELETE",
+          token,
+          cache: "no-store",
+        }),
+      recommendations: (token: string, limit = 6) =>
+        request<Recommendations>("/me/recommendations", { token, query: { limit }, cache: "no-store" }),
+    },
+
+    /** The public catalogue. Holds no personal data. */
+    catalog: {
+      meals: (filter: MealFilter = {}) => request<MealPage>("/meals", { query: mealQuery(filter), cache: "no-store" }),
+      meal: (slug: string) => request<MealDetail>(`/meals/${encodeURIComponent(slug)}`, { cache: "no-store" }),
+      categories: () => request<{ items: MealCategory[] }>("/meal-categories", { cache: "no-store" }),
+      chefs: () => request<{ items: ChefRef[] }>("/chefs", { cache: "no-store" }),
+      chef: (slug: string) => request<ChefProfile>(`/chefs/${encodeURIComponent(slug)}`, { cache: "no-store" }),
+      reference: () => request<Reference>("/reference", { next: { revalidate: 3600 } }),
+    },
+
     admin: {
       login: (email: string, password: string) =>
         request<AdminLoginResult>("/admin/auth/login", { method: "POST", body: { email, password }, cache: "no-store" }),
@@ -405,6 +543,35 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
       eraseLead: (token: string, id: string) =>
         request<{ erased: boolean }>(`/admin/leads/${encodeURIComponent(id)}`, {
           method: "DELETE",
+          token,
+          cache: "no-store",
+        }),
+      catalogMeals: (token: string, query: { status?: string; q?: string; page?: number } = {}) =>
+        request<AdminMealPage>("/admin/catalog/meals", { token, query, cache: "no-store" }),
+      catalogMeal: (token: string, id: string) =>
+        request<AdminMeal>(`/admin/catalog/meals/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createMeal: (token: string, input: MealInput) =>
+        request<AdminMeal>("/admin/catalog/meals", { method: "POST", body: input, token, cache: "no-store" }),
+      updateMeal: (token: string, id: string, input: MealInput) =>
+        request<AdminMeal>(`/admin/catalog/meals/${encodeURIComponent(id)}`, { method: "PUT", body: input, token, cache: "no-store" }),
+      setMealStatus: (token: string, id: string, action: "publish" | "unpublish") =>
+        request<AdminMeal>(`/admin/catalog/meals/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
+      setNutrition: (token: string, id: string, input: NutritionInput) =>
+        request<AdminMeal>(`/admin/catalog/meals/${encodeURIComponent(id)}/nutrition`, {
+          method: "PUT",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      catalogCategories: (token: string) =>
+        request<{ items: AdminCategory[] }>("/admin/catalog/categories", { token, cache: "no-store" }),
+      createCategory: (token: string, input: CategoryInput) =>
+        request<AdminCategory>("/admin/catalog/categories", { method: "POST", body: input, token, cache: "no-store" }),
+      catalogChefs: (token: string) => request<{ items: AdminChef[] }>("/admin/catalog/chefs", { token, cache: "no-store" }),
+      saveChef: (token: string, input: ChefInput, id?: string) =>
+        request<AdminChef>(id ? `/admin/catalog/chefs/${encodeURIComponent(id)}` : "/admin/catalog/chefs", {
+          method: id ? "PUT" : "POST",
+          body: input,
           token,
           cache: "no-store",
         }),

@@ -43,3 +43,8 @@ output "admin_url" {
 output "database_endpoint" {
   value = aws_db_instance.main.address
 }
+
+output "media_bucket" {
+  description = "Private bucket for meal and chef photographs, served at https://<domain>/media/*."
+  value       = aws_s3_bucket.media.bucket
+}

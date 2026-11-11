@@ -1,5 +1,20 @@
 # Status: what has been verified, and what has not
 
+## Sprint 2 (customer web platform): 11 November 2026
+
+Built and verified; not committed yet. Full account: `docs/SPRINT_2_REPORT.md`.
+- **Go:** 86 tests pass against PostgreSQL.
+- **Unit tests:** Vitest 38/38.
+- **Browser tests:** Playwright 31/31, the 7 new journeys three times in a row.
+- **Static checks:** lint and typecheck clean.
+- **Migrations:** 00005 runs up, down and up cleanly.
+- **Not run:** the Docker image build, GitHub Actions, and Safari, Firefox or real devices.
+- **Catalogue:** every meal shown is demo content until the real menu is supplied.
+- **Decisions applied (11 November):**
+  - Registration is open in the production and staging configuration.
+  - Delivery covers all of Trinidad and Tobago (migration 00006).
+  - The S3 media bucket is in Terraform, not applied.
+
 ## Sprint 1 (platform foundation): 11 November 2026
 
 Sprint 1 is complete and verified, **except for one open blocker**. The full account is in

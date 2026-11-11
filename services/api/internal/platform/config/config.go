@@ -58,6 +58,14 @@ type Config struct {
 	// TermsVersion is recorded against each customer at registration.
 	TermsVersion string
 
+	// CatalogDemoEnabled shows demo meals to customers and lets staff publish
+	// them. On by default in local only: demo content must never reach real
+	// customers by accident.
+	CatalogDemoEnabled bool
+	// CatalogImageHosts are https hosts meal photographs may come from, besides
+	// the customer app's own /catalog/ folder.
+	CatalogImageHosts []string
+
 	// BFFSharedKey authenticates the Next.js servers when they pass on the end
 	// user's address and browser (httpx.HeaderBFFKey). Empty disables that.
 	BFFSharedKey string
@@ -66,7 +74,7 @@ type Config struct {
 	// Optional: when unset it is derived from TokenSigningKey (see Load).
 	DataEncryptionKey []byte
 
-	// RateLimitsDisabled turns off per-IP limits so end-to-end tests can sign up
+	// RateLimitsDisabled turns off per-IP and per-account limits so end-to-end tests can sign up
 	// repeatedly. Refused outside the local environment.
 	RateLimitsDisabled bool
 }
@@ -165,6 +173,10 @@ func Load() (Config, error) {
 	if cfg.CustomerRegistrationEnabled, err = getBool("CUSTOMER_REGISTRATION_ENABLED", isLocal); err != nil {
 		errs = append(errs, err)
 	}
+	if cfg.CatalogDemoEnabled, err = getBool("CATALOG_DEMO_ENABLED", isLocal); err != nil {
+		errs = append(errs, err)
+	}
+	cfg.CatalogImageHosts = splitList(os.Getenv("CATALOG_IMAGE_HOSTS"))
 	if v := strings.TrimSpace(os.Getenv("DATA_ENCRYPTION_KEY")); v != "" {
 		key, decErr := base64.StdEncoding.DecodeString(v)
 		if decErr != nil || len(key) != 32 {

@@ -6,6 +6,8 @@ package store
 
 import (
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AdminSession struct {
@@ -49,6 +51,21 @@ type AuthToken struct {
 	ExpiresAt  time.Time
 	ConsumedAt *time.Time
 	CreatedAt  time.Time
+	NewEmail   *string
+}
+
+type ChefProfile struct {
+	ID          string
+	Slug        string
+	DisplayName string
+	RoleTitle   *string
+	Bio         string
+	ImageSrc    *string
+	ImageAlt    *string
+	Status      string
+	IsDemo      bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Customer struct {
@@ -60,6 +77,75 @@ type Customer struct {
 	TermsAcceptedAt time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Phone           *string
+	ContactChannel  string
+	Language        string
+	DeliveryCountry *string
+	DeliveryRegion  *string
+}
+
+type CustomerAddress struct {
+	ID            string
+	CustomerID    string
+	Label         *string
+	RecipientName string
+	Phone         *string
+	Line1         string
+	Line2         *string
+	Area          *string
+	City          string
+	Region        string
+	Country       string
+	Instructions  *string
+	IsDefault     bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type CustomerAllergy struct {
+	CustomerID string
+	Allergen   string
+	Detail     *string
+	CreatedAt  time.Time
+}
+
+type CustomerFavorite struct {
+	CustomerID string
+	MealID     string
+	CreatedAt  time.Time
+}
+
+type CustomerHousehold struct {
+	CustomerID string
+	Name       *string
+	Size       int16
+	Adults     *int16
+	Children   *int16
+	Source     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type CustomerPreference struct {
+	CustomerID          string
+	Dietary             []string
+	MealInterests       []string
+	Proteins            []string
+	MaxCookMinutes      *int16
+	OtherRestrictions   *string
+	Source              string
+	AllergiesReviewedAt *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type DeliveryZone struct {
+	ID        string
+	Country   string
+	Region    string
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Job struct {
@@ -134,6 +220,76 @@ type LeadPreference struct {
 	PackagingPreference *string
 }
 
+type Meal struct {
+	ID              string
+	Slug            string
+	Name            string
+	Summary         string
+	Description     string
+	CookingOverview string
+	CategoryID      string
+	ChefID          *string
+	PrepMinutes     int16
+	CookMinutes     int16
+	Servings        int16
+	Protein         *string
+	DietaryTags     []string
+	Allergens       []string
+	AllergenStatus  string
+	Status          string
+	PublishedAt     *time.Time
+	IsDemo          bool
+	Version         int32
+	CreatedBy       *string
+	UpdatedBy       *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type MealCategory struct {
+	ID          string
+	Slug        string
+	Name        string
+	Description string
+	Position    int16
+	IsDemo      bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type MealImage struct {
+	ID        string
+	MealID    string
+	Position  int16
+	Src       string
+	Alt       string
+	Width     *int32
+	Height    *int32
+	Credit    *string
+	CreatedAt time.Time
+}
+
+type MealIngredient struct {
+	MealID   string
+	Position int16
+	Name     string
+	Quantity *string
+}
+
+type MealNutrition struct {
+	MealID     string
+	Calories   int16
+	ProteinG   pgtype.Numeric
+	CarbsG     pgtype.Numeric
+	FatG       pgtype.Numeric
+	FibreG     pgtype.Numeric
+	SodiumMg   *int16
+	Status     string
+	VerifiedBy *string
+	VerifiedAt *time.Time
+	UpdatedAt  time.Time
+}
+
 type MfaTotp struct {
 	UserID           string
 	SecretCiphertext []byte
@@ -141,6 +297,23 @@ type MfaTotp struct {
 	LastUsedStep     *int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+type NotificationPreference struct {
+	CustomerID string
+	Topic      string
+	Enabled    bool
+	Source     string
+	UpdatedAt  time.Time
+}
+
+type OnboardingProgress struct {
+	CustomerID  string
+	Step        string
+	Skipped     []string
+	CompletedAt *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type PasswordCredential struct {

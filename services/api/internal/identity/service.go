@@ -39,10 +39,19 @@ const (
 	JobVerifyEmail       = "account.verify_email"
 	JobPasswordReset     = "account.password_reset"
 	JobAlreadyRegistered = "account.already_registered"
+	// Sprint 2: email and password changes made while signed in.
+	JobEmailChange       = "account.email_change"        // link, to the new address
+	JobEmailChangeNotice = "account.email_change_notice" // notice, to the current address
+	JobEmailInUse        = "account.email_in_use"        // notice, to an address that already has an account
+	JobPasswordChanged   = "account.password_changed"    // notice, to the account's address
 )
 
 type AccountJob struct {
 	UserID string `json:"user_id"`
+	// NewEmail is set for the email-change kinds: the address the person asked
+	// to move to. It is an address, not a secret; the link token is still
+	// created only when the email is sent.
+	NewEmail string `json:"new_email,omitempty"`
 }
 
 const (
@@ -838,17 +847,20 @@ type AccountEmail struct {
 	ActionURL string
 	// LinkTTL is how long ActionURL works, for the email copy. Zero if no token.
 	LinkTTL time.Duration
+	// NewEmail is the address an email change is moving to: in full in the
+	// link email to that address, masked in the notice to the old one.
+	NewEmail string
 }
 
 // PrepareAccountEmail creates the single-use token for an account email (if
 // the email needs one) and returns what to send. It returns nil when the email
 // should no longer be sent, for example because the address was verified in
 // the meantime or the account was disabled.
-func (s *Service) PrepareAccountEmail(ctx context.Context, kind, userID string) (*AccountEmail, error) {
+func (s *Service) PrepareAccountEmail(ctx context.Context, kind string, job AccountJob) (*AccountEmail, error) {
 	var out *AccountEmail
 	err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
-		u, err := q.GetUserByID(ctx, userID)
+		u, err := q.GetUserByID(ctx, job.UserID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
@@ -875,6 +887,29 @@ func (s *Service) PrepareAccountEmail(ctx context.Context, kind, userID string) 
 			email.ActionURL, email.LinkTTL = base+"/reset-password?token="+tok, resetPasswordTTL
 		case JobAlreadyRegistered:
 			email.ActionURL = base + "/sign-in"
+		case JobEmailChange:
+			address, _, ok := platformemail.Normalize(job.NewEmail)
+			if !ok {
+				return nil
+			}
+			tok, err := s.issueEmailChangeToken(ctx, q, u.ID, address)
+			if err != nil {
+				return err
+			}
+			email.To, email.NewEmail = address, address
+			email.ActionURL, email.LinkTTL = base+"/confirm-email-change?token="+tok, changeEmailTTL
+		case JobEmailChangeNotice:
+			email.NewEmail = MaskEmail(job.NewEmail)
+			email.ActionURL = base + "/profile/security"
+		case JobEmailInUse:
+			address, _, ok := platformemail.Normalize(job.NewEmail)
+			if !ok {
+				return nil
+			}
+			email.To, email.FirstName = address, ""
+			email.ActionURL = base + "/sign-in"
+		case JobPasswordChanged:
+			email.ActionURL = base + "/forgot-password"
 		default:
 			return errors.New("unknown account email kind " + kind)
 		}

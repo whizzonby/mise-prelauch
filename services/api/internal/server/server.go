@@ -8,9 +8,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"mise.tt/api/internal/addresses"
 	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/catalog"
 	"mise.tt/api/internal/customers"
+	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
+	"mise.tt/api/internal/favorites"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/platform/config"
@@ -50,6 +54,12 @@ func NewIdentityService(cfg config.Config, pool *pgxpool.Pool) (*identity.Servic
 		TermsVersion:           cfg.TermsVersion,
 		CustomerAppURL:         cfg.CustomerAppURL,
 	}), nil
+}
+
+// NewCatalogService builds the catalogue from configuration. misectl uses it
+// too, to load demo content.
+func NewCatalogService(cfg config.Config, pool *pgxpool.Pool) *catalog.Service {
+	return catalog.NewService(pool, catalog.Options{AllowDemo: cfg.CatalogDemoEnabled, ImageHosts: cfg.CatalogImageHosts})
 }
 
 // Limits are per client IP. Signup is the expensive, abusable endpoint and
@@ -110,7 +120,12 @@ func Build(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, 
 	referralHandler := &referrals.Handler{DB: pool}
 	eventHandler := &events.Handler{DB: pool, ResolveLead: leadService.Authenticate, BearerToken: leads.BearerToken}
 	identityHandler := identity.NewHandler(ids)
+	if cfg.RateLimitsDisabled {
+		identityHandler.OpenAccountLimits()
+	}
 	adminHandler := admin.NewHandler(pool, ids)
+	customerService := customers.NewService(pool, ids)
+	catalogService := NewCatalogService(cfg, pool)
 
 	mux := &recorder{mux: http.NewServeMux()}
 
@@ -137,6 +152,10 @@ func Build(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, 
 
 	identityHandler.Routes(mux, identity.Limits{Auth: limits.AdminLogin.ByIP, Token: limits.Token.ByIP})
 	adminHandler.Routes(mux)
+	(&customers.Handler{Service: customerService}).Routes(mux)
+	(&addresses.Handler{Pool: pool, Identity: ids, Customers: customerService, Delivery: delivery.Zones{DB: pool}}).Routes(mux)
+	(&catalog.Handler{Service: catalogService, Identity: ids, Tastes: customerService}).Routes(mux)
+	(&favorites.Handler{Pool: pool, Identity: ids, Customers: customerService, Catalog: catalogService}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

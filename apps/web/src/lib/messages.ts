@@ -4,6 +4,8 @@ export interface FormState {
   error?: string;
   fields?: Record<string, string>;
   done?: boolean;
+  /** Shown after a successful save, e.g. "Saved at 4:12 pm." */
+  message?: string;
 }
 
 /** Turns an API failure into what the person filling the form should read. */
@@ -26,6 +28,10 @@ export function formError(error: unknown): FormState {
         return { error: "This link is not valid or has expired. Ask for a new one." };
       case "rate_limited":
         return { error: "Too many attempts. Wait a few minutes and try again." };
+      case "email_taken":
+        return { error: "That address now belongs to another Mise account, so your email was not changed." };
+      case "too_many_addresses":
+        return { error: "You can save up to 10 addresses. Remove one to add another." };
     }
     return { error: error.message };
   }

@@ -108,6 +108,27 @@ RETURNING user_id;
 UPDATE auth_tokens SET consumed_at = now()
 WHERE user_id = @user_id AND purpose = @purpose AND consumed_at IS NULL;
 
+-- name: CreateEmailChangeToken :exec
+INSERT INTO auth_tokens (user_id, purpose, token_hash, expires_at, new_email)
+VALUES (@user_id, 'change_email', @token_hash, @expires_at, @new_email);
+
+-- name: ConsumeEmailChangeToken :one
+UPDATE auth_tokens SET consumed_at = now()
+WHERE token_hash = @token_hash AND purpose = 'change_email' AND consumed_at IS NULL AND expires_at > now()
+RETURNING user_id, new_email;
+
+-- name: PendingEmailChange :one
+-- The address an open email-change link would switch to, if there is one.
+SELECT new_email::text FROM auth_tokens
+WHERE user_id = @user_id AND purpose = 'change_email' AND consumed_at IS NULL AND expires_at > now()
+ORDER BY created_at DESC
+LIMIT 1;
+
+-- name: SetUserEmail :exec
+-- Following the change link proves the new inbox, so it counts as verified.
+UPDATE users SET email = @email, email_canonical = @email_canonical, email_verified_at = now(), updated_at = now()
+WHERE id = @id;
+
 -- ---------------------------------------------------------------- RBAC
 
 -- name: UserRoles :many

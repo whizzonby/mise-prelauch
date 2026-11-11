@@ -129,6 +129,9 @@ jobs:
         env:
           E2E_ADMIN_EMAIL: ci-admin@mise.local
           E2E_ADMIN_PASSWORD: ${{ github.run_id }}-ci-admin-password
+      - name: Load the demo meal catalogue
+        # The compose stack runs MISE_ENV=local, where demo content is allowed.
+        run: docker compose run --rm migrate /app/misectl catalog seed-demo
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

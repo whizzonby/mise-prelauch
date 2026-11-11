@@ -97,7 +97,12 @@ module "platform" {
   github_oidc_provider_arn = var.github_oidc_provider_arn
   alarm_email              = var.alarm_email
   admin_allowed_cidrs      = var.admin_allowed_cidrs
-  vpc_cidr                 = "10.20.0.0/16"
+
+  # Business decisions, 11 November 2026: customer accounts are open.
+  customer_registration_enabled = true
+  # Staging may show demo meals; production never does.
+  catalog_demo_enabled = true
+  vpc_cidr             = "10.20.0.0/16"
 
   # Staging is deliberately small: one task per service, a single-zone database.
   db_multi_az              = false

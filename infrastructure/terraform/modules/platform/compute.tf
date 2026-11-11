@@ -114,6 +114,9 @@ locals {
     # in production without it.
     { name = "ADMIN_MFA_REQUIRED", value = "true" },
     { name = "CUSTOMER_REGISTRATION_ENABLED", value = tostring(var.customer_registration_enabled) },
+    { name = "CATALOG_DEMO_ENABLED", value = tostring(var.catalog_demo_enabled) },
+    # The site itself serves /media/* from the media bucket (storage.tf).
+    { name = "CATALOG_IMAGE_HOSTS", value = join(",", distinct(concat([local.site_host], var.catalog_image_hosts))) },
     { name = "CUSTOMER_APP_URL", value = "https://app.${var.domain}" },
   ]
 

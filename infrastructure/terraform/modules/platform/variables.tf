@@ -115,3 +115,15 @@ variable "customer_registration_enabled" {
   type        = bool
   default     = false
 }
+
+variable "catalog_demo_enabled" {
+  description = "Show and allow publishing demo meals. Staging may turn it on; production must not."
+  type        = bool
+  default     = false
+}
+
+variable "catalog_image_hosts" {
+  description = "https hosts meal photographs may be served from, besides the customer app's /catalog/ folder."
+  type        = list(string)
+  default     = []
+}

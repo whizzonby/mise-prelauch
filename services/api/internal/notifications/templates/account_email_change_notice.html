@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" "Your email address is changing"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Someone signed in to your Mise account asked to move it to {{.NewEmail}}. Nothing changes until a link sent to that address is followed.</p>
+<p style="margin:0 0 16px 0;">If that was you, there is nothing to do. If it was not, change your password now: that signs out every other device and the request can no longer be confirmed by someone else signed in.</p>
+{{template "button" (dict "URL" .ActionURL "Label" "Review account security")}}
+{{template "account_footer" .}}

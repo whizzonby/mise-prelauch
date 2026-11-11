@@ -1,0 +1,11 @@
+Hi {{.FirstName}},
+
+Someone signed in to your Mise account asked to move it to {{.NewEmail}}. Nothing changes until a link sent to that address is followed.
+
+If that was you, there is nothing to do. If it was not, change your password now: that signs out every other device and the request can no longer be confirmed by someone else signed in.
+
+Review account security:
+{{.ActionURL}}
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

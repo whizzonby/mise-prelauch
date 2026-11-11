@@ -1,9 +1,10 @@
 "use client";
 
-import { Checkbox, Field, FieldError, Input, MiseButton, describedBy } from "@mise/ui";
 import { useActionState, type ReactNode } from "react";
 
 import type { FormState } from "@/lib/messages";
+
+import { CheckboxField, FormMessage, FormStateProvider, SubmitButton, TextField } from "./forms";
 
 export interface FieldSpec {
   name: string;
@@ -24,51 +25,29 @@ interface Props {
   doneMessage?: ReactNode;
 }
 
-/** A form wired to a server action, with per-field and whole-form errors. */
-export function ActionForm({ action, fields, hidden, submit, pending: pendingLabel, doneMessage }: Props) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
+/** A signed-out form (sign in, register, reset) wired to a server action. */
+export function ActionForm({ action, fields, hidden, submit, pending, doneMessage }: Props) {
+  const [state, formAction] = useActionState<FormState, FormData>(action, {});
   if (state.done && doneMessage) return <div className="mt-5">{doneMessage}</div>;
 
   return (
-    <form action={formAction} className="mt-6 grid gap-5" noValidate>
-      {Object.entries(hidden ?? {}).map(([name, value]) => (
-        <input key={name} type="hidden" name={name} value={value} />
-      ))}
-      {fields.map((f) => {
-        const error = state.fields?.[f.name];
-        if (f.type === "checkbox") {
-          return (
-            <div key={f.name}>
-              <Checkbox
-                name={f.name}
-                id={f.name}
-                label={f.label}
-                aria-invalid={error ? true : undefined}
-                aria-describedby={describedBy(f.name, { error })}
-              />
-              <FieldError id={`${f.name}-error`} message={error} />
-            </div>
-          );
-        }
-        return (
-          <Field key={f.name} id={f.name} label={f.label} hint={f.hint} error={error}>
-            <Input
-              id={f.name}
-              name={f.name}
-              type={f.type ?? "text"}
-              autoComplete={f.autoComplete}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={describedBy(f.name, { hint: f.hint, error })}
-            />
-          </Field>
-        );
-      })}
-      <p role="alert" className={state.error ? "type-body-sm font-semibold text-error" : "sr-only"}>
-        {state.error}
-      </p>
-      <MiseButton type="submit" size="lg" disabled={pending}>
-        {pending ? pendingLabel : submit}
-      </MiseButton>
-    </form>
+    <FormStateProvider value={state}>
+      <form action={formAction} className="mt-6 grid gap-5" noValidate>
+        {Object.entries(hidden ?? {}).map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
+        {fields.map((f) =>
+          f.type === "checkbox" ? (
+            <CheckboxField key={f.name} name={f.name} label={f.label} />
+          ) : (
+            <TextField key={f.name} name={f.name} label={f.label} type={f.type} autoComplete={f.autoComplete} hint={f.hint} />
+          ),
+        )}
+        <FormMessage />
+        <SubmitButton pending={pending} className="min-h-14 text-[1.0625rem]">
+          {submit}
+        </SubmitButton>
+      </form>
+    </FormStateProvider>
   );
 }

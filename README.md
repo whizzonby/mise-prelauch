@@ -62,8 +62,9 @@ MISE_ADMIN_PASSWORD='at-least-12-characters' pnpm misectl admin create -email yo
 
 In containers: `docker compose run --rm -e MISE_ADMIN_PASSWORD=… migrate /app/misectl admin create -email … -name … -role super_admin`.
 
-Staff roles: `super_admin`, `admin`, `marketing`, `operations`, `support` (plus `finance`,
-`chef`, `kitchen_staff`, `nutritionist`, `farmer`, which have no permissions yet). Roles and
+Staff roles: `super_admin`, `admin`, `marketing`, `operations`, `support`, `nutritionist`
+(enters and verifies nutrition figures), plus `finance`, `chef`, `kitchen_staff` and `farmer`,
+which have no permissions yet. Roles and
 permissions live in the database; see `docs/security/AUTHORIZATION.md`. Other operator commands:
 `misectl admin grant|revoke|reset-mfa|disable|enable|signout -email …` and `misectl doctor`.
 
@@ -86,6 +87,16 @@ Demo data for the admin dashboard (invented `@example.com` leads):
 docker compose exec -T postgres psql -U mise -d mise < infrastructure/scripts/seed-dev.sql
 ```
 
+Demo meal catalogue for the customer app: six placeholder meals, four categories and a demo
+kitchen profile, all marked as demo content. It needs `CATALOG_DEMO_ENABLED=true` (the
+default locally), and it is idempotent:
+
+```sh
+pnpm misectl catalog seed-demo
+```
+
+Real meals are added and published by staff in the admin, under Meals.
+
 ## Tests
 
 ```sh
@@ -104,6 +115,8 @@ are in `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`. First run: `pnpm --filter @mise
 It covers: visitor → signup → email verification → welcome page; invitation link → signup →
 referral credit; duplicate and invalid signups; admin sign-in → dashboard → lead → export;
 mobile navigation; reduced motion; keyboard use; automated accessibility scans; SEO essentials.
+
+The customer-platform tests also need the demo meal catalogue (`pnpm misectl catalog seed-demo`).
 
 Two local-only settings in `.env.example` exist for these tests: `RATE_LIMITS_DISABLED=true`
 (the API refuses to start with it outside `MISE_ENV=local`) and `TRUSTED_PROXY_HOPS=1`.

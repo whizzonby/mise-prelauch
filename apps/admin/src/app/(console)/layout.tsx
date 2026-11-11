@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { logout } from "@/app/actions";
 import { ConsoleNav } from "@/components/console-nav";
 import { humanize } from "@/lib/format";
-import { requireAdmin } from "@/lib/session";
+import { can, requireAdmin } from "@/lib/session";
 
 export default async function ConsoleLayout({ children }: { children: ReactNode }) {
   const { admin } = await requireAdmin();
@@ -17,7 +17,13 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
           <Wordmark />
         </Link>
 
-        <ConsoleNav />
+        <ConsoleNav
+          items={[
+            { href: "/", label: "Dashboard" },
+            { href: "/leads", label: "Leads" },
+            ...(can(admin, "catalog.read") ? [{ href: "/meals", label: "Meals" }] : []),
+          ]}
+        />
 
         <div className="flex items-center gap-4 lg:mt-auto lg:block lg:border-t lg:border-primary-foreground/25 lg:pt-5">
           <p className="hidden lg:block">

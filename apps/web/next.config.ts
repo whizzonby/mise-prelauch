@@ -16,7 +16,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  `img-src 'self' data:${(process.env.CATALOG_IMAGE_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean).map((h) => ` https://${h}`).join("")}`,
   "font-src 'self'",
   `connect-src 'self'${isDev ? " ws: http://localhost:*" : ""}`,
   "frame-ancestors 'none'",
@@ -32,6 +32,15 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   reactStrictMode: true,
   transpilePackages: ["@mise/ui", "@mise/api-client"],
+  images: {
+    // Meal photographs live in /public/catalog, or on hosts the API also
+    // accepts (CATALOG_IMAGE_HOSTS). Nothing else is optimised or proxied.
+    remotePatterns: (process.env.CATALOG_IMAGE_HOSTS ?? "")
+      .split(",")
+      .map((h) => h.trim())
+      .filter(Boolean)
+      .map((hostname) => ({ protocol: "https" as const, hostname })),
+  },
   async headers() {
     return [
       {

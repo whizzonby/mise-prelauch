@@ -55,14 +55,29 @@ export interface Session {
   customer: Customer;
 }
 
-/** The signed-in customer, or a redirect to sign in. Every protected page and action calls it. */
+/** Where the current request was going, set by src/proxy.ts on protected pages. */
+async function requestedPath(): Promise<string> {
+  try {
+    return (await headers()).get("x-mise-path") ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * The signed-in customer, or a redirect to sign in. Every protected page and
+ * action calls it. A session that has ended (expired, revoked, signed out
+ * elsewhere) is cleared and the person is sent back here after signing in.
+ */
 export const requireCustomer = cache(async (): Promise<Session> => {
   const token = await sessionToken();
-  if (!token) redirect("/sign-in");
+  const next = await requestedPath();
+  const back = next ? `&next=${encodeURIComponent(next)}` : "";
+  if (!token) redirect(`/sign-in?${back.slice(1)}`);
   try {
     return { token, customer: await api.auth.me(token) };
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) redirect("/sign-in?expired=1");
+    if (error instanceof ApiError && error.status === 401) redirect(`/sign-in?expired=1${back}`);
     throw error;
   }
 });

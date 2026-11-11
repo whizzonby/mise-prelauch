@@ -37,6 +37,24 @@ func (q *Queries) ConsumeAuthToken(ctx context.Context, arg ConsumeAuthTokenPara
 	return user_id, err
 }
 
+const consumeEmailChangeToken = `-- name: ConsumeEmailChangeToken :one
+UPDATE auth_tokens SET consumed_at = now()
+WHERE token_hash = $1 AND purpose = 'change_email' AND consumed_at IS NULL AND expires_at > now()
+RETURNING user_id, new_email
+`
+
+type ConsumeEmailChangeTokenRow struct {
+	UserID   string
+	NewEmail *string
+}
+
+func (q *Queries) ConsumeEmailChangeToken(ctx context.Context, tokenHash []byte) (ConsumeEmailChangeTokenRow, error) {
+	row := q.db.QueryRow(ctx, consumeEmailChangeToken, tokenHash)
+	var i ConsumeEmailChangeTokenRow
+	err := row.Scan(&i.UserID, &i.NewEmail)
+	return i, err
+}
+
 const createAuthToken = `-- name: CreateAuthToken :exec
 
 INSERT INTO auth_tokens (user_id, purpose, token_hash, expires_at)
@@ -57,6 +75,28 @@ func (q *Queries) CreateAuthToken(ctx context.Context, arg CreateAuthTokenParams
 		arg.Purpose,
 		arg.TokenHash,
 		arg.ExpiresAt,
+	)
+	return err
+}
+
+const createEmailChangeToken = `-- name: CreateEmailChangeToken :exec
+INSERT INTO auth_tokens (user_id, purpose, token_hash, expires_at, new_email)
+VALUES ($1, 'change_email', $2, $3, $4)
+`
+
+type CreateEmailChangeTokenParams struct {
+	UserID    string
+	TokenHash []byte
+	ExpiresAt time.Time
+	NewEmail  *string
+}
+
+func (q *Queries) CreateEmailChangeToken(ctx context.Context, arg CreateEmailChangeTokenParams) error {
+	_, err := q.db.Exec(ctx, createEmailChangeToken,
+		arg.UserID,
+		arg.TokenHash,
+		arg.ExpiresAt,
+		arg.NewEmail,
 	)
 	return err
 }
@@ -466,6 +506,21 @@ func (q *Queries) MarkEmailVerified(ctx context.Context, id string) (User, error
 	return i, err
 }
 
+const pendingEmailChange = `-- name: PendingEmailChange :one
+SELECT new_email::text FROM auth_tokens
+WHERE user_id = $1 AND purpose = 'change_email' AND consumed_at IS NULL AND expires_at > now()
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+// The address an open email-change link would switch to, if there is one.
+func (q *Queries) PendingEmailChange(ctx context.Context, userID string) (string, error) {
+	row := q.db.QueryRow(ctx, pendingEmailChange, userID)
+	var new_email string
+	err := row.Scan(&new_email)
+	return new_email, err
+}
+
 const revokeRole = `-- name: RevokeRole :execrows
 DELETE FROM user_roles
 WHERE user_id = $1 AND role_key = $2 AND scope_type IS NULL
@@ -547,6 +602,23 @@ type SetPasswordParams struct {
 
 func (q *Queries) SetPassword(ctx context.Context, arg SetPasswordParams) error {
 	_, err := q.db.Exec(ctx, setPassword, arg.UserID, arg.PasswordHash)
+	return err
+}
+
+const setUserEmail = `-- name: SetUserEmail :exec
+UPDATE users SET email = $1, email_canonical = $2, email_verified_at = now(), updated_at = now()
+WHERE id = $3
+`
+
+type SetUserEmailParams struct {
+	Email          string
+	EmailCanonical string
+	ID             string
+}
+
+// Following the change link proves the new inbox, so it counts as verified.
+func (q *Queries) SetUserEmail(ctx context.Context, arg SetUserEmailParams) error {
+	_, err := q.db.Exec(ctx, setUserEmail, arg.Email, arg.EmailCanonical, arg.ID)
 	return err
 }
 

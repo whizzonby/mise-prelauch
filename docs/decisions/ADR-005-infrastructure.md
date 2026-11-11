@@ -34,3 +34,11 @@ is live is not known from the repository.
 Unchanged from `deployment.md` (staging at idle about US$90 to 120 a month) plus about
 US$0.80 for the two new secrets. Adding the customer app later: about US$9 to 12 per
 environment per month.
+
+## Update, 11 November 2026 (Sprint 2)
+
+- **Media storage approved:** a private S3 bucket for meal and chef photographs, served
+  through the existing site distribution at `/media/*` (`storage.tf`).
+- **Cost:** estimated under US$1 a month at launch volume.
+- **Not applied yet.**
+- **No service has write access** until admin uploads are built.

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.1.0
+  version: 1.2.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -34,6 +34,10 @@ tags:
     description: Staff sign-in, MFA.
   - name: admin
     description: Back-office lead management.
+  - name: catalog
+    description: The public meal catalogue (Sprint 2).
+  - name: admin-catalog
+    description: Catalogue management for staff (Sprint 2).
 
 paths:
   /api/v1/health:
@@ -627,6 +631,860 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
 
+  # ------------------------------------------------------------ Sprint 2: account settings
+
+  /api/v1/me/password:
+    put:
+      tags: [me]
+      operationId: changePassword
+      summary: Change the password (signed in). Other sessions end; a notice is emailed.
+      description: "Rate-limited per address and per account."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePasswordInput" }
+      responses:
+        "200":
+          description: Changed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, properties: { password_changed: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/email:
+    post:
+      tags: [me]
+      operationId: requestEmailChange
+      summary: Start moving the account to a new address.
+      description: "A link goes to the new address and a notice to the current one. The answer is the same whether or not the new address already has an account."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailChangeInput" }
+      responses:
+        "202": { $ref: "#/components/responses/CheckEmail" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/confirm-email-change:
+    post:
+      tags: [auth]
+      operationId: confirmEmailChange
+      summary: Follow the link sent to the new address.
+      requestBody: { $ref: "#/components/requestBodies/Token" }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ Sprint 2: the customer's own records
+
+  /api/v1/me/profile:
+    get:
+      tags: [me]
+      operationId: getProfile
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: The profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Profile" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [me]
+      operationId: updateProfile
+      description: "Fields left out are unchanged; an empty string clears phone and the delivery area."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfileInput" }
+      responses:
+        "200":
+          description: The updated profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Profile" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/household:
+    get:
+      tags: [me]
+      operationId: getHousehold
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: The household, or null if never set.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [household], properties: { household: { oneOf: [{ $ref: "#/components/schemas/Household" }, { type: "null" }] } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [me]
+      operationId: putHousehold
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HouseholdInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [household], properties: { household: { $ref: "#/components/schemas/Household" } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/preferences:
+    get:
+      tags: [me]
+      operationId: getPreferences
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Preferences and, separately, allergies.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Preferences" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [me]
+      operationId: putPreferences
+      description: "Fields left out are unchanged. allergies replaces the list only when present; [] records no allergies."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PreferencesUpdate" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Preferences" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/onboarding:
+    get:
+      tags: [me]
+      operationId: getOnboarding
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Where the customer is in onboarding.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Onboarding" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [me]
+      operationId: putOnboarding
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OnboardingInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Onboarding" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/notification-preferences:
+    get:
+      tags: [me]
+      operationId: getNotificationPreferences
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Optional email topics; account and security email is always on.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/NotificationPreferences" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [me]
+      operationId: putNotificationPreferences
+      description: "Each change is recorded as a consent event."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/NotificationPreferences" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/addresses:
+    get:
+      tags: [me]
+      operationId: listAddresses
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Addresses, default first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/Address" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [me]
+      operationId: createAddress
+      description: "Up to 10. The first address becomes the default."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddressInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Address" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/addresses/{id}:
+    patch:
+      tags: [me]
+      operationId: updateAddress
+      description: "Another customer's address answers 404, exactly like a missing one."
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddressInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Address" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [me]
+      operationId: deleteAddress
+      description: "If it was the default, the oldest remaining address becomes the default."
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/favorites:
+    get:
+      tags: [me]
+      operationId: listFavorites
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Saved meals the customer can currently see, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FavoriteList" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [me]
+      operationId: addFavorite
+      description: "Idempotent: 201 when saved, 200 when it already was. Unpublished meals answer 404."
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FavoriteInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [meal_id, saved], properties: { meal_id: { type: string, format: uuid }, saved: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "200":
+          description: Already saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [meal_id, saved], properties: { meal_id: { type: string, format: uuid }, saved: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/favorites/{mealId}:
+    delete:
+      tags: [me]
+      operationId: removeFavorite
+      description: "Idempotent."
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: mealId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Removed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [meal_id, saved], properties: { meal_id: { type: string, format: uuid }, saved: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/recommendations:
+    get:
+      tags: [me]
+      operationId: getRecommendations
+      description: "Deterministic ranking from the customer's own preferences; each meal lists its reasons. Meals declaring an allergen the customer listed are never included."
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 24, default: 6 } }
+      responses:
+        "200":
+          description: Suggested meals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Recommendations" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ Sprint 2: public catalogue
+
+  /api/v1/meals:
+    get:
+      tags: [catalog]
+      operationId: listMeals
+      description: "Published meals only. Filters combine with AND. exclude_allergens also drops meals whose allergens are not yet declared."
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: diet, in: query, description: "Comma-separated dietary keys; a meal must suit every one.", schema: { type: string } }
+        - { name: max_minutes, in: query, description: Preparation plus cooking time, schema: { type: integer, minimum: 1, maximum: 480 } }
+        - { name: protein, in: query, schema: { type: string } }
+        - { name: chef, in: query, description: Chef slug, schema: { type: string } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: exclude_allergens, in: query, description: "Comma-separated allergen keys", schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, quickest, name], default: newest } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 48, default: 24 } }
+      responses:
+        "200":
+          description: One page of meals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/MealPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/meals/{slug}:
+    get:
+      tags: [catalog]
+      operationId: getMeal
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string, pattern: "^[a-z0-9]+(-[a-z0-9]+)*$" } }
+      responses:
+        "200":
+          description: One published meal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/MealDetail" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/meal-categories:
+    get:
+      tags: [catalog]
+      operationId: listMealCategories
+      responses:
+        "200":
+          description: Categories with their number of published meals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/MealCategory" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+
+  /api/v1/chefs:
+    get:
+      tags: [catalog]
+      operationId: listChefs
+      responses:
+        "200":
+          description: Published chef profiles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/Ref" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+
+  /api/v1/chefs/{slug}:
+    get:
+      tags: [catalog]
+      operationId: getChef
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string, pattern: "^[a-z0-9]+(-[a-z0-9]+)*$" } }
+      responses:
+        "200":
+          description: A published chef profile and their meals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ChefProfile" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/reference:
+    get:
+      tags: [catalog]
+      operationId: getReference
+      summary: Fixed value lists (dietary keys, allergens, regions, ...) with their labels.
+      responses:
+        "200":
+          description: Reference lists.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Reference" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+
+  # ------------------------------------------------------------ Sprint 2: catalogue administration
+
+  /api/v1/admin/catalog/meals:
+    get:
+      tags: [admin-catalog]
+      operationId: adminListMeals
+      description: "Permission: `catalog.read`. Every status."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [draft, published, unpublished] } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        "200":
+          description: Meals, most recently changed first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMealPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-catalog]
+      operationId: adminCreateMeal
+      description: "Permission: `catalog.manage`. Creates a draft."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MealInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/meals/{id}:
+    get:
+      tags: [admin-catalog]
+      operationId: adminGetMeal
+      description: "Permission: `catalog.read`."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The meal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-catalog]
+      operationId: adminUpdateMeal
+      description: "Permission: `catalog.manage`. Send the version you loaded; 409 version_conflict if someone saved since."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MealInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/meals/{id}/publish:
+    post:
+      tags: [admin-catalog]
+      operationId: adminPublishMeal
+      description: "Permission: `catalog.publish`. Needs a photograph; demo meals only where demo content is enabled."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The meal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/meals/{id}/unpublish:
+    post:
+      tags: [admin-catalog]
+      operationId: adminUnpublishMeal
+      description: "Permission: `catalog.publish`."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The meal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/meals/{id}/nutrition:
+    put:
+      tags: [admin-catalog]
+      operationId: adminSetNutrition
+      description: "Permission: `nutrition.verify`. Figures reach customers only when verified is true."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NutritionInput" }
+      responses:
+        "200":
+          description: The meal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminMeal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/categories:
+    get:
+      tags: [admin-catalog]
+      operationId: adminListCategories
+      description: "Permission: `catalog.read`."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Categories.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/AdminCategory" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-catalog]
+      operationId: adminCreateCategory
+      description: "Permission: `catalog.manage`."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminCategory" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/chefs:
+    get:
+      tags: [admin-catalog]
+      operationId: adminListChefs
+      description: "Permission: `catalog.read`."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Chef profiles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/AdminChef" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-catalog]
+      operationId: adminCreateChef
+      description: "Permission: `catalog.manage`; publishing also needs `catalog.publish`."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChefInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminChef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/catalog/chefs/{id}:
+    put:
+      tags: [admin-catalog]
+      operationId: adminUpdateChef
+      description: "Permission: `catalog.manage`; changing whether it is published also needs `catalog.publish`."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChefInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminChef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -936,7 +1794,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -1070,3 +1928,511 @@ components:
               properties:
                 customer_id: { type: string, format: uuid }
                 linked_at: { type: string, format: date-time }
+
+    # ---- Sprint 2: account settings
+    ChangePasswordInput:
+      type: object
+      required: [current_password, new_password]
+      additionalProperties: false
+      properties:
+        current_password: { type: string }
+        new_password: { type: string, minLength: 12 }
+    EmailChangeInput:
+      type: object
+      required: [new_email, current_password]
+      additionalProperties: false
+      properties:
+        new_email: { type: string, maxLength: 254 }
+        current_password: { type: string }
+
+    # ---- Sprint 2: the customer's own records
+    Term:
+      type: object
+      required: [key, label]
+      properties:
+        key: { type: string }
+        label: { type: string }
+    DeliveryAvailability:
+      type: string
+      enum: [unknown, available, planned, unavailable]
+      description: "unknown until delivery zones are configured. Never read as a promise of delivery."
+    Profile:
+      type: object
+      required: [email, pending_email, first_name, last_name, email_verified, phone, contact_channel, language, delivery_country, delivery_region, delivery_availability, waitlist_linked, member_since]
+      properties:
+        email: { type: string }
+        pending_email: { type: [string, "null"], description: "The address an open change link would switch to." }
+        first_name: { type: string }
+        last_name: { type: string }
+        email_verified: { type: boolean }
+        phone: { type: [string, "null"] }
+        contact_channel: { type: string, enum: [email, sms, whatsapp] }
+        language: { type: string, enum: [en] }
+        delivery_country: { type: [string, "null"] }
+        delivery_region: { type: [string, "null"] }
+        delivery_availability: { $ref: "#/components/schemas/DeliveryAvailability" }
+        waitlist_linked: { type: boolean }
+        member_since: { type: string, format: date-time }
+    ProfileInput:
+      type: object
+      additionalProperties: false
+      properties:
+        first_name: { type: string, maxLength: 80 }
+        last_name: { type: string, maxLength: 80 }
+        phone: { type: string, maxLength: 20 }
+        contact_channel: { type: string, enum: [email, sms, whatsapp] }
+        language: { type: string, enum: [en] }
+        delivery_country: { type: string }
+        delivery_region: { type: string }
+    Household:
+      type: object
+      required: [name, size, adults, children, source, updated_at]
+      properties:
+        name: { type: [string, "null"] }
+        size: { type: integer, minimum: 1, maximum: 20 }
+        adults: { type: [integer, "null"] }
+        children: { type: [integer, "null"] }
+        source: { type: string, enum: [customer, waitlist] }
+        updated_at: { type: [string, "null"], format: date-time }
+    HouseholdInput:
+      type: object
+      required: [size]
+      additionalProperties: false
+      properties:
+        name: { type: [string, "null"], maxLength: 60 }
+        size: { type: integer, minimum: 1, maximum: 20 }
+        adults: { type: [integer, "null"], minimum: 1, maximum: 20 }
+        children: { type: [integer, "null"], minimum: 0, maximum: 19 }
+    Allergy:
+      type: object
+      required: [allergen, label, detail]
+      properties:
+        allergen: { type: string }
+        label: { type: string }
+        detail: { type: [string, "null"] }
+    Preferences:
+      type: object
+      required: [dietary, meal_interests, proteins, max_cook_minutes, other_restrictions, source, allergies, allergies_reviewed_at, updated_at]
+      properties:
+        dietary: { type: array, items: { type: string } }
+        meal_interests: { type: array, items: { type: string } }
+        proteins: { type: array, items: { type: string } }
+        max_cook_minutes: { type: [integer, "null"] }
+        other_restrictions: { type: [string, "null"] }
+        source: { type: string, enum: [customer, waitlist] }
+        allergies: { type: array, items: { $ref: "#/components/schemas/Allergy" } }
+        allergies_reviewed_at: { type: [string, "null"], format: date-time, description: "null: never answered (not the same as no allergies)." }
+        updated_at: { type: [string, "null"], format: date-time }
+    PreferencesUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        dietary: { type: array, items: { type: string }, description: "Keys from /reference, or [\"no-preference\"]." }
+        meal_interests: { type: array, items: { type: string } }
+        proteins: { type: array, items: { type: string } }
+        max_cook_minutes: { type: integer, description: "0 removes the limit; otherwise 10 to 240." }
+        other_restrictions: { type: string, maxLength: 300 }
+        allergies:
+          type: array
+          items:
+            type: object
+            required: [allergen]
+            additionalProperties: false
+            properties:
+              allergen: { type: string }
+              detail: { type: [string, "null"], maxLength: 200 }
+    Onboarding:
+      type: object
+      required: [step, skipped, completed_at, steps]
+      properties:
+        step: { type: string, enum: [welcome, household, interests, dietary, allergies, location, complete] }
+        skipped: { type: array, items: { type: string } }
+        completed_at: { type: [string, "null"], format: date-time }
+        steps: { type: array, items: { type: string } }
+    OnboardingInput:
+      type: object
+      required: [step]
+      additionalProperties: false
+      properties:
+        step: { type: string, enum: [welcome, household, interests, dietary, allergies, location, complete] }
+        skipped: { type: array, items: { type: string, enum: [household, interests, dietary, allergies, location] } }
+    Topic:
+      type: object
+      required: [topic, label, enabled, source, updated_at]
+      properties:
+        topic: { type: string }
+        label: { type: string }
+        enabled: { type: boolean }
+        source: { type: [string, "null"], enum: [customer, waitlist_consent, null] }
+        updated_at: { type: [string, "null"], format: date-time }
+    NotificationPreferences:
+      type: object
+      required: [account_security, topics, upcoming]
+      properties:
+        account_security:
+          type: object
+          required: [enabled, required]
+          properties:
+            enabled: { type: boolean }
+            required: { type: boolean }
+        topics: { type: array, items: { $ref: "#/components/schemas/Topic" } }
+        upcoming: { type: array, items: { $ref: "#/components/schemas/Term" } }
+    NotificationInput:
+      type: object
+      required: [topics]
+      additionalProperties: false
+      properties:
+        topics: { type: object, additionalProperties: { type: boolean } }
+    Address:
+      type: object
+      required: [id, label, recipient_name, phone, line1, line2, area, city, region, region_label, country, instructions, is_default, delivery_availability, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: [string, "null"] }
+        recipient_name: { type: string }
+        phone: { type: [string, "null"] }
+        line1: { type: string }
+        line2: { type: [string, "null"] }
+        area: { type: [string, "null"] }
+        city: { type: string }
+        region: { type: string }
+        region_label: { type: string }
+        country: { type: string }
+        instructions: { type: [string, "null"] }
+        is_default: { type: boolean }
+        delivery_availability: { $ref: "#/components/schemas/DeliveryAvailability" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    AddressInput:
+      type: object
+      additionalProperties: false
+      description: "On create, recipient_name, line1, city and region are required. On update, fields left out keep their value."
+      properties:
+        label: { type: string, maxLength: 40 }
+        recipient_name: { type: string, maxLength: 120 }
+        phone: { type: string, maxLength: 20 }
+        line1: { type: string, maxLength: 120 }
+        line2: { type: string, maxLength: 120 }
+        area: { type: string, maxLength: 80 }
+        city: { type: string, maxLength: 80 }
+        region: { type: string }
+        country: { type: string, enum: [TT] }
+        instructions: { type: string, maxLength: 300 }
+        is_default: { type: boolean }
+    FavoriteInput:
+      type: object
+      required: [meal_id]
+      additionalProperties: false
+      properties:
+        meal_id: { type: string, format: uuid }
+    FavoriteList:
+      type: object
+      required: [items, meal_ids]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/MealCard" } }
+        meal_ids: { type: array, items: { type: string, format: uuid } }
+
+    # ---- Sprint 2: catalogue
+    Ref:
+      type: object
+      required: [slug, name]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+    Image:
+      type: object
+      required: [src, alt, width, height]
+      properties:
+        src: { type: string }
+        alt: { type: string }
+        width: { type: [integer, "null"] }
+        height: { type: [integer, "null"] }
+        credit: { type: [string, "null"] }
+    AllergenInfo:
+      type: object
+      required: [status, contains, notice]
+      description: "What the meal is declared to contain. Never a statement that it is free of anything."
+      properties:
+        status: { type: string, enum: [declared, unconfirmed] }
+        contains: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        notice: { type: string }
+    NutritionSummary:
+      type: object
+      required: [calories, protein_g]
+      properties:
+        calories: { type: integer }
+        protein_g: { type: number }
+    MealCard:
+      type: object
+      required: [id, slug, name, summary, category, chef, prep_minutes, cook_minutes, total_minutes, servings, protein, dietary, allergens, image, nutrition, is_demo]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        summary: { type: string }
+        category: { $ref: "#/components/schemas/Ref" }
+        chef: { oneOf: [{ $ref: "#/components/schemas/Ref" }, { type: "null" }] }
+        prep_minutes: { type: integer }
+        cook_minutes: { type: integer }
+        total_minutes: { type: integer }
+        servings: { type: integer }
+        protein: { oneOf: [{ $ref: "#/components/schemas/Term" }, { type: "null" }] }
+        dietary: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        allergens: { $ref: "#/components/schemas/AllergenInfo" }
+        image: { oneOf: [{ $ref: "#/components/schemas/Image" }, { type: "null" }] }
+        nutrition: { oneOf: [{ $ref: "#/components/schemas/NutritionSummary" }, { type: "null" }], description: "Verified figures only." }
+        is_demo: { type: boolean }
+    MealPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/MealCard" } }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    Nutrition:
+      type: object
+      required: [calories, protein_g, carbs_g, fat_g, fibre_g, sodium_mg, verified_at]
+      properties:
+        calories: { type: integer }
+        protein_g: { type: number }
+        carbs_g: { type: number }
+        fat_g: { type: number }
+        fibre_g: { type: [number, "null"] }
+        sodium_mg: { type: [integer, "null"] }
+        verified_at: { type: [string, "null"], format: date-time }
+    ChefSummary:
+      type: object
+      required: [slug, name, role_title, bio, image]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        role_title: { type: [string, "null"] }
+        bio: { type: string }
+        image: { oneOf: [{ $ref: "#/components/schemas/Image" }, { type: "null" }] }
+    MealDetail:
+      allOf:
+        - $ref: "#/components/schemas/MealCard"
+        - type: object
+          required: [description, cooking_overview, images, ingredients, nutrition_detail, chef_detail, published_at]
+          properties:
+            description: { type: string }
+            cooking_overview: { type: string }
+            images: { type: array, items: { $ref: "#/components/schemas/Image" } }
+            ingredients:
+              type: array
+              items:
+                type: object
+                required: [name, quantity]
+                properties:
+                  name: { type: string }
+                  quantity: { type: [string, "null"] }
+            nutrition_detail: { oneOf: [{ $ref: "#/components/schemas/Nutrition" }, { type: "null" }] }
+            chef_detail: { oneOf: [{ $ref: "#/components/schemas/ChefSummary" }, { type: "null" }] }
+            published_at: { type: [string, "null"], format: date-time }
+    MealCategory:
+      type: object
+      required: [slug, name, description, meal_count]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        meal_count: { type: integer }
+    ChefProfile:
+      allOf:
+        - $ref: "#/components/schemas/ChefSummary"
+        - type: object
+          required: [is_demo, meals]
+          properties:
+            is_demo: { type: boolean }
+            meals: { type: array, items: { $ref: "#/components/schemas/MealCard" } }
+    Recommendations:
+      type: object
+      required: [items, personalised, notice]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [meal, reasons]
+            properties:
+              meal: { $ref: "#/components/schemas/MealCard" }
+              reasons: { type: array, items: { type: string } }
+        personalised: { type: boolean }
+        notice: { type: string }
+    Reference:
+      type: object
+      required: [dietary, allergens, meal_allergens, proteins, meal_interests, countries, regions, topics, cross_contact_notice]
+      properties:
+        dietary: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        allergens: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        meal_allergens: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        proteins: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        meal_interests: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        countries: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        regions: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        topics: { type: array, items: { $ref: "#/components/schemas/Term" } }
+        cross_contact_notice: { type: string }
+
+    # ---- Sprint 2: catalogue administration
+    ImageInput:
+      type: object
+      required: [src, alt]
+      properties:
+        src: { type: string, description: "/catalog/... in the customer app, or https on an approved host" }
+        alt: { type: string, maxLength: 200 }
+        width: { type: [integer, "null"] }
+        height: { type: [integer, "null"] }
+        credit: { type: [string, "null"] }
+    IngredientInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        quantity: { type: [string, "null"], maxLength: 60 }
+    MealInput:
+      type: object
+      required: [name, summary, category_id, prep_minutes, cook_minutes, servings]
+      additionalProperties: false
+      properties:
+        slug: { type: string, description: "From the name when empty." }
+        name: { type: string, maxLength: 100 }
+        summary: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 3000 }
+        cooking_overview: { type: string, maxLength: 3000 }
+        category_id: { type: string, format: uuid }
+        chef_id: { type: [string, "null"], format: uuid }
+        prep_minutes: { type: integer, minimum: 0, maximum: 240 }
+        cook_minutes: { type: integer, minimum: 0, maximum: 480 }
+        servings: { type: integer, minimum: 1, maximum: 12 }
+        protein: { type: [string, "null"] }
+        dietary_tags: { type: array, items: { type: string } }
+        allergens: { type: array, items: { type: string } }
+        allergen_status: { type: string, enum: [unconfirmed, declared] }
+        images: { type: array, maxItems: 12, items: { $ref: "#/components/schemas/ImageInput" } }
+        ingredients: { type: array, maxItems: 60, items: { $ref: "#/components/schemas/IngredientInput" } }
+        is_demo: { type: boolean }
+        version: { type: integer, description: "Required on update." }
+    NutritionInput:
+      type: object
+      required: [calories, protein_g, carbs_g, fat_g, verified]
+      additionalProperties: false
+      properties:
+        calories: { type: integer, minimum: 0, maximum: 5000 }
+        protein_g: { type: number }
+        carbs_g: { type: number }
+        fat_g: { type: number }
+        fibre_g: { type: [number, "null"] }
+        sodium_mg: { type: [integer, "null"] }
+        verified: { type: boolean }
+    AdminNutrition:
+      type: object
+      required: [calories, protein_g, carbs_g, fat_g, fibre_g, sodium_mg, status, verified_at]
+      properties:
+        calories: { type: integer }
+        protein_g: { type: number }
+        carbs_g: { type: number }
+        fat_g: { type: number }
+        fibre_g: { type: [number, "null"] }
+        sodium_mg: { type: [integer, "null"] }
+        status: { type: string, enum: [pending, verified] }
+        verified_at: { type: [string, "null"], format: date-time }
+    AdminMeal:
+      type: object
+      required: [id, slug, name, summary, description, cooking_overview, category_id, chef_id, prep_minutes, cook_minutes, servings, protein, dietary_tags, allergens, allergen_status, status, published_at, is_demo, version, images, ingredients, nutrition, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        summary: { type: string }
+        description: { type: string }
+        cooking_overview: { type: string }
+        category_id: { type: string, format: uuid }
+        chef_id: { type: [string, "null"], format: uuid }
+        prep_minutes: { type: integer }
+        cook_minutes: { type: integer }
+        servings: { type: integer }
+        protein: { type: [string, "null"] }
+        dietary_tags: { type: array, items: { type: string } }
+        allergens: { type: array, items: { type: string } }
+        allergen_status: { type: string, enum: [unconfirmed, declared] }
+        status: { type: string, enum: [draft, published, unpublished] }
+        published_at: { type: [string, "null"], format: date-time }
+        is_demo: { type: boolean }
+        version: { type: integer }
+        images: { type: array, items: { $ref: "#/components/schemas/ImageInput" } }
+        ingredients: { type: array, items: { $ref: "#/components/schemas/IngredientInput" } }
+        nutrition: { oneOf: [{ $ref: "#/components/schemas/AdminNutrition" }, { type: "null" }] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    AdminMealPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, slug, name, status, is_demo, category_name, chef_name, allergen_status, nutrition_status, published_at, updated_at]
+            properties:
+              id: { type: string, format: uuid }
+              slug: { type: string }
+              name: { type: string }
+              status: { type: string, enum: [draft, published, unpublished] }
+              is_demo: { type: boolean }
+              category_name: { type: string }
+              chef_name: { type: [string, "null"] }
+              allergen_status: { type: string, enum: [unconfirmed, declared] }
+              nutrition_status: { type: [string, "null"], enum: [pending, verified, null] }
+              published_at: { type: [string, "null"], format: date-time }
+              updated_at: { type: string, format: date-time }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    AdminCategory:
+      type: object
+      required: [id, slug, name, description, position, is_demo]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        position: { type: integer }
+        is_demo: { type: boolean }
+    CategoryInput:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        slug: { type: string }
+        name: { type: string, maxLength: 60 }
+        description: { type: string, maxLength: 300 }
+        position: { type: integer, minimum: 0, maximum: 1000 }
+        is_demo: { type: boolean }
+    AdminChef:
+      type: object
+      required: [id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        display_name: { type: string }
+        role_title: { type: [string, "null"] }
+        bio: { type: string }
+        image_src: { type: [string, "null"] }
+        image_alt: { type: [string, "null"] }
+        status: { type: string, enum: [draft, published, unpublished] }
+        is_demo: { type: boolean }
+        updated_at: { type: string, format: date-time }
+    ChefInput:
+      type: object
+      required: [display_name]
+      additionalProperties: false
+      properties:
+        slug: { type: string }
+        display_name: { type: string, maxLength: 80 }
+        role_title: { type: [string, "null"], maxLength: 80 }
+        bio: { type: string, maxLength: 2000 }
+        image_src: { type: [string, "null"] }
+        image_alt: { type: [string, "null"] }
+        status: { type: string, enum: [draft, published, unpublished] }
+        is_demo: { type: boolean }

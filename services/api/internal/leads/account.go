@@ -3,6 +3,9 @@ package leads
 import (
 	"context"
 	"encoding/json"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
 
 	"mise.tt/api/internal/platform/db"
 )
@@ -32,4 +35,38 @@ func RecordEvent(ctx context.Context, q db.Querier, leadID, eventType string, me
 	_, err = q.Exec(ctx, `INSERT INTO lead_events (lead_id, event_type, metadata) VALUES ($1, $2, $3::jsonb)`,
 		leadID, eventType, string(body))
 	return err
+}
+
+// Importable is what a linked customer account may carry over from its lead:
+// answers the person gave on the waitlist, and whether their launch-email
+// consent still stands. Read-only; the lead is not changed.
+type Importable struct {
+	DietaryPreferences []string
+	MealInterests      []string
+	HouseholdSize      *int16
+	// ConsentActive is true when the lead consented to launch email and has
+	// not unsubscribed since.
+	ConsentActive bool
+}
+
+// ImportableFor returns the carry-over answers of a lead, or nil if it is gone.
+func ImportableFor(ctx context.Context, q db.Querier, leadID string) (*Importable, error) {
+	var (
+		out    Importable
+		status Status
+	)
+	err := q.QueryRow(ctx, `
+		SELECT l.status, p.household_size,
+		       coalesce(p.dietary_preferences, '{}'), coalesce(p.meal_interests, '{}')
+		FROM leads l
+		LEFT JOIN lead_preferences p ON p.lead_id = l.id
+		WHERE l.id = $1`, leadID).Scan(&status, &out.HouseholdSize, &out.DietaryPreferences, &out.MealInterests)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	out.ConsentActive = status != StatusUnsubscribed && status != StatusBlocked
+	return &out, nil
 }

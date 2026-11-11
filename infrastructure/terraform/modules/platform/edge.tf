@@ -180,6 +180,13 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
+  # Meal and chef photographs, from the private media bucket (storage.tf).
+  origin {
+    origin_id                = "media"
+    domain_name              = aws_s3_bucket.media.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.media.id
+  }
+
   # Pages: cached for as long as Next.js says (static pages revalidate; personal pages are not cached).
   default_cache_behavior {
     target_origin_id         = "marketing"
@@ -195,6 +202,16 @@ resource "aws_cloudfront_distribution" "site" {
   ordered_cache_behavior {
     path_pattern           = "/_next/static/*"
     target_origin_id       = "marketing"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = true
+    cache_policy_id        = data.aws_cloudfront_cache_policy.optimized.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/media/*"
+    target_origin_id       = "media"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]

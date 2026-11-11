@@ -16,12 +16,18 @@ const (
 	PermLeadsErase    Permission = "leads.erase"
 	PermUsersRead     Permission = "users.read"
 	PermUsersManage   Permission = "users.manage"
+	// Sprint 2: the customer-facing catalogue.
+	PermCatalogRead     Permission = "catalog.read"
+	PermCatalogManage   Permission = "catalog.manage"
+	PermCatalogPublish  Permission = "catalog.publish"
+	PermNutritionVerify Permission = "nutrition.verify"
 )
 
 // AllPermissions lists every permission the code checks.
 var AllPermissions = []Permission{
 	PermAdminAccess, PermAnalyticsView, PermLeadsRead, PermLeadsUpdate,
 	PermLeadsExport, PermLeadsErase, PermUsersRead, PermUsersManage,
+	PermCatalogRead, PermCatalogManage, PermCatalogPublish, PermNutritionVerify,
 }
 
 // RoleCustomer is the role every registered customer holds.

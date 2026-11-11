@@ -1,0 +1,10 @@
+Hi {{.FirstName}},
+
+You asked to use {{.NewEmail}} for your Mise account. Confirm it here and we will send everything to this address from now on:
+
+{{.ActionURL}}
+
+The link works once, for {{.LinkTTL}}. Until you follow it, your account keeps its current address. If you did not ask for this, ignore this email.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

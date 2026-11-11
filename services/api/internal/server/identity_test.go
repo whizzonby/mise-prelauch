@@ -647,9 +647,19 @@ func TestMigrationCopiesPrelaunchAdmins(t *testing.T) {
 		t.Error("migrated admin's password no longer verifies")
 	}
 
-	// Rolling back removes only what 00004 added.
-	if err := db.MigrateDown(ctx, pool); err != nil {
-		t.Fatalf("migrate down: %v", err)
+	// Rolling back to the pre-launch schema (00003) removes only what 00004
+	// and later added.
+	for {
+		v, err := db.MigrationVersion(ctx, pool)
+		if err != nil {
+			t.Fatalf("migration version: %v", err)
+		}
+		if v <= 3 {
+			break
+		}
+		if err := db.MigrateDown(ctx, pool); err != nil {
+			t.Fatalf("migrate down from %d: %v", v, err)
+		}
 	}
 	if n := count(`SELECT count(*) FROM admin_users`); n != 3 {
 		t.Errorf("admin_users after rollback = %d, want 3", n)

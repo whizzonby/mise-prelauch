@@ -1,0 +1,11 @@
+Hello,
+
+Someone asked to move another Mise account to this address, but this address already has its own Mise account, so nothing was changed.
+
+Sign in:
+{{.ActionURL}}
+
+If that was not you, you can ignore this email.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

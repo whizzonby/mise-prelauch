@@ -97,7 +97,10 @@ module "platform" {
   github_oidc_provider_arn = var.github_oidc_provider_arn
   alarm_email              = var.alarm_email
   admin_allowed_cidrs      = var.admin_allowed_cidrs
-  vpc_cidr                 = "10.10.0.0/16"
+
+  # Business decisions, 11 November 2026: customer accounts are open.
+  customer_registration_enabled = true
+  vpc_cidr                      = "10.10.0.0/16"
 
   db_multi_az              = true
   db_backup_retention_days = 14

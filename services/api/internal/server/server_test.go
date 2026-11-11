@@ -101,7 +101,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		t.Fatalf("migrate: %v", err)
 	}
 	// Roles and permissions are reference data seeded by migrations; they stay.
-	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users RESTART IDENTITY CASCADE`); err != nil {
+	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 

@@ -100,6 +100,9 @@ type Handler struct {
 	// one inbox with reset emails, whatever address the requests come from.
 	loginByEmail *ratelimit.Limiter
 	resetByEmail *ratelimit.Limiter
+	// changeByUser limits password-checked account changes (new password, new
+	// email) per account, so a stolen session cannot guess the password fast.
+	changeByUser *ratelimit.Limiter
 }
 
 func NewHandler(s *Service) *Handler {
@@ -107,7 +110,16 @@ func NewHandler(s *Service) *Handler {
 		Service:      s,
 		loginByEmail: ratelimit.New(10, 15*time.Minute, 5),
 		resetByEmail: ratelimit.New(3, time.Hour, 3),
+		changeByUser: ratelimit.New(10, 15*time.Minute, 5),
 	}
+}
+
+// OpenAccountLimits lifts the per-account limits, for automated test runs.
+// The server calls it only when RATE_LIMITS_DISABLED is set, which config
+// refuses outside MISE_ENV=local.
+func (h *Handler) OpenAccountLimits() {
+	open := func() *ratelimit.Limiter { return ratelimit.New(1_000_000, time.Minute, 1_000_000) }
+	h.loginByEmail, h.resetByEmail, h.changeByUser = open(), open(), open()
 }
 
 // Routes registers the customer account endpoints and the admin sign-in
@@ -125,6 +137,9 @@ func (h *Handler) Routes(mux httpx.Router, l Limits) {
 	mux.Handle("GET /api/v1/me/sessions", s.RequireCustomer(h.listSessions))
 	mux.Handle("DELETE /api/v1/me/sessions", s.RequireCustomer(h.revokeOtherSessions))
 	mux.Handle("DELETE /api/v1/me/sessions/{id}", s.RequireCustomer(h.revokeSession))
+	mux.Handle("PUT /api/v1/me/password", l.Auth(s.RequireCustomer(h.changePassword)))
+	mux.Handle("POST /api/v1/me/email", l.Auth(s.RequireCustomer(h.requestEmailChange)))
+	mux.Handle("POST /api/v1/auth/confirm-email-change", l.Token(http.HandlerFunc(h.confirmEmailChange)))
 
 	// Admin sign-in. The URLs are the pre-launch ones; MFA is new.
 	mux.Handle("POST /api/v1/admin/auth/login", l.Auth(http.HandlerFunc(h.adminLogin)))
@@ -275,6 +290,63 @@ func (h *Handler) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, r, http.StatusOK, map[string]bool{"password_reset": true})
+}
+
+func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := httpx.Decode(w, r, &in, maxBody); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	p := PrincipalFrom(r.Context())
+	if !h.changeByUser.Allow(p.UserID) {
+		httpx.Fail(w, r, httpx.ErrRateLimited)
+		return
+	}
+	if err := h.Service.ChangePassword(r.Context(), p, in.CurrentPassword, in.NewPassword); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, map[string]bool{"password_changed": true})
+}
+
+func (h *Handler) requestEmailChange(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		NewEmail        string `json:"new_email"`
+		CurrentPassword string `json:"current_password"`
+	}
+	if err := httpx.Decode(w, r, &in, maxBody); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	p := PrincipalFrom(r.Context())
+	if !h.changeByUser.Allow(p.UserID) {
+		httpx.Fail(w, r, httpx.ErrRateLimited)
+		return
+	}
+	if err := h.Service.RequestEmailChange(r.Context(), p, in.NewEmail, in.CurrentPassword); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusAccepted, map[string]string{"status": "check_email"})
+}
+
+func (h *Handler) confirmEmailChange(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Token string `json:"token"`
+	}
+	if err := httpx.Decode(w, r, &in, maxBody); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	if err := h.Service.ConfirmEmailChange(r.Context(), in.Token); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, map[string]bool{"email_changed": true})
 }
 
 func (h *Handler) customerMe(w http.ResponseWriter, r *http.Request) {

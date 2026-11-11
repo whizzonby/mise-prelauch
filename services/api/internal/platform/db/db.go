@@ -114,3 +114,16 @@ func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64) error {
 	defer sqlDB.Close()
 	return goose.UpToContext(ctx, sqlDB, ".", version)
 }
+
+// IsInvalidText reports a value PostgreSQL could not parse for its column
+// type, such as a malformed uuid (SQLSTATE 22P02).
+func IsInvalidText(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "22P02"
+}
+
+// IsForeignKeyViolation reports a reference to a row that does not exist (23503).
+func IsForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
+}

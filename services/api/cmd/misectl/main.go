@@ -3,6 +3,7 @@
 //	misectl migrate up
 //	misectl migrate status
 //	misectl migrate down                       (local only)
+//	misectl catalog seed-demo                  (needs CATALOG_DEMO_ENABLED)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -43,7 +44,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -83,6 +84,17 @@ func run(args []string) error {
 			return errors.New("migrate down is only allowed when MISE_ENV=local")
 		}
 		return db.MigrateDown(ctx, pool)
+
+	case "catalog seed-demo":
+		// Loads clearly marked demo meals, categories and a demo kitchen
+		// profile, and publishes them. Refused unless CATALOG_DEMO_ENABLED is
+		// on, so it cannot put placeholder food in front of real customers.
+		n, err := server.NewCatalogService(cfg, pool).SeedDemo(ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("demo catalogue ready (%d new items)\n", n)
+		return nil
 
 	case "doctor ":
 		ids, err := server.NewIdentityService(cfg, pool)

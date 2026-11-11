@@ -4,12 +4,13 @@ import { cx } from "@mise/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
-  { href: "/", label: "Dashboard" },
-  { href: "/leads", label: "Leads" },
-];
+export interface NavItem {
+  href: string;
+  label: string;
+}
 
-export function ConsoleNav() {
+/** The sections this admin may open; the layout decides from their permissions. */
+export function ConsoleNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Admin">

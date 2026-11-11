@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 
 import { formError, type FormState } from "@/lib/messages";
-import { api, clearSession, requireCustomer, sessionToken, storeSession } from "@/lib/session";
+import { safeNext } from "@/lib/safe-redirect";
+import { api, clearSession, sessionToken, storeSession } from "@/lib/session";
 
 const text = (form: FormData, key: string) => String(form.get(key) ?? "");
 
@@ -11,13 +12,19 @@ export async function signIn(_previous: FormState, form: FormData): Promise<Form
   const email = text(form, "email").trim();
   const password = text(form, "password");
   if (!email || !password) return { error: "Enter your email and password." };
+  const requested = text(form, "next");
+  let destination = safeNext(requested);
   try {
     const result = await api.auth.login(email, password);
     await storeSession(result.token, result.expires_in);
+    // Someone who has not set up their kitchen yet starts there, unless they
+    // followed a link to a particular page.
+    const onboarding = requested ? null : await api.account.onboarding(result.token).catch(() => null);
+    if (onboarding && !onboarding.completed_at && onboarding.step === "welcome") destination = "/onboarding";
   } catch (error) {
     return formError(error);
   }
-  redirect("/");
+  redirect(destination);
 }
 
 export async function register(_previous: FormState, form: FormData): Promise<FormState> {
@@ -70,8 +77,11 @@ export async function signOut(): Promise<void> {
   redirect("/sign-in");
 }
 
-export async function signOutEverywhereElse(): Promise<void> {
-  const { token } = await requireCustomer();
-  await api.auth.revokeOtherSessions(token);
-  redirect("/?signed_out_elsewhere=1");
+export async function confirmEmailChange(_previous: FormState, form: FormData): Promise<FormState> {
+  try {
+    await api.account.confirmEmailChange(text(form, "token"));
+  } catch (error) {
+    return formError(error);
+  }
+  return { done: true };
 }

@@ -43,7 +43,10 @@ test("a visitor registers, confirms their email, signs in and out", async ({ pag
   await confirmFromEmail(page, request, email);
 
   await signIn(page, email);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome, Kavita.");
+  // A new customer starts by setting up their kitchen.
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome to Mise, Kavita.");
+  await page.goto(`${urls.web}/profile/security`);
   await expect(page.getByText("(this device)")).toBeVisible();
 
   // The session lives in an httpOnly cookie; nothing is in browser storage.
@@ -86,7 +89,7 @@ test("a forgotten password is reset from the email link", async ({ page, request
   await expect(page.getByText("Your password is changed")).toBeVisible();
 
   await signIn(page, email, "callaloo on a sunday 99");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome, Kavita.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Welcome to Mise, Kavita.");
 });
 
 test("a waitlist lead who registers is linked to their account in the admin", async ({ page, request }) => {

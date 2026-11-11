@@ -498,6 +498,470 @@ export interface paths {
         patch: operations["adminSetLeadStatus"];
         trace?: never;
     };
+    "/api/v1/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the password (signed in). Other sessions end; a notice is emailed.
+         * @description Rate-limited per address and per account.
+         */
+        put: operations["changePassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start moving the account to a new address.
+         * @description A link goes to the new address and a notice to the current one. The answer is the same whether or not the new address already has an account.
+         */
+        post: operations["requestEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/confirm-email-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Follow the link sent to the new address. */
+        post: operations["confirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Fields left out are unchanged; an empty string clears phone and the delivery area. */
+        patch: operations["updateProfile"];
+        trace?: never;
+    };
+    "/api/v1/me/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getHousehold"];
+        put: operations["putHousehold"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPreferences"];
+        /** @description Fields left out are unchanged. allergies replaces the list only when present; [] records no allergies. */
+        put: operations["putPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getOnboarding"];
+        put: operations["putOnboarding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getNotificationPreferences"];
+        /** @description Each change is recorded as a consent event. */
+        put: operations["putNotificationPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/addresses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAddresses"];
+        put?: never;
+        /** @description Up to 10. The first address becomes the default. */
+        post: operations["createAddress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/addresses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description If it was the default, the oldest remaining address becomes the default. */
+        delete: operations["deleteAddress"];
+        options?: never;
+        head?: never;
+        /** @description Another customer's address answers 404, exactly like a missing one. */
+        patch: operations["updateAddress"];
+        trace?: never;
+    };
+    "/api/v1/me/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listFavorites"];
+        put?: never;
+        /** @description Idempotent: 201 when saved, 200 when it already was. Unpublished meals answer 404. */
+        post: operations["addFavorite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/favorites/{mealId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Idempotent. */
+        delete: operations["removeFavorite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Deterministic ranking from the customer's own preferences; each meal lists its reasons. Meals declaring an allergen the customer listed are never included. */
+        get: operations["getRecommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Published meals only. Filters combine with AND. exclude_allergens also drops meals whose allergens are not yet declared. */
+        get: operations["listMeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meals/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMeal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meal-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMealCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chefs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listChefs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chefs/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getChef"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fixed value lists (dietary keys, allergens, regions, ...) with their labels. */
+        get: operations["getReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/meals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Permission: `catalog.read`. Every status. */
+        get: operations["adminListMeals"];
+        put?: never;
+        /** @description Permission: `catalog.manage`. Creates a draft. */
+        post: operations["adminCreateMeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/meals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Permission: `catalog.read`. */
+        get: operations["adminGetMeal"];
+        /** @description Permission: `catalog.manage`. Send the version you loaded; 409 version_conflict if someone saved since. */
+        put: operations["adminUpdateMeal"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/meals/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Permission: `catalog.publish`. Needs a photograph; demo meals only where demo content is enabled. */
+        post: operations["adminPublishMeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/meals/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Permission: `catalog.publish`. */
+        post: operations["adminUnpublishMeal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/meals/{id}/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Permission: `nutrition.verify`. Figures reach customers only when verified is true. */
+        put: operations["adminSetNutrition"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Permission: `catalog.read`. */
+        get: operations["adminListCategories"];
+        put?: never;
+        /** @description Permission: `catalog.manage`. */
+        post: operations["adminCreateCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/chefs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Permission: `catalog.read`. */
+        get: operations["adminListChefs"];
+        put?: never;
+        /** @description Permission: `catalog.manage`; publishing also needs `catalog.publish`. */
+        post: operations["adminCreateChef"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/chefs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Permission: `catalog.manage`; changing whether it is published also needs `catalog.publish`. */
+        put: operations["adminUpdateChef"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -649,7 +1113,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -767,6 +1231,448 @@ export interface components {
                 /** Format: date-time */
                 linked_at: string;
             };
+        };
+        ChangePasswordInput: {
+            current_password: string;
+            new_password: string;
+        };
+        EmailChangeInput: {
+            new_email: string;
+            current_password: string;
+        };
+        Term: {
+            key: string;
+            label: string;
+        };
+        /**
+         * @description unknown until delivery zones are configured. Never read as a promise of delivery.
+         * @enum {string}
+         */
+        DeliveryAvailability: "unknown" | "available" | "planned" | "unavailable";
+        Profile: {
+            email: string;
+            /** @description The address an open change link would switch to. */
+            pending_email: string | null;
+            first_name: string;
+            last_name: string;
+            email_verified: boolean;
+            phone: string | null;
+            /** @enum {string} */
+            contact_channel: "email" | "sms" | "whatsapp";
+            /** @enum {string} */
+            language: "en";
+            delivery_country: string | null;
+            delivery_region: string | null;
+            delivery_availability: components["schemas"]["DeliveryAvailability"];
+            waitlist_linked: boolean;
+            /** Format: date-time */
+            member_since: string;
+        };
+        ProfileInput: {
+            first_name?: string;
+            last_name?: string;
+            phone?: string;
+            /** @enum {string} */
+            contact_channel?: "email" | "sms" | "whatsapp";
+            /** @enum {string} */
+            language?: "en";
+            delivery_country?: string;
+            delivery_region?: string;
+        };
+        Household: {
+            name: string | null;
+            size: number;
+            adults: number | null;
+            children: number | null;
+            /** @enum {string} */
+            source: "customer" | "waitlist";
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        HouseholdInput: {
+            name?: string | null;
+            size: number;
+            adults?: number | null;
+            children?: number | null;
+        };
+        Allergy: {
+            allergen: string;
+            label: string;
+            detail: string | null;
+        };
+        Preferences: {
+            dietary: string[];
+            meal_interests: string[];
+            proteins: string[];
+            max_cook_minutes: number | null;
+            other_restrictions: string | null;
+            /** @enum {string} */
+            source: "customer" | "waitlist";
+            allergies: components["schemas"]["Allergy"][];
+            /**
+             * Format: date-time
+             * @description null: never answered (not the same as no allergies).
+             */
+            allergies_reviewed_at: string | null;
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        PreferencesUpdate: {
+            /** @description Keys from /reference, or ["no-preference"]. */
+            dietary?: string[];
+            meal_interests?: string[];
+            proteins?: string[];
+            /** @description 0 removes the limit; otherwise 10 to 240. */
+            max_cook_minutes?: number;
+            other_restrictions?: string;
+            allergies?: {
+                allergen: string;
+                detail?: string | null;
+            }[];
+        };
+        Onboarding: {
+            /** @enum {string} */
+            step: "welcome" | "household" | "interests" | "dietary" | "allergies" | "location" | "complete";
+            skipped: string[];
+            /** Format: date-time */
+            completed_at: string | null;
+            steps: string[];
+        };
+        OnboardingInput: {
+            /** @enum {string} */
+            step: "welcome" | "household" | "interests" | "dietary" | "allergies" | "location" | "complete";
+            skipped?: ("household" | "interests" | "dietary" | "allergies" | "location")[];
+        };
+        Topic: {
+            topic: string;
+            label: string;
+            enabled: boolean;
+            /** @enum {string|null} */
+            source: "customer" | "waitlist_consent" | null;
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        NotificationPreferences: {
+            account_security: {
+                enabled: boolean;
+                required: boolean;
+            };
+            topics: components["schemas"]["Topic"][];
+            upcoming: components["schemas"]["Term"][];
+        };
+        NotificationInput: {
+            topics: {
+                [key: string]: boolean;
+            };
+        };
+        Address: {
+            /** Format: uuid */
+            id: string;
+            label: string | null;
+            recipient_name: string;
+            phone: string | null;
+            line1: string;
+            line2: string | null;
+            area: string | null;
+            city: string;
+            region: string;
+            region_label: string;
+            country: string;
+            instructions: string | null;
+            is_default: boolean;
+            delivery_availability: components["schemas"]["DeliveryAvailability"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description On create, recipient_name, line1, city and region are required. On update, fields left out keep their value. */
+        AddressInput: {
+            label?: string;
+            recipient_name?: string;
+            phone?: string;
+            line1?: string;
+            line2?: string;
+            area?: string;
+            city?: string;
+            region?: string;
+            /** @enum {string} */
+            country?: "TT";
+            instructions?: string;
+            is_default?: boolean;
+        };
+        FavoriteInput: {
+            /** Format: uuid */
+            meal_id: string;
+        };
+        FavoriteList: {
+            items: components["schemas"]["MealCard"][];
+            meal_ids: string[];
+        };
+        Ref: {
+            slug: string;
+            name: string;
+        };
+        Image: {
+            src: string;
+            alt: string;
+            width: number | null;
+            height: number | null;
+            credit?: string | null;
+        };
+        /** @description What the meal is declared to contain. Never a statement that it is free of anything. */
+        AllergenInfo: {
+            /** @enum {string} */
+            status: "declared" | "unconfirmed";
+            contains: components["schemas"]["Term"][];
+            notice: string;
+        };
+        NutritionSummary: {
+            calories: number;
+            protein_g: number;
+        };
+        MealCard: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            summary: string;
+            category: components["schemas"]["Ref"];
+            chef: components["schemas"]["Ref"] | null;
+            prep_minutes: number;
+            cook_minutes: number;
+            total_minutes: number;
+            servings: number;
+            protein: components["schemas"]["Term"] | null;
+            dietary: components["schemas"]["Term"][];
+            allergens: components["schemas"]["AllergenInfo"];
+            image: components["schemas"]["Image"] | null;
+            /** @description Verified figures only. */
+            nutrition: components["schemas"]["NutritionSummary"] | null;
+            is_demo: boolean;
+        };
+        MealPage: {
+            items: components["schemas"]["MealCard"][];
+            total: number;
+            page: number;
+            page_size: number;
+        };
+        Nutrition: {
+            calories: number;
+            protein_g: number;
+            carbs_g: number;
+            fat_g: number;
+            fibre_g: number | null;
+            sodium_mg: number | null;
+            /** Format: date-time */
+            verified_at: string | null;
+        };
+        ChefSummary: {
+            slug: string;
+            name: string;
+            role_title: string | null;
+            bio: string;
+            image: components["schemas"]["Image"] | null;
+        };
+        MealDetail: components["schemas"]["MealCard"] & {
+            description: string;
+            cooking_overview: string;
+            images: components["schemas"]["Image"][];
+            ingredients: {
+                name: string;
+                quantity: string | null;
+            }[];
+            nutrition_detail: components["schemas"]["Nutrition"] | null;
+            chef_detail: components["schemas"]["ChefSummary"] | null;
+            /** Format: date-time */
+            published_at: string | null;
+        };
+        MealCategory: {
+            slug: string;
+            name: string;
+            description: string;
+            meal_count: number;
+        };
+        ChefProfile: components["schemas"]["ChefSummary"] & {
+            is_demo: boolean;
+            meals: components["schemas"]["MealCard"][];
+        };
+        Recommendations: {
+            items: {
+                meal: components["schemas"]["MealCard"];
+                reasons: string[];
+            }[];
+            personalised: boolean;
+            notice: string;
+        };
+        Reference: {
+            dietary: components["schemas"]["Term"][];
+            allergens: components["schemas"]["Term"][];
+            meal_allergens: components["schemas"]["Term"][];
+            proteins: components["schemas"]["Term"][];
+            meal_interests: components["schemas"]["Term"][];
+            countries: components["schemas"]["Term"][];
+            regions: components["schemas"]["Term"][];
+            topics: components["schemas"]["Term"][];
+            cross_contact_notice: string;
+        };
+        ImageInput: {
+            /** @description /catalog/... in the customer app, or https on an approved host */
+            src: string;
+            alt: string;
+            width?: number | null;
+            height?: number | null;
+            credit?: string | null;
+        };
+        IngredientInput: {
+            name: string;
+            quantity?: string | null;
+        };
+        MealInput: {
+            /** @description From the name when empty. */
+            slug?: string;
+            name: string;
+            summary: string;
+            description?: string;
+            cooking_overview?: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            chef_id?: string | null;
+            prep_minutes: number;
+            cook_minutes: number;
+            servings: number;
+            protein?: string | null;
+            dietary_tags?: string[];
+            allergens?: string[];
+            /** @enum {string} */
+            allergen_status?: "unconfirmed" | "declared";
+            images?: components["schemas"]["ImageInput"][];
+            ingredients?: components["schemas"]["IngredientInput"][];
+            is_demo?: boolean;
+            /** @description Required on update. */
+            version?: number;
+        };
+        NutritionInput: {
+            calories: number;
+            protein_g: number;
+            carbs_g: number;
+            fat_g: number;
+            fibre_g?: number | null;
+            sodium_mg?: number | null;
+            verified: boolean;
+        };
+        AdminNutrition: {
+            calories: number;
+            protein_g: number;
+            carbs_g: number;
+            fat_g: number;
+            fibre_g: number | null;
+            sodium_mg: number | null;
+            /** @enum {string} */
+            status: "pending" | "verified";
+            /** Format: date-time */
+            verified_at: string | null;
+        };
+        AdminMeal: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            summary: string;
+            description: string;
+            cooking_overview: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            chef_id: string | null;
+            prep_minutes: number;
+            cook_minutes: number;
+            servings: number;
+            protein: string | null;
+            dietary_tags: string[];
+            allergens: string[];
+            /** @enum {string} */
+            allergen_status: "unconfirmed" | "declared";
+            /** @enum {string} */
+            status: "draft" | "published" | "unpublished";
+            /** Format: date-time */
+            published_at: string | null;
+            is_demo: boolean;
+            version: number;
+            images: components["schemas"]["ImageInput"][];
+            ingredients: components["schemas"]["IngredientInput"][];
+            nutrition: components["schemas"]["AdminNutrition"] | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AdminMealPage: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                name: string;
+                /** @enum {string} */
+                status: "draft" | "published" | "unpublished";
+                is_demo: boolean;
+                category_name: string;
+                chef_name: string | null;
+                /** @enum {string} */
+                allergen_status: "unconfirmed" | "declared";
+                /** @enum {string|null} */
+                nutrition_status: "pending" | "verified" | null;
+                /** Format: date-time */
+                published_at: string | null;
+                /** Format: date-time */
+                updated_at: string;
+            }[];
+            total: number;
+            page: number;
+            page_size: number;
+        };
+        AdminCategory: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            description: string;
+            position: number;
+            is_demo: boolean;
+        };
+        CategoryInput: {
+            slug?: string;
+            name: string;
+            description?: string;
+            position?: number;
+            is_demo?: boolean;
+        };
+        AdminChef: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            display_name: string;
+            role_title: string | null;
+            bio: string;
+            image_src: string | null;
+            image_alt: string | null;
+            /** @enum {string} */
+            status: "draft" | "published" | "unpublished";
+            is_demo: boolean;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ChefInput: {
+            slug?: string;
+            display_name: string;
+            role_title?: string | null;
+            bio?: string;
+            image_src?: string | null;
+            image_alt?: string | null;
+            /** @enum {string} */
+            status?: "draft" | "published" | "unpublished";
+            is_demo?: boolean;
         };
     };
     responses: {
@@ -1593,6 +2499,1100 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["LeadDetail"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            password_changed?: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    requestEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailChangeInput"];
+            };
+        };
+        responses: {
+            202: components["responses"]["CheckEmail"];
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    confirmEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["Token"];
+        responses: {
+            200: components["responses"]["Done"];
+            400: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    getProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Profile"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileInput"];
+            };
+        };
+        responses: {
+            /** @description The updated profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Profile"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    getHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household, or null if never set. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            household: components["schemas"]["Household"] | null;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    putHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            household: components["schemas"]["Household"];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    getPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Preferences and, separately, allergies. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Preferences"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    putPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Preferences"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    getOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where the customer is in onboarding. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Onboarding"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    putOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Onboarding"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    getNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Optional email topics; account and security email is always on. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NotificationPreferences"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    putNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NotificationPreferences"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    listAddresses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Addresses, default first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Address"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    createAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Address"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    deleteAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Done"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    updateAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Address"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    listFavorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved meals the customer can currently see, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FavoriteList"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    addFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteInput"];
+            };
+        };
+        responses: {
+            /** @description Already saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            meal_id: string;
+                            saved: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            meal_id: string;
+                            saved: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    removeFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mealId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            meal_id: string;
+                            saved: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    getRecommendations: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suggested meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Recommendations"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    listMeals: {
+        parameters: {
+            query?: {
+                category?: string;
+                /** @description Comma-separated dietary keys; a meal must suit every one. */
+                diet?: string;
+                /** @description Preparation plus cooking time */
+                max_minutes?: number;
+                protein?: string;
+                /** @description Chef slug */
+                chef?: string;
+                q?: string;
+                /** @description Comma-separated allergen keys */
+                exclude_allergens?: string;
+                sort?: "newest" | "quickest" | "name";
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MealPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            422: components["responses"]["Error"];
+        };
+    };
+    getMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One published meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MealDetail"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    listMealCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories with their number of published meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["MealCategory"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    listChefs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published chef profiles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Ref"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    getChef: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A published chef profile and their meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ChefProfile"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    getReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reference lists. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Reference"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    adminListMeals: {
+        parameters: {
+            query?: {
+                status?: "draft" | "published" | "unpublished";
+                q?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Meals, most recently changed first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMealPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCreateMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPublishMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminUnpublishMeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminSetNutrition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NutritionInput"];
+            };
+        };
+        responses: {
+            /** @description The meal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminMeal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AdminCategory"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategory"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListChefs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chef profiles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AdminChef"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateChef: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChefInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminChef"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateChef: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChefInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminChef"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];

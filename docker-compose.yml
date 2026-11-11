@@ -3,7 +3,7 @@
 # apps can run on the host with hot reload.
 #
 # Mise uses its own port block so it does not collide with other projects:
-#   marketing 3100, admin 3101, api 8090, postgres 5460, mailpit 1026 / 8026
+#   marketing 3100, admin 3101, web 3102, api 8090, postgres 5460, mailpit 1026 / 8026
 name: mise
 
 x-api-env: &api-env
@@ -21,6 +21,8 @@ x-api-env: &api-env
   SMTP_PORT: "1025"
   MAIL_FROM: Mise <hello@mise.local>
   LOG_LEVEL: debug
+  CUSTOMER_APP_URL: http://localhost:3102
+  BFF_SHARED_KEY: &bff-key local-bff-key-local-bff-key-local-bff
 
 services:
   postgres:
@@ -107,8 +109,26 @@ services:
       PORT: "3101"
       API_INTERNAL_URL: http://api:8080
       ADMIN_COOKIE_SECURE: "false"
+      BFF_SHARED_KEY: *bff-key
     ports:
       - "3101:3101"
+    depends_on:
+      - api
+
+  # Customer web app (Sprint 1: accounts only).
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        APP: web
+    environment:
+      PORT: "3102"
+      API_INTERNAL_URL: http://api:8080
+      WEB_COOKIE_SECURE: "false"
+      BFF_SHARED_KEY: *bff-key
+    ports:
+      - "3102:3102"
     depends_on:
       - api
 

@@ -130,3 +130,30 @@ them in a later release.
 
 Every variable is documented in `.env.example`. In AWS the same variables are set by
 `infrastructure/terraform/modules/platform/compute.tf`; secrets come from Secrets Manager.
+
+## Deploying Sprint 1 (identity, MFA, customer app)
+
+**Needs approval before it reaches production**: migration 00004 copies the admin
+accounts into the new identity tables, and every admin must then sign in again and set up
+an authenticator app (MFA is mandatory in production).
+
+Before the first deploy of this release:
+
+1. Set the new configuration. AWS: `terraform apply` creates the `DATA_ENCRYPTION_KEY` and
+   `BFF_SHARED_KEY` secrets and the new settings (about US$0.80 a month). Single server: add
+   `DATA_ENCRYPTION_KEY` and `BFF_SHARED_KEY` to `.env.production`
+   (see `.env.production.example`). Both are optional to start, but without
+   `DATA_ENCRYPTION_KEY` MFA secrets are sealed with a key derived from `TOKEN_SIGNING_KEY`.
+2. Take a database backup (RDS snapshot, or `pg_dump` on a single server).
+3. Tell the admins: at their next sign-in they scan a QR code with an authenticator app.
+
+Deploy as usual: migrations run first, then the services. Afterwards run
+`misectl doctor` and sign in to the admin once.
+
+Rollback: redeploy the previous images. The pre-Sprint-1 release works on the new schema
+(it still reads `admin_users`). Do not run the Down migration in production
+(`docs/database/MIGRATION_STRATEGY.md`).
+
+The customer app (`apps/web`) is **not** deployed by this release: registration is
+closed by default (`CUSTOMER_REGISTRATION_ENABLED=false`) and running it in AWS is a
+separate, costed decision (ADR-005).

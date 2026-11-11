@@ -1,4 +1,4 @@
-# Builds one of the Next.js apps (marketing or admin) as a standalone server.
+# Builds one of the Next.js apps (marketing, admin or web) as a standalone server.
 # Build context is the repository root.
 #
 #   docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=marketing \
@@ -15,6 +15,7 @@ WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/marketing/package.json apps/marketing/
 COPY apps/admin/package.json apps/admin/
+COPY apps/web/package.json apps/web/
 COPY e2e/package.json e2e/
 COPY packages/config/package.json packages/config/
 COPY packages/ui/package.json packages/ui/

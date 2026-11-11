@@ -109,3 +109,9 @@ locals {
     ManagedBy   = "terraform"
   }
 }
+
+variable "customer_registration_enabled" {
+  description = "Open customer account registration. A business decision; off until launch. The customer app itself is not yet deployed by this module (see docs/architecture/CONTAINER_ARCHITECTURE.md)."
+  type        = bool
+  default     = false
+}

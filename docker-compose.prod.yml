@@ -85,6 +85,8 @@ services:
       PORT: "3101"
       API_INTERNAL_URL: http://api:8080
       ADMIN_COOKIE_SECURE: "true"
+      # Empty unless set in .env.production; the API then ignores forwarded addresses.
+      BFF_SHARED_KEY: ${BFF_SHARED_KEY:-}
     ports:
       - "127.0.0.1:3101:3101"
     depends_on:

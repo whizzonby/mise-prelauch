@@ -14,7 +14,9 @@ func setEnv(t *testing.T, overrides map[string]string) {
 		"TOKEN_SIGNING_KEY": "0123456789abcdef0123456789abcdef",
 	}
 	for _, key := range []string{"DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "DB_SSLMODE",
-		"MAIL_DRIVER", "RATE_LIMITS_DISABLED", "REFERRAL_MILESTONES", "LOG_LEVEL"} {
+		"MAIL_DRIVER", "RATE_LIMITS_DISABLED", "REFERRAL_MILESTONES", "LOG_LEVEL",
+		"ADMIN_MFA_REQUIRED", "CUSTOMER_REGISTRATION_ENABLED", "DATA_ENCRYPTION_KEY", "BFF_SHARED_KEY",
+		"ADMIN_SESSION_TTL", "ADMIN_SESSION_IDLE_TTL", "CUSTOMER_SESSION_TTL", "CUSTOMER_SESSION_IDLE_TTL"} {
 		t.Setenv(key, "")
 	}
 	for k, v := range base {
@@ -82,5 +84,52 @@ func TestDatabaseURLFromParts(t *testing.T) {
 	want := "postgres://mise:p%40ss%2Fword%3Awith%3Fodd%23chars@db.internal:5432/mise?sslmode=require"
 	if cfg.DatabaseURL != want {
 		t.Errorf("DatabaseURL =\n  %s\nwant\n  %s", cfg.DatabaseURL, want)
+	}
+}
+
+func TestIdentityDefaultsDependOnEnvironment(t *testing.T) {
+	setEnv(t, map[string]string{"MISE_ENV": "local"})
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AdminMFARequired || !cfg.CustomerRegistrationEnabled {
+		t.Errorf("local: mfa %v registration %v, want false, true", cfg.AdminMFARequired, cfg.CustomerRegistrationEnabled)
+	}
+	if len(cfg.DataEncryptionKey) != 32 {
+		t.Errorf("derived data key is %d bytes", len(cfg.DataEncryptionKey))
+	}
+
+	setEnv(t, map[string]string{"MISE_ENV": "staging", "MAIL_DRIVER": "smtp"})
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.AdminMFARequired || cfg.CustomerRegistrationEnabled {
+		t.Errorf("staging: mfa %v registration %v, want true, false", cfg.AdminMFARequired, cfg.CustomerRegistrationEnabled)
+	}
+}
+
+func TestIdentityConfigurationIsChecked(t *testing.T) {
+	cases := map[string]map[string]string{
+		"mfa off in production":  {"MISE_ENV": "production", "MAIL_DRIVER": "smtp", "ADMIN_MFA_REQUIRED": "false"},
+		"short data key":         {"DATA_ENCRYPTION_KEY": "c2hvcnQ="},
+		"short bff key":          {"BFF_SHARED_KEY": "too-short"},
+		"idle longer than ttl":   {"ADMIN_SESSION_TTL": "1h", "ADMIN_SESSION_IDLE_TTL": "2h"},
+		"customer idle too long": {"CUSTOMER_SESSION_TTL": "24h", "CUSTOMER_SESSION_IDLE_TTL": "48h"},
+	}
+	for name, env := range cases {
+		t.Run(name, func(t *testing.T) {
+			setEnv(t, env)
+			if _, err := Load(); err == nil {
+				t.Error("unsafe configuration accepted")
+			}
+		})
+	}
+
+	setEnv(t, map[string]string{"DATA_ENCRYPTION_KEY": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="})
+	cfg, err := Load()
+	if err != nil || string(cfg.DataEncryptionKey) != "0123456789abcdef0123456789abcdef" {
+		t.Errorf("explicit data key: %q, %v", cfg.DataEncryptionKey, err)
 	}
 }

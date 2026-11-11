@@ -1,0 +1,11 @@
+Hi {{.FirstName}},
+
+Confirm this address to finish setting up your Mise account.
+
+Confirm my email:
+{{.ActionURL}}
+
+The link works once, for {{.LinkTTL}}. If you did not create a Mise account, ignore this email and no account will be activated.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

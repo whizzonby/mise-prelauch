@@ -173,3 +173,16 @@ func render(name string, data emailData) (mail.Message, error) {
 		},
 	}, nil
 }
+
+// renderAccount renders an account email. Account email is transactional and
+// carries no unsubscribe link; it is sent only because the person asked.
+func renderAccount(name string, data accountEmailData) (mail.Message, error) {
+	var html, text bytes.Buffer
+	if err := htmlTemplates.ExecuteTemplate(&html, name+".html", data); err != nil {
+		return mail.Message{}, fmt.Errorf("render %s.html: %w", name, err)
+	}
+	if err := textTemplates.ExecuteTemplate(&text, name+".txt", data); err != nil {
+		return mail.Message{}, fmt.Errorf("render %s.txt: %w", name, err)
+	}
+	return mail.Message{Subject: data.Subject, HTML: html.String(), Text: text.String()}, nil
+}

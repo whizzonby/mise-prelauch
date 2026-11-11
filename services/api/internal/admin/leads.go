@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"mise.tt/api/internal/customers"
+
 	"github.com/jackc/pgx/v5"
 
 	"mise.tt/api/internal/leads"
@@ -201,6 +203,8 @@ type LeadDetail struct {
 	ReferredBy      *ReferralEntry     `json:"referred_by"`
 	Referrals       []ReferralEntry    `json:"referrals"`
 	Timeline        []TimelineEntry    `json:"timeline"`
+	// Account is the customer account this lead became, once linked.
+	Account *customers.LeadLink `json:"account"`
 }
 
 // leadDetail returns nil, nil when the lead does not exist.
@@ -306,6 +310,9 @@ func leadDetail(ctx context.Context, q db.Querier, id string) (*LeadDetail, erro
 	if d.Referrals == nil {
 		d.Referrals = []ReferralEntry{}
 	}
+	if d.Account, err = customers.LinkForLead(ctx, q, id); err != nil {
+		return nil, err
+	}
 	if d.Timeline == nil {
 		d.Timeline = []TimelineEntry{}
 	}
@@ -333,26 +340,4 @@ func setLeadStatus(ctx context.Context, q db.Querier, id string, status leads.St
 		return "", false, nil
 	}
 	return previous, err == nil, err
-}
-
-func audit(ctx context.Context, q db.Querier, actorID, action, targetType, targetID string, metadata map[string]any) error {
-	if metadata == nil {
-		metadata = map[string]any{}
-	}
-	body, err := json.Marshal(metadata)
-	if err != nil {
-		return err
-	}
-	_, err = q.Exec(ctx, `
-		INSERT INTO audit_log (actor_admin_id, action, target_type, target_id, metadata)
-		VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5::jsonb)`,
-		nullIfEmpty(actorID), action, targetType, targetID, string(body))
-	return err
-}
-
-func nullIfEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

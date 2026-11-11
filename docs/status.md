@@ -1,5 +1,34 @@
 # Status: what has been verified, and what has not
 
+## Sprint 1 (platform foundation): 11 November 2026
+
+Sprint 1 is complete and verified, **except for one open blocker**. The full account is in
+`docs/SPRINT_1_REPORT.md`.
+
+- **Verified on 11 November 2026:**
+  - Go: gofmt, vet and build are clean; 69 tests and subtests pass against real PostgreSQL.
+  - Migrations: up/down/up passes, and `misectl doctor` passes.
+  - Generated code: sqlc and the OpenAPI-generated types have no drift.
+  - Frontend: ESLint and typecheck pass on every workspace; Vitest 31/31; all three apps build.
+  - Playwright: **24/24**, the 7 new customer-account tests and all 17 pre-launch tests.
+- **F1, security upgrade: applied.** Next.js went from 16.3.5 to 16.4.6 (critical RCE
+  advisories), and zod, sharp and source-map-js were patched too.
+  - The production audit is clean.
+  - Lint, typecheck, Vitest and builds pass on the upgrade.
+  - Playwright 24/24 pass on 16.4.6.
+  - One dev-only high advisory remains, in vite (unit-test runner).
+- **Not re-run this sprint:**
+  - `docker compose up --build`: the image build failed on npm registry timeouts
+  - the GitHub Actions workflows: there is no remote
+  - `govulncheck`
+  - AWS and SES
+- **Not committed yet**, by decision.
+
+The items below are from the pre-launch build. Customer accounts, admin MFA and the OpenAPI
+description, listed under "Deliberately not built", now exist.
+
+---
+
 Written at the end of the initial build (23 September 2026). Update it when something on
 the "not yet" list is done.
 

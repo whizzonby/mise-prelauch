@@ -40,9 +40,16 @@ func run() error {
 	}
 	defer pool.Close()
 
+	handler, err := server.New(cfg, pool, server.LimitsFor(cfg))
+	if err != nil {
+		return err
+	}
+	if !cfg.CustomerRegistrationEnabled {
+		slog.Info("customer registration is closed")
+	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           server.New(cfg, pool, server.LimitsFor(cfg)),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      60 * time.Second, // CSV export streams

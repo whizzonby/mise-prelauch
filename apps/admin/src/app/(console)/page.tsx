@@ -14,7 +14,7 @@ const RANGES = [30, 90, 180];
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const { token, admin } = await requireAdmin();
 
-  if (!can(admin, "stats:read")) {
+  if (!can(admin, "analytics.view")) {
     return (
       <>
         <Heading as="h1" size="h2">

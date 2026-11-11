@@ -6,6 +6,7 @@ export default async function globalSetup() {
     ["API", `${urls.api}/api/v1/ready`],
     ["marketing site", `${urls.site}/robots.txt`],
     ["admin app", `${urls.admin}/login`],
+    ["customer app", `${urls.web}/sign-in`],
     ["Mailpit", `${urls.mailpit}/api/v1/info`],
   ];
   const down: string[] = [];

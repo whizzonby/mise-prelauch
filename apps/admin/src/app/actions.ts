@@ -1,11 +1,11 @@
 "use server";
 
-import { ApiError, type LeadStatus } from "@mise/api-client";
+import { ApiError, mfaComplete, type LeadStatus } from "@mise/api-client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { api, requireAdmin, SESSION_COOKIE, sessionToken } from "@/lib/session";
+import { api, requireAdmin, requireSession, SESSION_COOKIE, sessionToken, storeSession } from "@/lib/session";
 
 export interface FormState {
   error?: string;
@@ -25,14 +25,31 @@ export async function login(_previous: FormState, form: FormData): Promise<FormS
     return { error: "The Mise API could not be reached. Try again in a moment." };
   }
 
-  (await cookies()).set(SESSION_COOKIE, result.token, {
-    httpOnly: true,
-    // Only ever disabled for local development over http.
-    secure: process.env.ADMIN_COOKIE_SECURE !== "false",
-    sameSite: "strict",
-    path: "/",
-    maxAge: result.expires_in,
-  });
+  await storeSession(result.token, result.expires_in);
+  // The password was right; the second factor may still be due.
+  redirect(mfaComplete(result.mfa) ? "/" : "/login/mfa");
+}
+
+/** Second step of sign-in: a code from the authenticator app. */
+export async function verifyCode(_previous: FormState, form: FormData): Promise<FormState> {
+  const { token } = await requireSession();
+  const code = String(form.get("code") ?? "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code from your authenticator app." };
+  const enrolling = form.get("mode") === "enrol";
+  let result;
+  try {
+    result = enrolling ? await api.admin.mfaConfirm(token, code) : await api.admin.mfaVerify(token, code);
+  } catch (error) {
+    if (error instanceof ApiError && error.code === "mfa_locked") {
+      (await cookies()).delete(SESSION_COOKIE);
+      redirect("/login?locked=1");
+    }
+    if (error instanceof ApiError && error.status === 401) return { error: "That code is not right. Check the app and try again." };
+    if (error instanceof ApiError && error.status === 429) return { error: "Too many attempts. Wait a few minutes and try again." };
+    return { error: "The Mise API could not be reached. Try again in a moment." };
+  }
+  // The API issues a new token once MFA is done; the old one no longer works.
+  await storeSession(result.token, result.expires_in);
   redirect("/");
 }
 

@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" "Confirm your email"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Confirm this address to finish setting up your Mise account.</p>
+{{template "button" (dict "URL" .ActionURL "Label" "Confirm my email")}}
+<p style="margin:0;color:#5F5B50;font-size:14px;">The link works once, for {{.LinkTTL}}. If you did not create a Mise account, ignore this email and no account will be activated.</p>
+{{template "account_footer" .}}

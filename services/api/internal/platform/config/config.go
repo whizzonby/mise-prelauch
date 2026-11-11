@@ -2,6 +2,9 @@
 package config
 
 import (
+	"crypto/hkdf"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -39,6 +42,29 @@ type Config struct {
 	Mail MailConfig
 
 	AdminSessionTTL time.Duration
+	// AdminSessionIdleTTL ends an admin session that has not been used for this long.
+	AdminSessionIdleTTL time.Duration
+	// AdminMFARequired makes every account holding admin.access present a TOTP
+	// code. It cannot be turned off in production.
+	AdminMFARequired bool
+
+	// CustomerAppURL is the customer web app origin, used in account emails.
+	CustomerAppURL string
+	// CustomerRegistrationEnabled opens POST /api/v1/auth/register. Off by
+	// default outside local: opening sign-ups is a business decision.
+	CustomerRegistrationEnabled bool
+	CustomerSessionTTL          time.Duration
+	CustomerSessionIdleTTL      time.Duration
+	// TermsVersion is recorded against each customer at registration.
+	TermsVersion string
+
+	// BFFSharedKey authenticates the Next.js servers when they pass on the end
+	// user's address and browser (httpx.HeaderBFFKey). Empty disables that.
+	BFFSharedKey string
+
+	// DataEncryptionKey seals secrets stored in the database (TOTP secrets).
+	// Optional: when unset it is derived from TokenSigningKey (see Load).
+	DataEncryptionKey []byte
 
 	// RateLimitsDisabled turns off per-IP limits so end-to-end tests can sign up
 	// repeatedly. Refused outside the local environment.
@@ -79,6 +105,9 @@ func Load() (Config, error) {
 		TokenSigningKey: []byte(need("TOKEN_SIGNING_KEY")),
 
 		ConsentVersion: get("CONSENT_VERSION", "2026-09"),
+		TermsVersion:   get("TERMS_VERSION", "draft-2026-11"),
+		BFFSharedKey:   strings.TrimSpace(os.Getenv("BFF_SHARED_KEY")),
+		CustomerAppURL: strings.TrimRight(get("CUSTOMER_APP_URL", "http://localhost:3102"), "/"),
 
 		Mail: MailConfig{
 			Driver:   get("MAIL_DRIVER", "log"),
@@ -118,6 +147,31 @@ func Load() (Config, error) {
 	if cfg.AdminSessionTTL, err = getDuration("ADMIN_SESSION_TTL", 12*time.Hour); err != nil {
 		errs = append(errs, err)
 	}
+	if cfg.AdminSessionIdleTTL, err = getDuration("ADMIN_SESSION_IDLE_TTL", 2*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.CustomerSessionTTL, err = getDuration("CUSTOMER_SESSION_TTL", 30*24*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.CustomerSessionIdleTTL, err = getDuration("CUSTOMER_SESSION_IDLE_TTL", 7*24*time.Hour); err != nil {
+		errs = append(errs, err)
+	}
+	// Safe defaults differ by environment: MFA on and registration closed
+	// everywhere except a developer's machine.
+	isLocal := cfg.Env == "local"
+	if cfg.AdminMFARequired, err = getBool("ADMIN_MFA_REQUIRED", !isLocal); err != nil {
+		errs = append(errs, err)
+	}
+	if cfg.CustomerRegistrationEnabled, err = getBool("CUSTOMER_REGISTRATION_ENABLED", isLocal); err != nil {
+		errs = append(errs, err)
+	}
+	if v := strings.TrimSpace(os.Getenv("DATA_ENCRYPTION_KEY")); v != "" {
+		key, decErr := base64.StdEncoding.DecodeString(v)
+		if decErr != nil || len(key) != 32 {
+			errs = append(errs, errors.New("DATA_ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)"))
+		}
+		cfg.DataEncryptionKey = key
+	}
 	for _, s := range splitList(os.Getenv("REFERRAL_MILESTONES")) {
 		n, convErr := strconv.Atoi(s)
 		if convErr != nil || n < 1 {
@@ -138,6 +192,30 @@ func Load() (Config, error) {
 	}
 	if cfg.Env != "local" && cfg.Mail.Driver == "log" {
 		errs = append(errs, errors.New("MAIL_DRIVER=log is only allowed when MISE_ENV=local"))
+	}
+	if cfg.BFFSharedKey != "" && len(cfg.BFFSharedKey) < 32 {
+		errs = append(errs, errors.New("BFF_SHARED_KEY must be at least 32 characters"))
+	}
+	if cfg.IsProduction() && !cfg.AdminMFARequired {
+		errs = append(errs, errors.New("ADMIN_MFA_REQUIRED cannot be false in production"))
+	}
+	if cfg.AdminSessionIdleTTL <= 0 || cfg.AdminSessionIdleTTL > cfg.AdminSessionTTL {
+		errs = append(errs, errors.New("ADMIN_SESSION_IDLE_TTL must be positive and no longer than ADMIN_SESSION_TTL"))
+	}
+	if cfg.CustomerSessionIdleTTL <= 0 || cfg.CustomerSessionIdleTTL > cfg.CustomerSessionTTL {
+		errs = append(errs, errors.New("CUSTOMER_SESSION_IDLE_TTL must be positive and no longer than CUSTOMER_SESSION_TTL"))
+	}
+
+	// Without an explicit key, derive one from the signing key with HKDF so
+	// existing deployments start without a new secret. Rotating
+	// TOKEN_SIGNING_KEY would then make stored TOTP secrets unreadable, so
+	// staging and production should set DATA_ENCRYPTION_KEY.
+	if cfg.DataEncryptionKey == nil && len(cfg.TokenSigningKey) >= 32 {
+		key, hkdfErr := hkdf.Key(sha256.New, cfg.TokenSigningKey, nil, "mise/data-encryption/v1", 32)
+		if hkdfErr != nil {
+			errs = append(errs, hkdfErr)
+		}
+		cfg.DataEncryptionKey = key
 	}
 
 	return cfg, errors.Join(errs...)

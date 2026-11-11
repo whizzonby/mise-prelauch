@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" "You already have an account"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">Someone tried to create a Mise account with this address, but it already has one. You can sign in, or reset your password from the sign-in page if you have forgotten it.</p>
+{{template "button" (dict "URL" .ActionURL "Label" "Sign in")}}
+<p style="margin:0;color:#5F5B50;font-size:14px;">If that was not you, nothing has changed and you can ignore this email.</p>
+{{template "account_footer" .}}

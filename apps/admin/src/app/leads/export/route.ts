@@ -5,7 +5,7 @@ import { api, sessionToken } from "@/lib/session";
 
 /**
  * Streams the CSV export from the API to the browser. The session token is
- * added here, on the server; the API checks the `leads:export` permission and
+ * added here, on the server; the API checks the `leads.export` permission and
  * writes the audit entry before it sends a single row.
  */
 export async function GET(request: NextRequest) {

@@ -10,10 +10,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "generate": "openapi-typescript ../../docs/api/openapi.yaml -o src/schema.d.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src"
   },
   "devDependencies": {
-    "@mise/config": "workspace:*"
+    "@mise/config": "workspace:*",
+    "openapi-typescript": "7.13.0"
   }
 }

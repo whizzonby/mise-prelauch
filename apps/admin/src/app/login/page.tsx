@@ -7,17 +7,18 @@ import { api, sessionToken } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string; locked?: string }> }) {
   // Someone already signed in has no use for this page.
   const token = await sessionToken();
   if (token) {
+    // A session still finishing MFA goes on to the code step via "/".
     const valid = await api.admin.me(token).then(
       () => true,
       () => false,
     );
     if (valid) redirect("/");
   }
-  const { expired } = await searchParams;
+  const { expired, locked } = await searchParams;
 
   return (
     <main className="grid min-h-svh place-items-center px-5 py-12">
@@ -32,6 +33,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {expired ? (
             <Text size="sm" className="mt-3 border-l-2 border-warning pl-3">
               Your session ended. Sign in again to continue.
+            </Text>
+          ) : null}
+          {locked ? (
+            <Text size="sm" className="mt-3 border-l-2 border-warning pl-3">
+              Too many wrong codes. Sign in again to get a fresh attempt.
             </Text>
           ) : null}
           <LoginForm />

@@ -78,6 +78,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               ["Email confirmed", lead.email_verified_at ? formatDateTime(lead.email_verified_at) : "Not yet"],
               ["Consent given", `${formatDateTime(lead.consent_at)} (wording ${lead.consent_version})`],
               ["Invitation code", lead.referral_code],
+              ["Mise account", lead.account ? `Linked ${formatDateTime(lead.account.linked_at)}` : "None yet"],
             ]}
           />
         </Panel>
@@ -171,13 +172,13 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           )}
         </Panel>
 
-        {can(admin, "leads:write") ? (
+        {can(admin, "leads.update") ? (
           <Panel title="Change status">
             <StatusForm id={lead.id} current={lead.status} />
           </Panel>
         ) : null}
 
-        {can(admin, "leads:erase") ? (
+        {can(admin, "leads.erase") ? (
           <Panel title="Delete this lead">
             <EraseLeadForm id={lead.id} name={fullName(lead)} />
           </Panel>

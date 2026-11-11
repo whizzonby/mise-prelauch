@@ -1,0 +1,1072 @@
+openapi: 3.1.0
+info:
+  title: Mise API
+  version: 1.1.0
+  summary: The REST API behind the Mise marketing site, customer app and admin console.
+  description: |
+    Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
+    are in docs/api/API_STANDARDS.md. This file is the contract: the server's test
+    suite fails if a route is served but not described here, or described but not
+    served (internal/server/identity_test.go, TestRoutesMatchOpenAPI), and the
+    TypeScript types in packages/api-client are generated from it.
+
+    Authentication is an opaque bearer token in `Authorization: Bearer <token>`.
+    Browsers never hold one: each Next.js app keeps it in an httpOnly cookie on its
+    own server (docs/security/AUTHENTICATION.md). Three token kinds exist and are
+    never interchangeable: lead profile tokens (waitlist), customer sessions and
+    admin sessions.
+servers:
+  - url: http://localhost:8090
+    description: Local development
+
+tags:
+  - name: health
+  - name: leads
+    description: The pre-launch waitlist.
+  - name: referrals
+  - name: events
+    description: First-party analytics.
+  - name: auth
+    description: Customer accounts.
+  - name: me
+    description: The signed-in customer.
+  - name: admin-auth
+    description: Staff sign-in, MFA.
+  - name: admin
+    description: Back-office lead management.
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [health]
+      operationId: health
+      summary: Liveness. Does not touch the database.
+      responses:
+        "200":
+          description: The process is serving.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusEnvelope" }
+
+  /api/v1/ready:
+    get:
+      tags: [health]
+      operationId: ready
+      summary: Readiness. Pings PostgreSQL with a 2-second timeout.
+      responses:
+        "200":
+          description: Ready to serve traffic.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusEnvelope" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ leads
+
+  /api/v1/leads:
+    post:
+      tags: [leads]
+      operationId: createLead
+      summary: Join the waitlist.
+      description: Idempotent on the email address. An address already on the list gets 200 and an email, never a second lead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLeadInput" }
+      responses:
+        "201":
+          description: A new lead.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CreateLeadResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "200":
+          description: The address was already on the list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CreateLeadResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/leads/verify:
+    post:
+      tags: [leads]
+      operationId: verifyLead
+      summary: Confirm a lead's email from the emailed link.
+      requestBody: { $ref: "#/components/requestBodies/Token" }
+      responses:
+        "200":
+          description: Verified.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [lead, profile_token]
+                    properties:
+                      lead: { $ref: "#/components/schemas/LeadSummary" }
+                      profile_token: { type: string }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+
+  /api/v1/leads/unsubscribe:
+    post:
+      tags: [leads]
+      operationId: unsubscribeLead
+      requestBody: { $ref: "#/components/requestBodies/Token" }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/v1/leads/me:
+    get:
+      tags: [leads]
+      operationId: getLeadSummary
+      summary: The waitlist page for the lead holding a profile token.
+      security: [{ leadProfileToken: [] }]
+      responses:
+        "200":
+          description: The lead's own summary.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadSummaryEnvelope" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /api/v1/leads/preferences:
+    patch:
+      tags: [leads]
+      operationId: updateLeadPreferences
+      security: [{ leadProfileToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PreferencesInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadSummaryEnvelope" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/referrals/{code}:
+    get:
+      tags: [referrals]
+      operationId: lookupReferral
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string, maxLength: 32 } }
+      responses:
+        "200":
+          description: The inviting lead's first name.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [code, referrer_first_name]
+                    properties:
+                      code: { type: string }
+                      referrer_first_name: { type: string }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/v1/events:
+    post:
+      tags: [events]
+      operationId: sendEvents
+      summary: Record allow-listed first-party analytics events.
+      security: [{}, { leadProfileToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventBatch" }
+      responses:
+        "202":
+          description: Accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [accepted]
+                    properties:
+                      accepted: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ customer accounts
+
+  /api/v1/auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      summary: Create a customer account.
+      description: |
+        Always answers 202 `check_email` for a valid request, whether or not the
+        address already has an account (that person is emailed instead). 403
+        `registration_closed` while CUSTOMER_REGISTRATION_ENABLED is off.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterInput" }
+      responses:
+        "202": { $ref: "#/components/responses/CheckEmail" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/verify-email:
+    post:
+      tags: [auth]
+      operationId: verifyEmail
+      summary: Confirm an account's email from the emailed link (single use, 48 hours).
+      description: For customers this also links the account to the waitlist lead with the same address, if there is one.
+      requestBody: { $ref: "#/components/requestBodies/Token" }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Customer sign-in.
+      requestBody: { $ref: "#/components/requestBodies/Credentials" }
+      responses:
+        "200":
+          description: A customer session.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [token, expires_in, user]
+                    properties:
+                      token: { type: string, description: "Opaque session token. Keep it server-side." }
+                      expires_in: { type: integer, description: "Seconds until the session's absolute end." }
+                      user: { $ref: "#/components/schemas/Customer" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403":
+          description: "`email_not_verified`: a new verification link has been sent."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      security: [{ customerSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/password/forgot:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      summary: Email a password reset link to a customer.
+      description: Always 202. Staff accounts are not reset by email (see AUTHENTICATION.md).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              additionalProperties: false
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202": { $ref: "#/components/responses/CheckEmail" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/auth/password/reset:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: Set a new password from a reset link (single use, 1 hour). Ends every session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              additionalProperties: false
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 12 }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "400": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me:
+    get:
+      tags: [me]
+      operationId: getMe
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: The signed-in customer.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Customer" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/sessions:
+    get:
+      tags: [me]
+      operationId: listMySessions
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Live sessions, most recently used first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SessionInfo" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [me]
+      operationId: revokeOtherSessions
+      summary: Sign out everywhere except this session.
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Number of sessions ended.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [revoked]
+                    properties:
+                      revoked: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/v1/me/sessions/{id}:
+    delete:
+      tags: [me]
+      operationId: revokeSession
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ admin sign-in
+
+  /api/v1/admin/auth/login:
+    post:
+      tags: [admin-auth]
+      operationId: adminLogin
+      summary: Staff sign-in with a password; the first of up to two steps.
+      description: |
+        When `mfa` is `challenge` or `enrolment_required`, the session lasts 10 minutes
+        and may call only `me`, `logout` and the `mfa/*` endpoints until a code is
+        presented. Other endpoints answer 403 `mfa_required`.
+      requestBody: { $ref: "#/components/requestBodies/Credentials" }
+      responses:
+        "200": { $ref: "#/components/responses/AdminGrant" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/auth/logout:
+    post:
+      tags: [admin-auth]
+      operationId: adminLogout
+      security: [{ adminSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/auth/me:
+    get:
+      tags: [admin-auth]
+      operationId: adminMe
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: The signed-in staff member, including sessions still finishing MFA.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AdminPrincipal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/auth/mfa/verify:
+    post:
+      tags: [admin-auth]
+      operationId: adminMfaVerify
+      summary: Present a TOTP code. Replaces the session token.
+      description: Five wrong codes end the session (`mfa_locked`). A code is accepted once.
+      security: [{ adminSession: [] }]
+      requestBody: { $ref: "#/components/requestBodies/Code" }
+      responses:
+        "200": { $ref: "#/components/responses/AdminGrant" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/auth/mfa/setup:
+    post:
+      tags: [admin-auth]
+      operationId: adminMfaSetup
+      summary: Start (or restart) adding Mise to an authenticator app.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: The secret, as text, an otpauth URL and a QR code.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [secret, otpauth_url, qr_png_base64]
+                    properties:
+                      secret: { type: string }
+                      otpauth_url: { type: string }
+                      qr_png_base64: { type: string }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/auth/mfa/confirm:
+    post:
+      tags: [admin-auth]
+      operationId: adminMfaConfirm
+      summary: Confirm enrolment with the first code. Turns MFA on and completes the session.
+      security: [{ adminSession: [] }]
+      requestBody: { $ref: "#/components/requestBodies/Code" }
+      responses:
+        "200": { $ref: "#/components/responses/AdminGrant" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ admin
+
+  /api/v1/admin/stats/overview:
+    get:
+      tags: [admin]
+      operationId: adminOverview
+      description: "Permission: `analytics.view`."
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: days, in: query, schema: { type: integer, minimum: 7, maximum: 180, default: 30 } }
+      responses:
+        "200":
+          description: Dashboard figures.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Overview" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/leads:
+    get:
+      tags: [admin]
+      operationId: adminListLeads
+      description: "Permission: `leads.read`. Offset pagination (API_STANDARDS.md)."
+      security: [{ adminSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LeadQuery"
+        - $ref: "#/components/parameters/LeadStatus"
+        - $ref: "#/components/parameters/LeadLocation"
+        - $ref: "#/components/parameters/LeadSource"
+        - $ref: "#/components/parameters/LeadReferral"
+        - $ref: "#/components/parameters/LeadPackaging"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        "200":
+          description: One page of leads, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/LeadPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/leads/export.csv:
+    get:
+      tags: [admin]
+      operationId: adminExportLeads
+      description: "Permission: `leads.export`. Audited before any row is sent. At most 50,000 rows."
+      security: [{ adminSession: [] }]
+      parameters:
+        - $ref: "#/components/parameters/LeadQuery"
+        - $ref: "#/components/parameters/LeadStatus"
+        - $ref: "#/components/parameters/LeadLocation"
+        - $ref: "#/components/parameters/LeadSource"
+        - $ref: "#/components/parameters/LeadReferral"
+        - $ref: "#/components/parameters/LeadPackaging"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/To"
+      responses:
+        "200":
+          description: CSV, one lead per row; cells starting with = + - @ are prefixed with '.
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/leads/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [admin]
+      operationId: adminGetLead
+      description: "Permission: `leads.read`."
+      security: [{ adminSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/LeadDetail" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin]
+      operationId: adminSetLeadStatus
+      description: "Permission: `leads.update`. Audited."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              additionalProperties: false
+              properties:
+                status: { type: string, enum: [VERIFIED, QUALIFIED, UNSUBSCRIBED, BLOCKED] }
+      responses:
+        "200": { $ref: "#/components/responses/LeadDetail" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [admin]
+      operationId: adminEraseLead
+      description: "Permission: `leads.erase`. Permanent; leaves one audit entry with no personal data. A linked customer account is kept and unlinked."
+      security: [{ adminSession: [] }]
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    leadProfileToken:
+      type: http
+      scheme: bearer
+      description: Stateless signed token for one waitlist lead (decisions/prelaunch/009).
+    customerSession:
+      type: http
+      scheme: bearer
+      description: Customer session token, held by the customer Next.js server.
+    adminSession:
+      type: http
+      scheme: bearer
+      description: Admin session token, held by the admin Next.js server.
+
+  parameters:
+    LeadQuery: { name: q, in: query, description: "Name or email contains", schema: { type: string, maxLength: 100 } }
+    LeadStatus: { name: status, in: query, schema: { $ref: "#/components/schemas/LeadStatus" } }
+    LeadLocation: { name: location, in: query, schema: { type: string } }
+    LeadSource: { name: source, in: query, description: "First-touch utm_source, 'referral' or 'direct'", schema: { type: string } }
+    LeadReferral: { name: referral, in: query, schema: { type: string, enum: [referrer, referred] } }
+    LeadPackaging: { name: packaging, in: query, description: "A packaging option value, or 'none'", schema: { type: string } }
+    From: { name: from, in: query, schema: { type: string, format: date } }
+    To: { name: to, in: query, description: "Inclusive", schema: { type: string, format: date } }
+
+  requestBodies:
+    Token:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [token]
+            additionalProperties: false
+            properties:
+              token: { type: string }
+    Credentials:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            additionalProperties: false
+            properties:
+              email: { type: string }
+              password: { type: string }
+    Code:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code]
+            additionalProperties: false
+            properties:
+              code: { type: string, pattern: "^[0-9]{6}$" }
+
+  responses:
+    Error:
+      description: An error envelope. See API_STANDARDS.md for codes.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    Done:
+      description: "Done. The body is a small object such as {\"verified\": true}."
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data:
+                type: object
+                additionalProperties: { type: boolean }
+              meta: { $ref: "#/components/schemas/Meta" }
+    CheckEmail:
+      description: Accepted. Nothing in the answer reveals whether an account exists.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [check_email] }
+              meta: { $ref: "#/components/schemas/Meta" }
+    AdminGrant:
+      description: An admin session, complete or waiting for its second factor.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data:
+                type: object
+                required: [token, expires_in, admin, mfa]
+                properties:
+                  token: { type: string }
+                  expires_in: { type: integer }
+                  admin: { $ref: "#/components/schemas/AdminPrincipal" }
+                  mfa: { $ref: "#/components/schemas/MFAState" }
+              meta: { $ref: "#/components/schemas/Meta" }
+    LeadDetail:
+      description: Everything about one lead.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data, meta]
+            properties:
+              data: { $ref: "#/components/schemas/LeadDetail" }
+              meta: { $ref: "#/components/schemas/Meta" }
+
+  schemas:
+    Meta:
+      type: object
+      required: [request_id]
+      properties:
+        request_id: { type: string }
+    StatusEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [status]
+          properties:
+            status: { type: string }
+        meta: { $ref: "#/components/schemas/Meta" }
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, description: "Stable, for programs." }
+        message: { type: string, description: "For people; may change." }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/FieldError" }
+    ErrorEnvelope:
+      type: object
+      required: [error, meta]
+      properties:
+        error: { $ref: "#/components/schemas/ApiError" }
+        meta: { $ref: "#/components/schemas/Meta" }
+
+    # ---- leads
+    LeadStatus:
+      type: string
+      enum: [PENDING, VERIFIED, QUALIFIED, CONVERTED, UNSUBSCRIBED, BLOCKED]
+    ReferralCounts:
+      type: object
+      required: [pending, converted]
+      properties:
+        pending: { type: integer }
+        converted: { type: integer }
+    LeadSummary:
+      type: object
+      required: [first_name, status, verification_required, referral_code, referral_url, referrals, profile_completed]
+      properties:
+        first_name: { type: string }
+        status: { $ref: "#/components/schemas/LeadStatus" }
+        verification_required: { type: boolean }
+        referral_code: { type: string }
+        referral_url: { type: string }
+        referrals: { $ref: "#/components/schemas/ReferralCounts" }
+        profile_completed: { type: boolean }
+    LeadSummaryEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/LeadSummary" }
+        meta: { $ref: "#/components/schemas/Meta" }
+    AttributionTouch:
+      type: object
+      properties:
+        utm_source: { type: string }
+        utm_medium: { type: string }
+        utm_campaign: { type: string }
+        utm_content: { type: string }
+        utm_term: { type: string }
+        landing_page: { type: string }
+        referrer_url: { type: string }
+    CreateLeadInput:
+      type: object
+      required: [first_name, last_name, email, location, dietary_interests, consent, website, elapsed_ms]
+      additionalProperties: false
+      properties:
+        first_name: { type: string, maxLength: 80 }
+        last_name: { type: string, maxLength: 80 }
+        email: { type: string, maxLength: 254 }
+        phone: { type: string }
+        location: { type: string }
+        dietary_interests: { type: array, items: { type: string } }
+        household_size: { type: integer, minimum: 1, maximum: 12 }
+        packaging_preference: { type: string }
+        consent: { type: boolean }
+        referral_code: { type: string }
+        attribution:
+          type: object
+          properties:
+            first: { $ref: "#/components/schemas/AttributionTouch" }
+            latest: { $ref: "#/components/schemas/AttributionTouch" }
+        anonymous_id: { type: string }
+        website: { type: string, description: "Honeypot. Always empty from a person." }
+        elapsed_ms: { type: integer, description: "Milliseconds the form was open." }
+    CreateLeadResult:
+      type: object
+      required: [outcome]
+      properties:
+        outcome: { type: string, enum: [created, already_on_list] }
+        lead: { $ref: "#/components/schemas/LeadSummary" }
+        profile_token: { type: string }
+    PreferencesInput:
+      type: object
+      additionalProperties: false
+      properties:
+        household_size: { type: integer }
+        meals_per_week: { type: integer }
+        dietary_preferences: { type: array, items: { type: string } }
+        meal_interests: { type: array, items: { type: string } }
+        cooking_frequency: { type: string }
+        delivery_area: { type: string }
+        packaging_preference: { type: string }
+        household_type: { type: string }
+        fitness_goal: { type: string }
+        usage: { type: string }
+    EventBatch:
+      type: object
+      required: [anonymous_id, session_id, events]
+      additionalProperties: false
+      properties:
+        anonymous_id: { type: string }
+        session_id: { type: string }
+        events:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [type]
+            properties:
+              type: { type: string }
+              metadata:
+                type: object
+                additionalProperties:
+                  oneOf: [{ type: string }, { type: number }, { type: boolean }]
+
+    # ---- accounts
+    RegisterInput:
+      type: object
+      required: [email, password, first_name, last_name, accept_terms]
+      additionalProperties: false
+      properties:
+        email: { type: string, maxLength: 254 }
+        password: { type: string, minLength: 12, description: "12 or more characters; at most 256 bytes." }
+        first_name: { type: string, maxLength: 80 }
+        last_name: { type: string, maxLength: 80 }
+        accept_terms: { type: boolean }
+    Customer:
+      type: object
+      required: [id, email, first_name, last_name, email_verified]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        email_verified: { type: boolean }
+    SessionInfo:
+      type: object
+      required: [id, current, client, user_agent, created_at, last_seen_at, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        current: { type: boolean }
+        client: { type: string, enum: [web, mobile] }
+        user_agent: { type: string }
+        created_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+    MFAState:
+      type: string
+      enum: [verified, challenge, enrolment_required, not_enrolled, not_applicable]
+      description: |
+        verified: a code was presented in this session. challenge: present a code.
+        enrolment_required: set up an authenticator first. not_enrolled: MFA not
+        required here (local development) and not set up.
+    AdminPrincipal:
+      type: object
+      required: [id, email, name, role, roles, permissions, mfa]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string, description: "The most senior staff role, for display. Authorise with permissions." }
+        roles: { type: array, items: { type: string } }
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage]
+        mfa: { $ref: "#/components/schemas/MFAState" }
+
+    # ---- admin
+    Bucket:
+      type: object
+      required: [label, count]
+      properties:
+        label: { type: string }
+        count: { type: integer }
+    Overview:
+      type: object
+      required: [total_leads, verified_leads, pending_leads, unsubscribed_leads, referral_conversions, referred_signups, profiles_completed, range_days, signups_by_day, sources, dietary, household_sizes, packaging, locations]
+      properties:
+        total_leads: { type: integer }
+        verified_leads: { type: integer }
+        pending_leads: { type: integer }
+        unsubscribed_leads: { type: integer }
+        referral_conversions: { type: integer }
+        referred_signups: { type: integer }
+        profiles_completed: { type: integer }
+        range_days: { type: integer }
+        signups_by_day:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date: { type: string, format: date }
+              count: { type: integer }
+        sources: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
+        dietary: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
+        household_sizes: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
+        packaging: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
+        locations: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
+    LeadRow:
+      type: object
+      required: [id, first_name, last_name, email, status, location, source, household_size, referrals_converted, was_referred, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        first_name: { type: string }
+        last_name: { type: string }
+        email: { type: string }
+        status: { $ref: "#/components/schemas/LeadStatus" }
+        location: { type: string }
+        source: { type: string }
+        household_size: { type: [integer, "null"] }
+        referrals_converted: { type: integer }
+        was_referred: { type: boolean }
+        created_at: { type: string, format: date-time }
+    LeadPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/LeadRow" } }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    ReferralEntry:
+      type: object
+      required: [lead_id, first_name, last_name, status, created_at, converted_at]
+      properties:
+        lead_id: { type: string, format: uuid }
+        first_name: { type: string }
+        last_name: { type: string }
+        status: { type: string, enum: [pending, converted, flagged] }
+        created_at: { type: string, format: date-time }
+        converted_at: { type: [string, "null"], format: date-time }
+    LeadDetail:
+      type: object
+      required: [id, first_name, last_name, email, phone, location, status, referral_code, email_verified_at, consent_at, consent_version, created_at, updated_at, preferences, attribution, referred_by, referrals, timeline, account]
+      properties:
+        id: { type: string, format: uuid }
+        first_name: { type: string }
+        last_name: { type: string }
+        email: { type: string }
+        phone: { type: [string, "null"] }
+        location: { type: string }
+        status: { $ref: "#/components/schemas/LeadStatus" }
+        referral_code: { type: string }
+        email_verified_at: { type: [string, "null"], format: date-time }
+        consent_at: { type: string, format: date-time }
+        consent_version: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        preferences:
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [household_size, meals_per_week, dietary_preferences, meal_interests, cooking_frequency, delivery_area, packaging_preference, metadata, updated_at]
+              properties:
+                household_size: { type: [integer, "null"] }
+                meals_per_week: { type: [integer, "null"] }
+                dietary_preferences: { type: array, items: { type: string } }
+                meal_interests: { type: array, items: { type: string } }
+                cooking_frequency: { type: [string, "null"] }
+                delivery_area: { type: [string, "null"] }
+                packaging_preference: { type: [string, "null"] }
+                metadata: { type: object, additionalProperties: { type: string } }
+                updated_at: { type: string, format: date-time }
+        attribution:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/AttributionTouch"
+              - type: object
+                required: [touch, created_at]
+                properties:
+                  touch: { type: string, enum: [first, latest] }
+                  created_at: { type: string, format: date-time }
+        referred_by:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ReferralEntry"
+        referrals: { type: array, items: { $ref: "#/components/schemas/ReferralEntry" } }
+        timeline:
+          type: array
+          items:
+            type: object
+            required: [kind, type, metadata, created_at]
+            properties:
+              kind: { type: string, enum: [event, audit] }
+              type: { type: string }
+              metadata: { type: object, additionalProperties: true }
+              created_at: { type: string, format: date-time }
+        account:
+          description: The customer account this lead became, once linked.
+          oneOf:
+            - type: "null"
+            - type: object
+              required: [customer_id, linked_at]
+              properties:
+                customer_id: { type: string, format: uuid }
+                linked_at: { type: string, format: date-time }

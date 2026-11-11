@@ -9,9 +9,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/customers"
 	"mise.tt/api/internal/events"
+	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/platform/config"
+	"mise.tt/api/internal/platform/crypto"
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/platform/token"
@@ -29,8 +32,29 @@ func NewLeadService(cfg config.Config, pool *pgxpool.Pool) *leads.Service {
 	})
 }
 
+// NewIdentityService builds the identity service from configuration. The
+// worker and misectl use it too.
+func NewIdentityService(cfg config.Config, pool *pgxpool.Pool) (*identity.Service, error) {
+	sealer, err := crypto.NewSealer(cfg.DataEncryptionKey)
+	if err != nil {
+		return nil, err
+	}
+	signer := token.NewSigner(cfg.TokenSigningKey)
+	return identity.NewService(pool, sealer, signer.HashIP, customers.Hooks{}, identity.Options{
+		AdminSessionTTL:        cfg.AdminSessionTTL,
+		AdminSessionIdleTTL:    cfg.AdminSessionIdleTTL,
+		CustomerSessionTTL:     cfg.CustomerSessionTTL,
+		CustomerSessionIdleTTL: cfg.CustomerSessionIdleTTL,
+		AdminMFARequired:       cfg.AdminMFARequired,
+		RegistrationEnabled:    cfg.CustomerRegistrationEnabled,
+		TermsVersion:           cfg.TermsVersion,
+		CustomerAppURL:         cfg.CustomerAppURL,
+	}), nil
+}
+
 // Limits are per client IP. Signup is the expensive, abusable endpoint and
-// gets the tightest budget.
+// gets the tightest budget. AdminLogin is kept as the name of the budget for
+// every password and registration endpoint (customer and admin).
 type Limits struct {
 	Signup, Token, Lookup, Events, AdminLogin, General *ratelimit.Limiter
 }
@@ -56,14 +80,39 @@ func DefaultLimits() Limits {
 	}
 }
 
-func New(cfg config.Config, pool *pgxpool.Pool, limits Limits) http.Handler {
+// recorder registers routes on a ServeMux and remembers their patterns.
+type recorder struct {
+	mux      *http.ServeMux
+	patterns []string
+}
+
+func (r *recorder) Handle(pattern string, h http.Handler) {
+	r.patterns = append(r.patterns, pattern)
+	r.mux.Handle(pattern, h)
+}
+
+func (r *recorder) HandleFunc(pattern string, h http.HandlerFunc) { r.Handle(pattern, h) }
+
+// New builds the API's HTTP handler.
+func New(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, error) {
+	h, _, err := Build(cfg, pool, limits)
+	return h, err
+}
+
+// Build is New, also returning every registered route pattern ("METHOD /path").
+func Build(cfg config.Config, pool *pgxpool.Pool, limits Limits) (http.Handler, []string, error) {
+	ids, err := NewIdentityService(cfg, pool)
+	if err != nil {
+		return nil, nil, err
+	}
 	leadService := NewLeadService(cfg, pool)
 	leadHandler := &leads.Handler{Service: leadService}
 	referralHandler := &referrals.Handler{DB: pool}
 	eventHandler := &events.Handler{DB: pool, ResolveLead: leadService.Authenticate, BearerToken: leads.BearerToken}
-	adminHandler := admin.NewHandler(pool, admin.NewAuth(pool, cfg.AdminSessionTTL))
+	identityHandler := identity.NewHandler(ids)
+	adminHandler := admin.NewHandler(pool, ids)
 
-	mux := http.NewServeMux()
+	mux := &recorder{mux: http.NewServeMux()}
 
 	mux.HandleFunc("GET /api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		httpx.JSON(w, r, http.StatusOK, map[string]string{"status": "ok"})
@@ -86,19 +135,20 @@ func New(cfg config.Config, pool *pgxpool.Pool, limits Limits) http.Handler {
 	mux.Handle("GET /api/v1/referrals/{code}", limits.Lookup.ByIP(http.HandlerFunc(referralHandler.Lookup)))
 	mux.Handle("POST /api/v1/events", limits.Events.ByIP(http.HandlerFunc(eventHandler.Ingest)))
 
-	adminHandler.Routes(mux, limits.AdminLogin.ByIP)
+	identityHandler.Routes(mux, identity.Limits{Auth: limits.AdminLogin.ByIP, Token: limits.Token.ByIP})
+	adminHandler.Routes(mux)
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)
 	})
 
-	return httpx.Chain(mux,
+	return httpx.Chain(mux.mux,
 		httpx.WithRequestID,
-		httpx.WithClientIP(cfg.TrustedProxyHops),
+		httpx.WithClientIP(cfg.TrustedProxyHops, cfg.BFFSharedKey),
 		httpx.WithAccessLog,
 		httpx.WithRecover,
 		httpx.WithSecurityHeaders(cfg.IsProduction()),
 		httpx.WithCORS(cfg.CORSOrigins),
 		limits.General.ByIP,
-	)
+	), mux.patterns, nil
 }

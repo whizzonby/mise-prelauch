@@ -28,6 +28,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: API types are generated from the current OpenAPI contract
+        run: |
+          pnpm generate:api
+          git diff --exit-code -- packages/api-client/src/schema.d.ts
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -63,6 +67,11 @@ jobs:
           cache-dependency-path: services/api/go.sum
       - name: Formatting
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - uses: sqlc-dev/setup-sqlc@v4
+        with:
+          sqlc-version: "1.31.1"
+      - name: Generated database code matches the queries and migrations
+        run: sqlc diff
       - run: go vet ./...
       - name: Tests (unit and database)
         run: go test ./... -race -count=1
@@ -76,6 +85,7 @@ jobs:
           go run ./cmd/misectl migrate up
           go run ./cmd/misectl migrate down
           go run ./cmd/misectl migrate up
+          go run ./cmd/misectl doctor
       - run: go build ./...
 
   security:

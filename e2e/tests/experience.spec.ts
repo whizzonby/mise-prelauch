@@ -96,6 +96,10 @@ test.describe("accessibility", () => {
     await form.getByLabel("First name").focus();
     await page.keyboard.type("Asha");
     await page.keyboard.press("Tab");
+    // Last name follows first name (added in d70359c; this test predated it).
+    await expect(form.getByLabel("Last name")).toBeFocused();
+    await page.keyboard.type("Mohammed");
+    await page.keyboard.press("Tab");
     await expect(form.getByLabel("Email", { exact: true })).toBeFocused();
     await page.keyboard.type("asha@example.com");
     await page.keyboard.press("Tab");

@@ -1,3 +1,6 @@
+// Package admin is the internal back office: dashboard statistics and lead
+// management (list, detail, status, export, erasure). Staff sign-in, sessions,
+// MFA and permissions belong to the identity module.
 package admin
 
 import (
@@ -13,10 +16,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"mise.tt/api/internal/audit"
+	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
-	"mise.tt/api/internal/platform/ratelimit"
 )
 
 const maxBody = 8 << 10
@@ -26,74 +30,30 @@ var optionPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,39}$`)
 
 var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
+// Handler serves the back-office lead features. Who may call them is decided
+// by the identity module: every route names the permission it needs.
 type Handler struct {
-	Pool *pgxpool.Pool
-	Auth *Auth
-	// loginByEmail slows password guessing against one account, whatever
-	// address the attempts come from.
-	loginByEmail *ratelimit.Limiter
+	Pool     *pgxpool.Pool
+	Identity *identity.Service
 }
 
-func NewHandler(pool *pgxpool.Pool, auth *Auth) *Handler {
-	return &Handler{Pool: pool, Auth: auth, loginByEmail: ratelimit.New(10, 15*time.Minute, 5)}
+func NewHandler(pool *pgxpool.Pool, ids *identity.Service) *Handler {
+	return &Handler{Pool: pool, Identity: ids}
 }
 
-// Routes registers every admin endpoint under /api/v1/admin.
-func (h *Handler) Routes(mux *http.ServeMux, loginLimit func(http.Handler) http.Handler) {
-	mux.Handle("POST /api/v1/admin/auth/login", loginLimit(http.HandlerFunc(h.login)))
-	mux.Handle("POST /api/v1/admin/auth/logout", h.Auth.Require("", h.logout))
-	mux.Handle("GET /api/v1/admin/auth/me", h.Auth.Require("", h.me))
-	mux.Handle("GET /api/v1/admin/stats/overview", h.Auth.Require(PermStatsRead, h.overview))
-	mux.Handle("GET /api/v1/admin/leads", h.Auth.Require(PermLeadsRead, h.list))
-	mux.Handle("GET /api/v1/admin/leads/export.csv", h.Auth.Require(PermLeadsExport, h.export))
-	mux.Handle("GET /api/v1/admin/leads/{id}", h.Auth.Require(PermLeadsRead, h.detail))
-	mux.Handle("PATCH /api/v1/admin/leads/{id}", h.Auth.Require(PermLeadsWrite, h.updateStatus))
-	mux.Handle("DELETE /api/v1/admin/leads/{id}", h.Auth.Require(PermLeadsErase, h.erase))
+// Routes registers the admin lead and statistics endpoints. Admin sign-in
+// lives in the identity module, at the same /api/v1/admin/auth URLs as before.
+func (h *Handler) Routes(mux httpx.Router) {
+	req := h.Identity.RequireAdmin
+	mux.Handle("GET /api/v1/admin/stats/overview", req(identity.PermAnalyticsView, h.overview))
+	mux.Handle("GET /api/v1/admin/leads", req(identity.PermLeadsRead, h.list))
+	mux.Handle("GET /api/v1/admin/leads/export.csv", req(identity.PermLeadsExport, h.export))
+	mux.Handle("GET /api/v1/admin/leads/{id}", req(identity.PermLeadsRead, h.detail))
+	mux.Handle("PATCH /api/v1/admin/leads/{id}", req(identity.PermLeadsUpdate, h.updateStatus))
+	mux.Handle("DELETE /api/v1/admin/leads/{id}", req(identity.PermLeadsErase, h.erase))
 }
 
-func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
-	var in struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	if err := httpx.Decode(w, r, &in, maxBody); err != nil {
-		httpx.Fail(w, r, err)
-		return
-	}
-	if !h.loginByEmail.Allow(strings.ToLower(strings.TrimSpace(in.Email))) {
-		httpx.Fail(w, r, httpx.ErrRateLimited)
-		return
-	}
-	tok, principal, err := h.Auth.Login(r.Context(), in.Email, in.Password)
-	if err != nil {
-		if err == errBadCredentials {
-			slog.WarnContext(r.Context(), "admin login failed", "event", "admin.login_failed")
-		}
-		httpx.Fail(w, r, err)
-		return
-	}
-	if err := audit(r.Context(), h.Pool, principal.ID, "admin.login", "admin_user", principal.ID, nil); err != nil {
-		httpx.Fail(w, r, err)
-		return
-	}
-	httpx.JSON(w, r, http.StatusOK, map[string]any{
-		"token":      tok,
-		"expires_in": int(h.Auth.sessionTTL.Seconds()),
-		"admin":      principal,
-	})
-}
-
-func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
-	if err := h.Auth.Logout(r.Context(), bearer(r)); err != nil {
-		httpx.Fail(w, r, err)
-		return
-	}
-	httpx.JSON(w, r, http.StatusOK, map[string]bool{"signed_out": true})
-}
-
-func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
-	httpx.JSON(w, r, http.StatusOK, principalFrom(r.Context()))
-}
+func actorID(r *http.Request) string { return identity.PrincipalFrom(r.Context()).UserID }
 
 func (h *Handler) overview(w http.ResponseWriter, r *http.Request) {
 	days := 30
@@ -234,7 +194,6 @@ func (h *Handler) updateStatus(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, badParam("status", "Status must be VERIFIED, QUALIFIED, UNSUBSCRIBED or BLOCKED."))
 		return
 	}
-	actor := principalFrom(r.Context())
 	found := false
 	err = db.InTx(r.Context(), h.Pool, func(tx pgx.Tx) error {
 		previous, ok, err := setLeadStatus(r.Context(), tx, id, status)
@@ -242,8 +201,10 @@ func (h *Handler) updateStatus(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		found = true
-		return audit(r.Context(), tx, actor.ID, "lead.status_changed", "lead", id,
-			map[string]any{"from": previous, "to": string(status)})
+		return audit.Record(r.Context(), tx, audit.Entry{
+			ActorUserID: actorID(r), Action: "lead.status_changed", TargetType: "lead", TargetID: id,
+			Metadata: map[string]any{"from": previous, "to": string(status)},
+		})
 	})
 	if err != nil {
 		httpx.Fail(w, r, err)
@@ -264,7 +225,6 @@ func (h *Handler) erase(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, err)
 		return
 	}
-	actor := principalFrom(r.Context())
 	found := false
 	err = db.InTx(r.Context(), h.Pool, func(tx pgx.Tx) error {
 		// Audit entries about the lead may hold nothing personal, but they are
@@ -277,7 +237,7 @@ func (h *Handler) erase(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		found = true
-		return audit(r.Context(), tx, actor.ID, "lead.erased", "lead", "", nil)
+		return audit.Record(r.Context(), tx, audit.Entry{ActorUserID: actorID(r), Action: "lead.erased", TargetType: "lead"})
 	})
 	if err != nil {
 		httpx.Fail(w, r, err)
@@ -309,15 +269,14 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, err)
 		return
 	}
-	actor := principalFrom(r.Context())
-	if err := audit(r.Context(), h.Pool, actor.ID, "leads.exported", "lead", "", map[string]any{
+	if err := audit.Record(r.Context(), h.Pool, audit.Entry{ActorUserID: actorID(r), Action: "leads.exported", TargetType: "lead", Metadata: map[string]any{
 		"rows":     min(total, exportLimit),
 		"status":   f.Status,
 		"location": f.Location,
 		"source":   f.Source,
 		"referral": f.Referral,
 		"searched": f.Query != "",
-	}); err != nil {
+	}}); err != nil {
 		httpx.Fail(w, r, err)
 		return
 	}
@@ -350,11 +309,11 @@ func (h *Handler) export(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var (
 			id, firstName, lastName, email, phone, location, status, code, source, medium, campaign string
-			household, meals, cooking, packaging                                          string
-			dietary, interests                                                            *string
-			converted                                                                     int
-			verifiedAt                                                                    *time.Time
-			consentAt, createdAt                                                          time.Time
+			household, meals, cooking, packaging                                                    string
+			dietary, interests                                                                      *string
+			converted                                                                               int
+			verifiedAt                                                                              *time.Time
+			consentAt, createdAt                                                                    time.Time
 		)
 		if err := rows.Scan(&id, &firstName, &lastName, &email, &phone, &location, &status, &code, &source, &medium,
 			&campaign, &household, &meals, &dietary, &interests, &cooking, &packaging, &converted, &verifiedAt,

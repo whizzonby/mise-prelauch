@@ -1,0 +1,11 @@
+Hi {{.FirstName}},
+
+Someone tried to create a Mise account with this address, but it already has one. You can sign in, or reset your password from the sign-in page if you have forgotten it.
+
+Sign in:
+{{.ActionURL}}
+
+If that was not you, nothing has changed and you can ignore this email.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

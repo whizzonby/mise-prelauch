@@ -13,6 +13,12 @@ import (
 	"strings"
 )
 
+// Router is what modules register their routes on. The server records every
+// pattern, so tests can compare the routes with the OpenAPI contract.
+type Router interface {
+	Handle(pattern string, handler http.Handler)
+}
+
 // FieldError describes one invalid input field.
 type FieldError struct {
 	Field   string `json:"field"`

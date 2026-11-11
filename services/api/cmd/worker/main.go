@@ -1,4 +1,5 @@
-// Command worker runs background jobs: today, transactional email.
+// Command worker runs background jobs: today, transactional email for the
+// waitlist and for customer accounts.
 package main
 
 import (
@@ -53,6 +54,12 @@ func run() error {
 		SiteURL: cfg.PublicSiteURL,
 	}
 	sender.Register(runner)
+
+	ids, err := server.NewIdentityService(cfg, pool)
+	if err != nil {
+		return err
+	}
+	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
 
 	slog.Info("worker started", "mail_driver", cfg.Mail.Driver)
 	err = runner.Run(ctx)

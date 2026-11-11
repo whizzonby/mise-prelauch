@@ -1,8 +1,14 @@
 /**
- * Typed client for the Mise API. Used by the marketing site (browser), the
- * admin app (server) and, later, anything else written in TypeScript. The
- * contract is documented in docs/api/README.md.
+ * Typed client for the Mise API. Used by the marketing site (browser), and by
+ * the admin and customer apps (on their servers only). The contract is
+ * docs/api/openapi.yaml; `schema.d.ts` is generated from it (`pnpm --filter
+ * @mise/api-client generate`) and `contract-check.ts` fails the type check if
+ * the hand-written types below drift from it.
  */
+
+import type { components } from "./schema";
+
+export type { components, paths } from "./schema";
 
 export type LeadStatus = "PENDING" | "VERIFIED" | "QUALIFIED" | "CONVERTED" | "UNSUBSCRIBED" | "BLOCKED";
 
@@ -83,21 +89,41 @@ export interface EventBatch {
   events: { type: string; metadata?: Record<string, string | number | boolean> }[];
 }
 
-// ---------- admin ----------
+// ---------- accounts (types generated from the contract) ----------
 
-export interface AdminPrincipal {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  permissions: string[];
+export type Customer = components["schemas"]["Customer"];
+export type RegisterInput = components["schemas"]["RegisterInput"];
+export type SessionInfo = components["schemas"]["SessionInfo"];
+export type MFAState = components["schemas"]["MFAState"];
+export type AdminPrincipal = components["schemas"]["AdminPrincipal"];
+export type Permission = AdminPrincipal["permissions"][number];
+
+export interface CustomerLoginResult {
+  token: string;
+  expires_in: number;
+  user: Customer;
 }
 
 export interface AdminLoginResult {
   token: string;
   expires_in: number;
   admin: AdminPrincipal;
+  /** Anything but "verified" or "not_enrolled" means the second step is still due. */
+  mfa: MFAState;
 }
+
+export interface MFASetup {
+  secret: string;
+  otpauth_url: string;
+  qr_png_base64: string;
+}
+
+/** Whether an admin session may use the console, or must finish MFA first. */
+export function mfaComplete(state: MFAState): boolean {
+  return state === "verified" || state === "not_enrolled" || state === "not_applicable";
+}
+
+// ---------- admin ----------
 
 export interface Bucket {
   label: string;
@@ -197,6 +223,8 @@ export interface LeadDetail {
   referred_by: ReferralEntry | null;
   referrals: ReferralEntry[];
   timeline: { kind: "event" | "audit"; type: string; metadata: Record<string, unknown>; created_at: string }[];
+  /** The customer account this lead became, once linked. */
+  account: { customer_id: string; linked_at: string } | null;
 }
 
 // ---------- errors ----------
@@ -233,6 +261,12 @@ export class NetworkError extends Error {
 export interface ClientOptions {
   baseUrl: string;
   fetch?: typeof fetch;
+  /**
+   * Extra headers for every request, resolved per call. The Next.js servers
+   * use it to pass on the end user's address and browser with the BFF key
+   * (docs/security/AUTHENTICATION.md, "Client address").
+   */
+  headers?: () => Record<string, string> | Promise<Record<string, string>>;
 }
 
 interface RequestOptions {
@@ -255,11 +289,11 @@ function toQuery(query?: object): string {
   return text ? `?${text}` : "";
 }
 
-export function createClient({ baseUrl, fetch: fetchImpl = fetch }: ClientOptions) {
+export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extraHeaders }: ClientOptions) {
   const base = baseUrl.replace(/\/$/, "");
 
-  function buildRequest(path: string, opts: RequestOptions): [string, RequestInit] {
-    const headers: Record<string, string> = { Accept: "application/json" };
+  async function buildRequest(path: string, opts: RequestOptions): Promise<[string, RequestInit]> {
+    const headers: Record<string, string> = { ...(extraHeaders ? await extraHeaders() : {}), Accept: "application/json" };
     if (opts.body !== undefined) headers["Content-Type"] = "application/json";
     if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
     return [
@@ -275,7 +309,7 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch }: ClientOption
   }
 
   async function send(path: string, opts: RequestOptions): Promise<Response> {
-    const [url, init] = buildRequest(path, opts);
+    const [url, init] = await buildRequest(path, opts);
     let res: Response;
     try {
       res = await fetchImpl(url, init);
@@ -317,12 +351,44 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch }: ClientOption
     sendEvents: (batch: EventBatch, token?: string) =>
       request<{ accepted: number }>("/events", { method: "POST", body: batch, token, keepalive: true }),
 
+    /** Customer accounts. Server-side only: tokens never reach the browser. */
+    auth: {
+      register: (input: RegisterInput) =>
+        request<{ status: "check_email" }>("/auth/register", { method: "POST", body: input, cache: "no-store" }),
+      verifyEmail: (token: string) =>
+        request<{ verified: boolean }>("/auth/verify-email", { method: "POST", body: { token }, cache: "no-store" }),
+      login: (email: string, password: string) =>
+        request<CustomerLoginResult>("/auth/login", { method: "POST", body: { email, password }, cache: "no-store" }),
+      logout: (token: string) =>
+        request<{ signed_out: boolean }>("/auth/logout", { method: "POST", token, cache: "no-store" }),
+      forgotPassword: (email: string) =>
+        request<{ status: "check_email" }>("/auth/password/forgot", { method: "POST", body: { email }, cache: "no-store" }),
+      resetPassword: (token: string, password: string) =>
+        request<{ password_reset: boolean }>("/auth/password/reset", {
+          method: "POST",
+          body: { token, password },
+          cache: "no-store",
+        }),
+      me: (token: string) => request<Customer>("/me", { token, cache: "no-store" }),
+      sessions: (token: string) => request<{ items: SessionInfo[] }>("/me/sessions", { token, cache: "no-store" }),
+      revokeSession: (token: string, id: string) =>
+        request<{ revoked: boolean }>(`/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE", token, cache: "no-store" }),
+      revokeOtherSessions: (token: string) =>
+        request<{ revoked: number }>("/me/sessions", { method: "DELETE", token, cache: "no-store" }),
+    },
+
     admin: {
       login: (email: string, password: string) =>
         request<AdminLoginResult>("/admin/auth/login", { method: "POST", body: { email, password }, cache: "no-store" }),
       logout: (token: string) =>
         request<{ signed_out: boolean }>("/admin/auth/logout", { method: "POST", token, cache: "no-store" }),
       me: (token: string) => request<AdminPrincipal>("/admin/auth/me", { token, cache: "no-store" }),
+      mfaVerify: (token: string, code: string) =>
+        request<AdminLoginResult>("/admin/auth/mfa/verify", { method: "POST", body: { code }, token, cache: "no-store" }),
+      mfaSetup: (token: string) =>
+        request<MFASetup>("/admin/auth/mfa/setup", { method: "POST", token, cache: "no-store" }),
+      mfaConfirm: (token: string, code: string) =>
+        request<AdminLoginResult>("/admin/auth/mfa/confirm", { method: "POST", body: { code }, token, cache: "no-store" }),
       overview: (token: string, days = 30) =>
         request<Overview>("/admin/stats/overview", { token, query: { days }, cache: "no-store" }),
       listLeads: (token: string, filter: LeadFilter = {}) =>

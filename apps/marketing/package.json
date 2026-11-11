@@ -7,7 +7,7 @@
     "dev": "next dev --port 3100",
     "build": "next build",
     "start": "next start --port 3100",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run"
   },
@@ -22,11 +22,11 @@
     "@tanstack/react-query": "^5.103.2",
     "gsap": "^3.15.0",
     "lucide-react": "^1.47.0",
-    "next": "^16.3.5",
+    "next": "^16.4.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-hook-form": "^7.88.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@mise/config": "workspace:*",

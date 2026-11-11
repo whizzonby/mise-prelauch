@@ -1,11 +1,12 @@
 package leads
 
 import (
-	"net/mail"
 	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	platformemail "mise.tt/api/internal/platform/email"
 
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/referrals"
@@ -149,37 +150,9 @@ func looksAutomated(in SignupInput) bool {
 }
 
 // NormalizeEmail returns the deliverable form (trimmed, lower-cased) and the
-// canonical form used for uniqueness.
+// canonical form used for uniqueness. It is shared with customer accounts.
 func NormalizeEmail(raw string) (email, canonical string, ok bool) {
-	email = strings.ToLower(strings.TrimSpace(raw))
-	if email == "" || len(email) > 254 {
-		return "", "", false
-	}
-	addr, err := mail.ParseAddress(email)
-	if err != nil || addr.Address != email {
-		return "", "", false
-	}
-	at := strings.LastIndex(email, "@")
-	local, domain := email[:at], email[at+1:]
-	if len(local) > 64 || !strings.Contains(domain, ".") || strings.HasPrefix(domain, ".") || strings.HasSuffix(domain, ".") || strings.Contains(domain, "..") {
-		return "", "", false
-	}
-	for _, r := range email {
-		if r > unicode.MaxASCII || unicode.IsSpace(r) || unicode.IsControl(r) {
-			return "", "", false
-		}
-	}
-
-	canonLocal, _, _ := strings.Cut(local, "+")
-	canonDomain := domain
-	if domain == "gmail.com" || domain == "googlemail.com" {
-		canonLocal = strings.ReplaceAll(canonLocal, ".", "")
-		canonDomain = "gmail.com"
-	}
-	if canonLocal == "" {
-		return "", "", false
-	}
-	return email, canonLocal + "@" + canonDomain, true
+	return platformemail.Normalize(raw)
 }
 
 // NormalizePhone keeps digits and a leading plus sign.

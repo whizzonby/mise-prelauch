@@ -3,6 +3,7 @@ package httpx
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"log/slog"
 	"net"
@@ -19,6 +20,8 @@ type ctxKey int
 const (
 	requestIDKey ctxKey = iota
 	clientIPKey
+	traceIDKey
+	clientUAKey
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -41,7 +44,36 @@ func ClientIP(ctx context.Context) string {
 	return ip
 }
 
+// ClientUserAgent is the end user's browser, even when the request was made on
+// their behalf by one of Mise's Next.js servers.
+func ClientUserAgent(ctx context.Context) string {
+	ua, _ := ctx.Value(clientUAKey).(string)
+	return ua
+}
+
+// Headers a Mise backend-for-frontend (the admin and customer Next.js
+// servers) uses to pass on the address and browser of the person it is acting
+// for. They are believed only alongside the shared BFF key; otherwise every
+// sign-in would appear to come from the Next.js server, and per-address rate
+// limits would become one global limit.
+const (
+	HeaderBFFKey      = "X-Mise-Bff-Key"
+	HeaderBFFClientIP = "X-Mise-Client-Ip"
+	HeaderBFFClientUA = "X-Mise-Client-Ua"
+)
+
 var validRequestID = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
+
+// W3C Trace Context: version-traceid-parentid-flags. Only version 00 is read.
+var validTraceparent = regexp.MustCompile(`^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$`)
+
+// TraceID returns the W3C trace id the caller sent, if any. Logs carry it so
+// that, once an OpenTelemetry collector exists, log lines join traces without
+// changing any handler (ADR-005).
+func TraceID(ctx context.Context) string {
+	id, _ := ctx.Value(traceIDKey).(string)
+	return id
+}
 
 // WithRequestID accepts a well-formed inbound X-Request-Id (so a trace can span
 // the Next.js apps and the API) or generates one.
@@ -54,14 +86,19 @@ func WithRequestID(next http.Handler) http.Handler {
 			id = hex.EncodeToString(buf)
 		}
 		w.Header().Set("X-Request-Id", id)
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), requestIDKey, id)))
+		ctx := context.WithValue(r.Context(), requestIDKey, id)
+		if m := validTraceparent.FindStringSubmatch(r.Header.Get("Traceparent")); m != nil && m[1] != strings.Repeat("0", 32) {
+			ctx = context.WithValue(ctx, traceIDKey, m[1])
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // WithClientIP resolves the caller's address. Behind N trusted proxies the
 // client is the Nth entry from the right of X-Forwarded-For; anything further
-// left is caller-controlled and ignored.
-func WithClientIP(trustedHops int) Middleware {
+// left is caller-controlled and ignored. A request carrying the BFF key may
+// name the end user's address and browser instead (see HeaderBFFKey).
+func WithClientIP(trustedHops int, bffKey string) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -76,7 +113,16 @@ func WithClientIP(trustedHops int) Middleware {
 					}
 				}
 			}
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), clientIPKey, ip)))
+			ua := r.UserAgent()
+			if bffKey != "" && subtle.ConstantTimeCompare([]byte(r.Header.Get(HeaderBFFKey)), []byte(bffKey)) == 1 {
+				if candidate := strings.TrimSpace(r.Header.Get(HeaderBFFClientIP)); net.ParseIP(candidate) != nil {
+					ip = candidate
+				}
+				ua = r.Header.Get(HeaderBFFClientUA)
+			}
+			ctx := context.WithValue(r.Context(), clientIPKey, ip)
+			ctx = context.WithValue(ctx, clientUAKey, ua)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
@@ -160,7 +206,7 @@ func WithCORS(allowedOrigins []string) Middleware {
 				w.Header().Set("Access-Control-Expose-Headers", "X-Request-Id")
 				if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE")
-					w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-Id")
+					w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-Id, Traceparent")
 					w.Header().Set("Access-Control-Max-Age", "600")
 					w.WriteHeader(http.StatusNoContent)
 					return

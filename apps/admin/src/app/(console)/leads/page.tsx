@@ -35,7 +35,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const [leads, overview] = await Promise.all([
     api.admin.listLeads(token, filter),
     // The dashboard breakdowns double as the lists of filter options.
-    can(admin, "stats:read") ? api.admin.overview(token, 30) : null,
+    can(admin, "analytics.view") ? api.admin.overview(token, 30) : null,
   ]);
   const pages = Math.max(1, Math.ceil(leads.total / leads.page_size));
   const hasFilters = Object.keys(active).length > 0;
@@ -46,7 +46,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <Heading as="h1" size="h2">
           Leads
         </Heading>
-        {can(admin, "leads:export") ? (
+        {can(admin, "leads.export") ? (
           // A plain link, not a Next link: it downloads a file.
           <a href={`/leads/export${queryString(active)}`} className={buttonClasses("secondary", "md")}>
             Export {hasFilters ? "these" : "all"} leads as CSV

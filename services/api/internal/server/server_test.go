@@ -16,7 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
@@ -73,6 +73,8 @@ type harness struct {
 	t       *testing.T
 	pool    *pgxpool.Pool
 	handler http.Handler
+	routes  []string
+	ids     *identity.Service
 	runner  *jobs.Runner
 	mailer  *captureMailer
 	cfg     config.Config
@@ -98,18 +100,26 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	if err := db.Migrate(ctx, pool); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
-	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log RESTART IDENTITY CASCADE`); err != nil {
+	// Roles and permissions are reference data seeded by migrations; they stay.
+	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 
 	cfg := config.Config{
-		Env:                       "local",
-		PublicSiteURL:             "http://site.test",
-		CORSOrigins:               []string{"http://site.test"},
-		TokenSigningKey:           []byte("test-signing-key-test-signing-key-123"),
-		EmailVerificationRequired: true,
-		ConsentVersion:            "test",
-		AdminSessionTTL:           time.Hour,
+		Env:                         "local",
+		PublicSiteURL:               "http://site.test",
+		CORSOrigins:                 []string{"http://site.test"},
+		TokenSigningKey:             []byte("test-signing-key-test-signing-key-123"),
+		EmailVerificationRequired:   true,
+		ConsentVersion:              "test",
+		AdminSessionTTL:             time.Hour,
+		AdminSessionIdleTTL:         time.Hour,
+		CustomerSessionTTL:          24 * time.Hour,
+		CustomerSessionIdleTTL:      24 * time.Hour,
+		CustomerRegistrationEnabled: true,
+		CustomerAppURL:              "http://app.test",
+		TermsVersion:                "test-terms",
+		DataEncryptionKey:           []byte("0123456789abcdef0123456789abcdef"),
 	}
 	limits := openLimits()
 	for _, m := range mutate {
@@ -118,9 +128,19 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 
 	mailer := &captureMailer{}
 	runner := jobs.NewRunner(pool)
-	(&notifications.Sender{DB: pool, Mailer: mailer, Links: server.NewLeadService(cfg, pool), SiteURL: cfg.PublicSiteURL}).Register(runner)
+	sender := &notifications.Sender{DB: pool, Mailer: mailer, Links: server.NewLeadService(cfg, pool), SiteURL: cfg.PublicSiteURL}
+	sender.Register(runner)
+	ids, err := server.NewIdentityService(cfg, pool)
+	if err != nil {
+		t.Fatalf("identity service: %v", err)
+	}
+	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
 
-	return &harness{t: t, pool: pool, handler: server.New(cfg, pool, limits), runner: runner, mailer: mailer, cfg: cfg}
+	handler, routes, err := server.Build(cfg, pool, limits)
+	if err != nil {
+		t.Fatalf("build server: %v", err)
+	}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.
@@ -655,8 +675,7 @@ func TestCORS(t *testing.T) {
 func (h *harness) adminLogin(email, role string) string {
 	h.t.Helper()
 	const password = "correct horse battery staple"
-	auth := admin.NewAuth(h.pool, time.Hour)
-	if err := auth.CreateUser(context.Background(), email, "Test Admin", role, password); err != nil {
+	if err := h.ids.UpsertStaff(context.Background(), email, "Test Admin", role, password); err != nil {
 		h.t.Fatalf("create admin: %v", err)
 	}
 	res := h.do("POST", "/api/v1/admin/auth/login", map[string]string{"email": email, "password": password})
@@ -691,7 +710,7 @@ func TestAdminAuth(t *testing.T) {
 	h.wantStatus(h.do("GET", "/api/v1/admin/auth/me", nil, bearer(tok)), http.StatusUnauthorized)
 
 	// The session token is stored hashed.
-	if n := h.count(`SELECT count(*) FROM admin_sessions WHERE token_hash = convert_to($1, 'UTF8')`, tok); n != 0 {
+	if n := h.count(`SELECT count(*) FROM sessions WHERE token_hash = convert_to($1, 'UTF8')`, tok); n != 0 {
 		t.Error("raw session token found in the database")
 	}
 }

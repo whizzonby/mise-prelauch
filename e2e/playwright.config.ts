@@ -11,6 +11,7 @@ if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 export const urls = {
   site: process.env.E2E_SITE_URL ?? "http://localhost:3100",
   admin: process.env.E2E_ADMIN_URL ?? "http://localhost:3101",
+  web: process.env.E2E_WEB_URL ?? "http://localhost:3102",
   api: process.env.E2E_API_URL ?? "http://localhost:8090",
   mailpit: process.env.MAILPIT_URL ?? "http://localhost:8026",
 };

@@ -3,6 +3,17 @@ packages:
   - packages/*
   - e2e
 
+# Security floors for packages we only get indirectly (through next, postcss and
+# eslint-plugin-react-hooks). Remove an entry once its parent requires the
+# patched version itself.
+#   source-map-js >=1.2.2: GHSA-68fv-2mgg-jv7q (event-loop denial of service)
+#   zod >=4.6.6: memory exhaustion on oversized constrained collections
+overrides:
+  source-map-js: ">=1.2.2"
+  zod@4: ">=4.6.7 <5"
+  # Test tooling only (jsdom -> undici); never shipped.
+  undici@8: ">=8.12.2 <9"
+
 # Packages allowed to run install scripts (they download or build native binaries).
 allowBuilds:
   "@tailwindcss/oxide": true

@@ -72,6 +72,8 @@ resource "aws_iam_role_policy" "execution_secrets" {
       Resource = [
         aws_secretsmanager_secret.token_signing_key.arn,
         aws_secretsmanager_secret.smtp.arn,
+        aws_secretsmanager_secret.data_encryption_key.arn,
+        aws_secretsmanager_secret.bff_shared_key.arn,
         aws_db_instance.main.master_user_secret[0].secret_arn,
       ]
     }]
@@ -108,6 +110,11 @@ locals {
     { name = "SMTP_PORT", value = "587" },
     { name = "SMTP_STARTTLS", value = "true" },
     { name = "MAIL_FROM", value = var.mail_from },
+    # Sprint 1 identity. MFA is on for every admin; the API refuses to start
+    # in production without it.
+    { name = "ADMIN_MFA_REQUIRED", value = "true" },
+    { name = "CUSTOMER_REGISTRATION_ENABLED", value = tostring(var.customer_registration_enabled) },
+    { name = "CUSTOMER_APP_URL", value = "https://app.${var.domain}" },
   ]
 
   api_secrets = [
@@ -116,6 +123,8 @@ locals {
     { name = "TOKEN_SIGNING_KEY", valueFrom = aws_secretsmanager_secret.token_signing_key.arn },
     { name = "SMTP_USERNAME", valueFrom = "${aws_secretsmanager_secret.smtp.arn}:username::" },
     { name = "SMTP_PASSWORD", valueFrom = "${aws_secretsmanager_secret.smtp.arn}:password::" },
+    { name = "DATA_ENCRYPTION_KEY", valueFrom = aws_secretsmanager_secret.data_encryption_key.arn },
+    { name = "BFF_SHARED_KEY", valueFrom = aws_secretsmanager_secret.bff_shared_key.arn },
   ]
 
   # name => container settings. Images start as a placeholder; the deploy
@@ -171,7 +180,9 @@ locals {
         { name = "API_INTERNAL_URL", value = "https://${local.api_host}" },
         { name = "ADMIN_COOKIE_SECURE", value = "true" },
       ]
-      secrets = []
+      secrets = [
+        { name = "BFF_SHARED_KEY", valueFrom = aws_secretsmanager_secret.bff_shared_key.arn },
+      ]
     }
   }
 }

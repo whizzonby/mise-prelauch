@@ -7,7 +7,7 @@
     "dev": "next dev --port 3101",
     "build": "next build",
     "start": "next start --port 3101",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run"
   },
@@ -15,11 +15,11 @@
     "@mise/api-client": "workspace:*",
     "@mise/ui": "workspace:*",
     "lucide-react": "^1.47.0",
-    "next": "^16.3.5",
+    "next": "^16.4.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@mise/config": "workspace:*",

@@ -103,3 +103,14 @@ func MigrateDown(ctx context.Context, pool *pgxpool.Pool) error {
 	defer sqlDB.Close()
 	return goose.DownContext(ctx, sqlDB, ".")
 }
+
+// MigrateTo applies migrations up to and including version. Tests use it to
+// load data into an older schema and then migrate it forward.
+func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64) error {
+	sqlDB, err := migrationDB(pool)
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
+	return goose.UpToContext(ctx, sqlDB, ".", version)
+}

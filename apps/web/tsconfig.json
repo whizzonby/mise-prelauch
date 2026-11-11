@@ -1,0 +1,11 @@
+{
+  "extends": "@mise/config/tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts", "*.ts", "*.mjs"],
+  "exclude": ["node_modules"]
+}

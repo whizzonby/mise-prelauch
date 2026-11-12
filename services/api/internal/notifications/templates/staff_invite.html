@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{template "heading" "You're invited to the Mise console"}}
+<p style="margin:0 0 16px 0;">Hi {{.FirstName}},</p>
+<p style="margin:0 0 16px 0;">You've been invited to join the Mise team in the admin console. Choose a password to set up your account.</p>
+{{template "button" (dict "URL" .ActionURL "Label" "Accept invitation")}}
+<p style="margin:0 0 16px 0;">The link works once{{if .LinkTTL}}, for {{.LinkTTL}}{{end}}. You'll set up an authenticator app when you first sign in.</p>
+{{template "account_footer" .}}

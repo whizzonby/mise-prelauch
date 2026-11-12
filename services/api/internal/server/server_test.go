@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/config"
@@ -79,6 +80,7 @@ type harness struct {
 	mailer  *captureMailer
 	cfg     config.Config
 	com     *server.Commerce
+	bo      *backoffice.Service
 	clock   *testClock
 }
 
@@ -122,7 +124,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		t.Fatalf("migrate: %v", err)
 	}
 	// Roles and permissions are reference data seeded by migrations; they stay.
-	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events RESTART IDENTITY CASCADE`); err != nil {
+	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 
@@ -139,6 +141,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		CustomerSessionIdleTTL:      24 * time.Hour,
 		CustomerRegistrationEnabled: true,
 		CustomerAppURL:              "http://app.test",
+		AdminAppURL:                 "http://admin.test",
 		TermsVersion:                "test-terms",
 		DataEncryptionKey:           []byte("0123456789abcdef0123456789abcdef"),
 		CatalogDemoEnabled:          false,
@@ -163,6 +166,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		t.Fatalf("identity service: %v", err)
 	}
 	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
+	(&notifications.StaffInviteSender{Staff: ids, Sender: sender}).Register(runner)
 
 	com, err := server.NewCommerce(cfg, pool, ids)
 	if err != nil {
@@ -172,12 +176,14 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	com.SetClock(clock.Now)
 	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender}).Register(runner)
 	server.RegisterCommerceJobs(runner, com)
+	bo := server.NewBackoffice(cfg, pool, ids, com)
+	runner.Register(backoffice.JobExport, bo.HandleExport)
 
 	handler, routes, err := server.BuildWith(cfg, pool, limits, ids, com)
 	if err != nil {
 		t.Fatalf("build server: %v", err)
 	}
-	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.

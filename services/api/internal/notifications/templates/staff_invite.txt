@@ -1,0 +1,9 @@
+Hi {{.FirstName}},
+
+You've been invited to join the Mise team in the admin console. Choose a password to set up your account:
+{{.ActionURL}}
+
+The link works once{{if .LinkTTL}}, for {{.LinkTTL}}{{end}}. You'll set up an authenticator app when you first sign in.
+
+--
+Mise makes Caribbean meal kits in Trinidad & Tobago.

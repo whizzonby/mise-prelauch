@@ -209,6 +209,78 @@ export function formatMoney(minor: number, currency = "TTD"): string {
   return `${sign}${currency} ${whole}.${String(abs % 100).padStart(2, "0")}`;
 }
 
+// ---------- Sprint 4: administration and CRM (generated types) ----------
+
+export type Metric = S["Metric"];
+export type Series = S["Series"];
+export type Share = S["Share"];
+export type AttentionItem = S["AttentionItem"];
+export type Dashboard = S["Dashboard"];
+export type Report = S["Report"];
+export type CustomerRow = S["CustomerRow"];
+export type CustomerPage = S["CustomerPage"];
+export type Customer360 = S["Customer360"];
+export type CustomerBilling = S["CustomerBilling"];
+export type CustomerSensitive = S["CustomerSensitive"];
+export type ActivityEntry = S["ActivityEntry"];
+export type CrmNote = S["CrmNote"];
+export type LeadCRM = S["LeadCRM"];
+export type SegmentRules = S["SegmentRules"];
+export type Segment = S["Segment"];
+export type SegmentInput = S["SegmentInput"];
+export type Campaign = S["Campaign"];
+export type CampaignInput = S["CampaignInput"];
+export type Attribution = S["Attribution"];
+export type ReferralRow = S["ReferralRow"];
+export type RetentionSignal = S["RetentionSignal"];
+export type SupportCase = S["SupportCase"];
+export type SupportCasePage = S["SupportCasePage"];
+export type CaseInput = S["CaseInput"];
+export type CaseUpdate = S["CaseUpdate"];
+export type StaffActionInput = S["StaffActionInput"];
+export type InvoiceRow = S["InvoiceRow"];
+export type ExportRequest = S["ExportRequest"];
+export type ExportJob = S["Export"];
+export type AdminAlert = S["AdminAlert"];
+export type Settings = S["Settings"];
+export type IntegrationStatus = S["IntegrationStatus"];
+export type AuditEntry = S["AuditEntry"];
+export type StaffMember = S["StaffMember"];
+export type StaffInvitation = S["StaffInvitation"];
+export type RoleInfo = S["RoleInfo"];
+export type PermissionInfo = S["PermissionInfo"];
+
+export interface CustomerFilter {
+  q?: string;
+  status?: string;
+  subscription_status?: string;
+  plan_id?: string;
+  region?: string;
+  segment_id?: string;
+  sort?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface CaseFilter {
+  status?: string;
+  open?: boolean;
+  customer_id?: string;
+  assigned_to?: string;
+  priority?: string;
+  page?: number;
+}
+
+export interface AuditFilter {
+  actor?: string;
+  action?: string;
+  target_type?: string;
+  target_id?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+}
+
 export interface MealFilter {
   category?: string;
   /** Dietary keys; a meal must suit every one. */
@@ -270,7 +342,12 @@ export interface LeadRow {
   referrals_converted: number;
   was_referred: boolean;
   created_at: string;
+  /** CRM stage (Sprint 4); converted and unsubscribed come from the lifecycle. */
+  stage: LeadStage;
+  assigned_to: string | null;
 }
+
+export type LeadStage = "new" | "contacted" | "qualified" | "unqualified" | "converted" | "unsubscribed";
 
 export interface LeadPage {
   items: LeadRow[];
@@ -289,6 +366,9 @@ export interface LeadFilter {
   packaging?: string;
   from?: string;
   to?: string;
+  stage?: string;
+  /** A staff user id, or "none". */
+  assigned_to?: string;
   page?: number;
   page_size?: number;
 }
@@ -685,6 +765,113 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
       setPromotionStatus: (token: string, id: string, action: "activate" | "archive") =>
         request<Promotion>(`/admin/promotions/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
       failedJobs: (token: string) => request<{ items: FailedJob[] }>("/admin/commerce/jobs", { token, cache: "no-store" }),
+
+      // Sprint 4: administration and CRM.
+      dashboard: (token: string) => request<Dashboard>("/admin/dashboard", { token, cache: "no-store" }),
+      report: (token: string, kind: string, from: string, to: string) =>
+        request<Report>(`/admin/reports/${encodeURIComponent(kind)}`, { token, query: { from, to }, cache: "no-store" }),
+      customers: (token: string, filter: CustomerFilter = {}) =>
+        request<CustomerPage>("/admin/customers", { token, query: filter, cache: "no-store" }),
+      customer: (token: string, id: string) => request<Customer360>(`/admin/customers/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      customerOrders: (token: string, id: string) =>
+        request<{ items: OrderSummary[] }>(`/admin/customers/${encodeURIComponent(id)}/orders`, { token, cache: "no-store" }),
+      customerBilling: (token: string, id: string) =>
+        request<CustomerBilling>(`/admin/customers/${encodeURIComponent(id)}/billing`, { token, cache: "no-store" }),
+      customerSensitive: (token: string, id: string) =>
+        request<CustomerSensitive>(`/admin/customers/${encodeURIComponent(id)}/preferences`, { token, cache: "no-store" }),
+      customerActivity: (token: string, id: string) =>
+        request<{ items: ActivityEntry[] }>(`/admin/customers/${encodeURIComponent(id)}/activity`, { token, cache: "no-store" }),
+      notes: (token: string, subject: "customers" | "leads", id: string) =>
+        request<{ items: CrmNote[] }>(`/admin/${subject}/${encodeURIComponent(id)}/notes`, { token, cache: "no-store" }),
+      addNote: (token: string, subject: "customers" | "leads", id: string, body: string) =>
+        request<CrmNote>(`/admin/${subject}/${encodeURIComponent(id)}/notes`, { method: "POST", body: { body }, token, cache: "no-store" }),
+      leadCRM: (token: string, id: string) => request<LeadCRM>(`/admin/leads/${encodeURIComponent(id)}/crm`, { token, cache: "no-store" }),
+      setLeadCRM: (token: string, id: string, stage: string, assignedTo: string | null) =>
+        request<LeadCRM>(`/admin/leads/${encodeURIComponent(id)}/crm`, {
+          method: "PUT",
+          body: { stage, assigned_to: assignedTo },
+          token,
+          cache: "no-store",
+        }),
+      segments: (token: string) => request<{ items: Segment[] }>("/admin/segments", { token, cache: "no-store" }),
+      segment: (token: string, id: string) =>
+        request<{ segment: Segment; preview: CustomerPage }>(`/admin/segments/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      saveSegment: (token: string, input: SegmentInput, id?: string) =>
+        request<Segment>(id ? `/admin/segments/${encodeURIComponent(id)}` : "/admin/segments", {
+          method: id ? "PUT" : "POST",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      deleteSegment: (token: string, id: string) =>
+        request<{ deleted: boolean }>(`/admin/segments/${encodeURIComponent(id)}`, { method: "DELETE", token, cache: "no-store" }),
+      previewSegment: (token: string, rules: SegmentRules) =>
+        request<CustomerPage>("/admin/segments/preview", { method: "POST", body: rules, token, cache: "no-store" }),
+      campaigns: (token: string) => request<{ items: Campaign[] }>("/admin/campaigns", { token, cache: "no-store" }),
+      campaign: (token: string, id: string) =>
+        request<{ campaign: Campaign; attribution: Attribution }>(`/admin/campaigns/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      saveCampaign: (token: string, input: CampaignInput, id?: string) =>
+        request<Campaign>(id ? `/admin/campaigns/${encodeURIComponent(id)}` : "/admin/campaigns", {
+          method: id ? "PUT" : "POST",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      setCampaignStatus: (token: string, id: string, status: string) =>
+        request<Campaign>(`/admin/campaigns/${encodeURIComponent(id)}/status`, { method: "POST", body: { status }, token, cache: "no-store" }),
+      referralsReview: (token: string, flagged = false, page = 1) =>
+        request<{ items: ReferralRow[]; total: number }>("/admin/referrals", { token, query: { flagged, page }, cache: "no-store" }),
+      retention: (token: string) =>
+        request<{ items: RetentionSignal[]; rules: Record<string, string> }>("/admin/retention", { token, cache: "no-store" }),
+      cases: (token: string, filter: CaseFilter = {}) =>
+        request<SupportCasePage>("/admin/support/cases", { token, query: filter, cache: "no-store" }),
+      case: (token: string, id: string) => request<SupportCase>(`/admin/support/cases/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createCase: (token: string, input: CaseInput) =>
+        request<SupportCase>("/admin/support/cases", { method: "POST", body: input, token, cache: "no-store" }),
+      updateCase: (token: string, id: string, input: CaseUpdate) =>
+        request<SupportCase>(`/admin/support/cases/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      caseNote: (token: string, id: string, body: string) =>
+        request<SupportCase>(`/admin/support/cases/${encodeURIComponent(id)}/notes`, { method: "POST", body: { body }, token, cache: "no-store" }),
+      subscriptionAction: (token: string, id: string, action: "pause" | "resume" | "cancel", input: StaffActionInput) =>
+        request<{ subscription: Subscription | null }>(`/admin/subscriptions/${encodeURIComponent(id)}/${action}`, {
+          method: "POST",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      invoices: (token: string, query: { status?: string; q?: string; page?: number } = {}) =>
+        request<{ items: InvoiceRow[]; total: number }>("/admin/invoices", { token, query, cache: "no-store" }),
+      exports: (token: string) => request<{ items: ExportJob[]; limit: number }>("/admin/exports", { token, cache: "no-store" }),
+      requestExport: (token: string, input: ExportRequest) =>
+        request<ExportJob>("/admin/exports", { method: "POST", body: input, token, cache: "no-store" }),
+      /** The raw CSV response, to stream to the browser. */
+      downloadExport: (token: string, id: string) =>
+        send(`/admin/exports/${encodeURIComponent(id)}/download`, { token, cache: "no-store" }),
+      alerts: (token: string, unread = false) =>
+        request<{ items: AdminAlert[]; unread: number }>("/admin/alerts", { token, query: { unread: unread || undefined }, cache: "no-store" }),
+      readAlerts: (token: string, ids: number[] = []) =>
+        request<{ read: boolean }>("/admin/alerts/read", { method: "POST", body: { ids }, token, cache: "no-store" }),
+      settings: (token: string) => request<Settings>("/admin/settings", { token, cache: "no-store" }),
+      putSettings: (token: string, values: Record<string, string>) =>
+        request<Settings>("/admin/settings", { method: "PUT", body: values, token, cache: "no-store" }),
+      integrations: (token: string) => request<{ items: IntegrationStatus[] }>("/admin/integrations", { token, cache: "no-store" }),
+      audit: (token: string, filter: AuditFilter = {}) =>
+        request<{ items: AuditEntry[]; total: number }>("/admin/audit-events", { token, query: filter, cache: "no-store" }),
+      staff: (token: string) =>
+        request<{ items: StaffMember[]; invitations: StaffInvitation[] }>("/admin/staff", { token, cache: "no-store" }),
+      invite: (token: string, input: { email: string; name: string; role: string }) =>
+        request<StaffInvitation>("/admin/staff/invitations", { method: "POST", body: input, token, cache: "no-store" }),
+      revokeInvitation: (token: string, id: string) =>
+        request<{ revoked: boolean }>(`/admin/staff/invitations/${encodeURIComponent(id)}`, { method: "DELETE", token, cache: "no-store" }),
+      staffAction: (token: string, id: string, action: "roles" | "roles/revoke" | "disable" | "enable" | "signout", input: { role?: string; reason: string }) =>
+        request<Record<string, unknown>>(`/admin/staff/${encodeURIComponent(id)}/${action}`, { method: "POST", body: input, token, cache: "no-store" }),
+      roles: (token: string) => request<{ roles: RoleInfo[]; permissions: PermissionInfo[] }>("/admin/roles", { token, cache: "no-store" }),
+      acceptInvitation: (invitationToken: string, password: string) =>
+        request<{ accepted: boolean }>("/admin/auth/invitations/accept", {
+          method: "POST",
+          body: { token: invitationToken, password },
+          cache: "no-store",
+        }),
     },
 
     /** Plans and published menus. Public: the same for everyone. */

@@ -180,3 +180,55 @@ WHERE user_id = @user_id AND (last_used_step IS NULL OR last_used_step < @step);
 
 -- name: DeleteTOTP :execrows
 DELETE FROM mfa_totp WHERE user_id = @user_id;
+
+-- ---------------------------------------------------------------- staff (Sprint 4)
+
+-- name: ListStaff :many
+-- Every account holding a role other than customer, with its roles.
+SELECT u.id, u.email, u.first_name, u.last_name, u.status, u.last_login_at, u.created_at,
+       array_agg(DISTINCT ur.role_key ORDER BY ur.role_key)::text[] AS roles,
+       EXISTS (SELECT 1 FROM mfa_totp m WHERE m.user_id = u.id AND m.confirmed_at IS NOT NULL) AS mfa_enrolled
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id AND ur.scope_type IS NULL AND ur.role_key <> 'customer'
+GROUP BY u.id
+ORDER BY u.status, u.first_name, u.email;
+
+-- name: IsStaff :one
+SELECT EXISTS (SELECT 1 FROM user_roles WHERE user_id = @user_id AND scope_type IS NULL AND role_key <> 'customer');
+
+-- name: CountActiveWithRole :one
+SELECT count(*)::int FROM users u JOIN user_roles ur ON ur.user_id = u.id AND ur.scope_type IS NULL
+WHERE ur.role_key = @role_key AND u.status = 'active';
+
+-- name: ListRoles :many
+SELECT r.key, r.name, r.description,
+       coalesce(array_agg(rp.permission_key ORDER BY rp.permission_key) FILTER (WHERE rp.permission_key IS NOT NULL), '{}')::text[] AS permissions
+FROM roles r LEFT JOIN role_permissions rp ON rp.role_key = r.key
+GROUP BY r.key, r.name, r.description
+ORDER BY r.key;
+
+-- name: ListPermissions :many
+SELECT key, description FROM permissions ORDER BY key;
+
+-- name: CreateInvitation :one
+INSERT INTO staff_invitations (email, email_canonical, name, role_key, token_hash, invited_by, expires_at)
+VALUES (@email, @email_canonical, @name, @role_key, @token_hash, @invited_by, @expires_at)
+RETURNING *;
+
+-- name: GetInvitation :one
+SELECT * FROM staff_invitations WHERE id = @id FOR UPDATE;
+
+-- name: InvitationByTokenHash :one
+SELECT * FROM staff_invitations WHERE token_hash = @token_hash FOR UPDATE;
+
+-- name: SetInvitationToken :exec
+UPDATE staff_invitations SET token_hash = @token_hash, expires_at = @expires_at WHERE id = @id AND accepted_at IS NULL AND revoked_at IS NULL;
+
+-- name: ListOpenInvitations :many
+SELECT * FROM staff_invitations WHERE accepted_at IS NULL AND revoked_at IS NULL ORDER BY created_at DESC;
+
+-- name: RevokeInvitation :execrows
+UPDATE staff_invitations SET revoked_at = now() WHERE id = @id AND accepted_at IS NULL AND revoked_at IS NULL;
+
+-- name: AcceptInvitation :exec
+UPDATE staff_invitations SET accepted_at = now(), accepted_user_id = @user_id WHERE id = @id;

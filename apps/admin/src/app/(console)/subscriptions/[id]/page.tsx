@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DataTable, Panel } from "@/components/commerce-ui";
+import { SubscriptionStaffActions } from "@/components/subscription-staff-actions";
 import { commerceTone, formatDateTime, formatDay, humanize, money } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
@@ -30,10 +31,19 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ i
         <Tag tone={commerceTone(s.status)}>{s.status_label}</Tag>
       </div>
       <p className="type-body-sm mt-2 text-muted">
-        {s.customer_email} · {s.plan.name}, {s.plan.meals_per_week} meals, {s.price_formatted} a week · created {formatDateTime(s.created_at)}
+        {can(admin, "customers.read") ? (
+          <Link href={`/customers/${s.customer_id}`} className="underline underline-offset-4">
+            {s.customer_email}
+          </Link>
+        ) : (
+          s.customer_email
+        )}{" "}
+        · {s.plan.name}, {s.plan.meals_per_week} meals, {s.price_formatted} a week · created {formatDateTime(s.created_at)}
       </p>
       {s.pause ? <p className="type-body-sm mt-2">Paused {s.pause.label}.</p> : null}
       {s.cancel ? <p className="type-body-sm mt-2">{s.cancel.label}.</p> : null}
+
+      {can(admin, "subscriptions.manage") ? <SubscriptionStaffActions s={s} /> : null}
 
       <Panel title="Weeks" className="mt-8">
         <DataTable head={["Week", "State", "Plan", "Billing", "Meals", "Order"]}>

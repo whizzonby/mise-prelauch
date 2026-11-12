@@ -8,7 +8,8 @@ import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Leads" };
 
-const FILTER_KEYS = ["q", "status", "location", "source", "packaging", "referral", "from", "to"] as const;
+const FILTER_KEYS = ["q", "status", "stage", "assigned_to", "location", "source", "packaging", "referral", "from", "to"] as const;
+const STAGES = ["new", "contacted", "qualified", "unqualified", "converted", "unsubscribed"];
 type FilterKey = (typeof FILTER_KEYS)[number];
 type Params = Partial<Record<FilterKey | "page" | "erased", string>>;
 
@@ -72,6 +73,23 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 {humanize(status.toLowerCase())}
               </option>
             ))}
+          </Select>
+        </Field>
+        <Field id="stage" label="CRM stage">
+          <Select id="stage" name="stage" defaultValue={active.stage ?? ""}>
+            <option value="">Any stage</option>
+            {STAGES.map((s) => (
+              <option key={s} value={s}>
+                {humanize(s)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="assigned_to" label="Assigned to">
+          <Select id="assigned_to" name="assigned_to" defaultValue={active.assigned_to ?? ""}>
+            <option value="">Anyone</option>
+            <option value={admin.id}>Me</option>
+            <option value="none">Nobody</option>
           </Select>
         </Field>
         <Field id="referral" label="Referral activity">
@@ -151,7 +169,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           <table className="type-body-sm w-full min-w-[52rem] text-left">
             <thead>
               <tr className="border-b border-foreground">
-                {["Name", "Email", "Status", "Location", "Source", "Referrals", "Signed up"].map((heading) => (
+                {["Name", "Email", "Status", "Stage", "Location", "Source", "Referrals", "Signed up"].map((heading) => (
                   <th key={heading} scope="col" className="px-4 py-3 font-semibold">
                     {heading}
                   </th>
@@ -170,6 +188,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   <td className="px-4 py-3">
                     <Tag tone={statusTone(lead.status)}>{humanize(lead.status.toLowerCase())}</Tag>
                   </td>
+                  <td className="px-4 py-3">{humanize(lead.stage)}</td>
                   <td className="px-4 py-3">{humanize(lead.location)}</td>
                   <td className="px-4 py-3">{humanize(lead.source)}</td>
                   <td className="type-figures px-4 py-3">

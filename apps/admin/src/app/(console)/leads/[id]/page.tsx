@@ -4,10 +4,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Timeline } from "@/components/admin-ui";
+import { CatalogForm } from "@/components/catalog-form";
+import { Labelled, SelectInput, TextArea } from "@/components/commerce-ui";
 import { EraseLeadForm, StatusForm } from "@/components/lead-actions";
 import { DetailList, Panel } from "@/components/panel";
 import { formatDateTime, fullName, humanize, packagingLabel, statusTone } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
+
+import { addNote, setLeadCRM } from "../../crm-actions";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -52,6 +57,12 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
     throw error;
   }
   const prefs = lead.preferences;
+  const [crm, notes, staff] = await Promise.all([
+    api.admin.leadCRM(token, id),
+    api.admin.notes(token, "leads", id),
+    can(admin, "users.read") ? api.admin.staff(token).then((s) => s.items.filter((m) => m.status === "active")) : Promise.resolve([]),
+  ]);
+  const converted = Boolean(lead.account) || lead.status === "CONVERTED";
 
   return (
     <>
@@ -170,6 +181,54 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               ))}
             </ol>
           )}
+        </Panel>
+
+        <Panel title="CRM" note="The stage is separate from email verification and never creates an account.">
+          {converted ? (
+            <p className="type-body-sm mb-3 font-semibold">This lead became a customer. Their stage stays as history.</p>
+          ) : null}
+          {can(admin, "leads.manage") ? (
+            <CatalogForm action={setLeadCRM} submit="Save" pending="Saving…" label="CRM stage">
+              <input type="hidden" name="id" value={lead.id} />
+              <Labelled label="Stage">
+                <SelectInput name="stage" defaultValue={crm.stage}>
+                  {["new", "contacted", "qualified", "unqualified"].map((s) => (
+                    <option key={s} value={s}>
+                      {humanize(s)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Labelled>
+              <Labelled label="Assigned to">
+                <SelectInput name="assigned_to" defaultValue={crm.assigned_to ?? ""}>
+                  <option value="">Nobody</option>
+                  {!staff.some((m) => m.id === admin.id) ? <option value={admin.id}>Me</option> : null}
+                  {staff.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name || m.email}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Labelled>
+            </CatalogForm>
+          ) : (
+            <DetailList items={[["Stage", humanize(crm.stage)]]} />
+          )}
+        </Panel>
+
+        <Panel title="Notes" note="Internal only">
+          <Timeline items={notes.items.map((n) => ({ at: n.created_at, title: n.author_name || "Staff", detail: <p className="whitespace-pre-line">{n.body}</p> }))} empty="No notes yet." />
+          {can(admin, "leads.manage") ? (
+            <div className="mt-4">
+              <CatalogForm action={addNote} submit="Add note" pending="Adding…" label="Add a note">
+                <input type="hidden" name="subject" value="lead" />
+                <input type="hidden" name="id" value={lead.id} />
+                <Labelled label="Note">
+                  <TextArea name="body" rows={3} maxLength={2000} required />
+                </Labelled>
+              </CatalogForm>
+            </div>
+          ) : null}
         </Panel>
 
         {can(admin, "leads.update") ? (

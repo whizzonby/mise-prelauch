@@ -261,3 +261,25 @@ func UserIDOf(ctx context.Context, q db.Querier, customerID string) (string, err
 	}
 	return c.UserID, nil
 }
+
+// PhoneOf returns a customer's phone number and preferred contact channel
+// (staff views with permission).
+func PhoneOf(ctx context.Context, q db.Querier, customerID string) (*string, string, error) {
+	c, err := store.New(q).GetByID(ctx, customerID)
+	if err != nil {
+		return nil, "", err
+	}
+	return c.Phone, c.ContactChannel, nil
+}
+
+// HouseholdOf returns a customer's household, or nil.
+func HouseholdOf(ctx context.Context, q db.Querier, customerID string) (*Household, error) {
+	h, err := store.New(q).GetHousehold(ctx, customerID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return householdView(h), nil
+}

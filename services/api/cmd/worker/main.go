@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
@@ -60,6 +61,7 @@ func run() error {
 		return err
 	}
 	(&notifications.AccountSender{Accounts: ids, Sender: sender}).Register(runner)
+	(&notifications.StaffInviteSender{Staff: ids, Sender: sender}).Register(runner)
 
 	com, err := server.NewCommerce(cfg, pool, ids)
 	if err != nil {
@@ -70,6 +72,10 @@ func run() error {
 	// The commerce scheduler: weekly cycles, renewals, cutoffs, reminders.
 	// Safe on several workers (it takes a database advisory lock).
 	go com.Service.RunScheduler(ctx, cfg.Commerce.SchedulerInterval)
+	// Staff alerts and CSV exports (Sprint 4).
+	bo := server.NewBackoffice(cfg, pool, ids, com)
+	runner.Register(backoffice.JobExport, bo.HandleExport)
+	go bo.RunAlerts(ctx, cfg.Commerce.SchedulerInterval)
 
 	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
 	err = runner.Run(ctx)

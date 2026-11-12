@@ -1,8 +1,7 @@
 "use client";
 
 import { MiseButton } from "@mise/ui";
-import { useActionState, type ReactNode } from "react";
-import { useFormStatus } from "react-dom";
+import { startTransition, useActionState, useEffect, useRef, type FormEvent, type ReactNode } from "react";
 
 import type { CatalogState } from "@/app/(console)/meals/actions";
 
@@ -20,9 +19,22 @@ export function CatalogForm({
   children: ReactNode;
   label: string;
 }) {
-  const [state, formAction] = useActionState<CatalogState, FormData>(action, {});
+  const [state, formAction, isPending] = useActionState<CatalogState, FormData>(action, {});
+  const ref = useRef<HTMLFormElement>(null);
+  // React resets a form after its action runs. Submitting through a
+  // transition instead keeps what was typed when the save fails; the form
+  // is reset only after a save that worked. Without JavaScript the plain
+  // form action still works.
+  useEffect(() => {
+    if (state.message && !state.error) ref.current?.reset();
+  }, [state]);
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter);
+    startTransition(() => formAction(data));
+  }
   return (
-    <form action={formAction} aria-label={label} noValidate className="grid gap-5">
+    <form ref={ref} action={formAction} onSubmit={onSubmit} aria-label={label} noValidate className="grid gap-5">
       {children}
       <div aria-live="polite">
         {state.error ? (
@@ -43,17 +55,18 @@ export function CatalogForm({
         ) : null}
       </div>
       <div>
-        <Submit pending={pending}>{submit}</Submit>
+        <Submit busy={isPending} pending={pending}>
+          {submit}
+        </Submit>
       </div>
     </form>
   );
 }
 
-function Submit({ children, pending }: { children: ReactNode; pending: string }) {
-  const status = useFormStatus();
+function Submit({ children, busy, pending }: { children: ReactNode; busy: boolean; pending: string }) {
   return (
-    <MiseButton type="submit" disabled={status.pending}>
-      {status.pending ? pending : children}
+    <MiseButton type="submit" disabled={busy}>
+      {busy ? pending : children}
     </MiseButton>
   );
 }

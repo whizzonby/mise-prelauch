@@ -87,9 +87,19 @@ func parseFilter(r *http.Request) (LeadFilter, error) {
 		Source:   q.Get("source"),
 		Referral: q.Get("referral"),
 		// Packaging is an option value, or "none".
-		Packaging: q.Get("packaging"),
-		Page:      1,
-		PageSize:  25,
+		Packaging:  q.Get("packaging"),
+		Stage:      q.Get("stage"),
+		AssignedTo: q.Get("assigned_to"),
+		Page:       1,
+		PageSize:   25,
+	}
+	switch f.Stage {
+	case "", "new", "contacted", "qualified", "unqualified", "converted", "unsubscribed":
+	default:
+		return f, badParam("stage", "Unknown stage.")
+	}
+	if f.AssignedTo != "" && f.AssignedTo != "none" && !uuidPattern.MatchString(f.AssignedTo) {
+		return f, badParam("assigned_to", "Unknown staff member.")
 	}
 	if len(f.Query) > 100 {
 		return f, badParam("q", "Search text is too long.")
@@ -229,6 +239,11 @@ func (h *Handler) erase(w http.ResponseWriter, r *http.Request) {
 	err = db.InTx(r.Context(), h.Pool, func(tx pgx.Tx) error {
 		// Audit entries about the lead may hold nothing personal, but they are
 		// keyed by the lead id; remove them and leave a single erasure record.
+		// The audit log is append-only (migration 00008); erasure is the one
+		// permitted deletion, and only of this lead's own entries.
+		if _, err := tx.Exec(r.Context(), `SET LOCAL mise.audit_erasure = 'on'`); err != nil {
+			return err
+		}
 		if _, err := tx.Exec(r.Context(), `DELETE FROM audit_log WHERE target_type = 'lead' AND target_id = $1`, id); err != nil {
 			return err
 		}

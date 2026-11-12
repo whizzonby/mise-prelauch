@@ -17,14 +17,15 @@ test("admin pages are closed to visitors who are not signed in", async ({ page, 
   await expect(page.getByRole("alert").filter({ hasText: "Email or password is incorrect." })).toBeVisible();
 });
 
-test("an admin signs in, reads the dashboard, finds a lead and exports the list", async ({ page, request }) => {
+test("an admin signs in, reads the waitlist report, finds a lead and exports the list", async ({ page, request }) => {
   const email = uniqueEmail("lead");
   await createLeadViaApi(request, { name: "Kavita", email, ip: "203.0.113.30" });
   await verifyViaApi(request, email);
 
   await signInToAdmin(page);
 
-  // Dashboard: headline numbers and every breakdown the team asked for.
+  // Waitlist statistics (the dashboard before Sprint 4): headline numbers and every breakdown.
+  await page.goto(`${urls.admin}/reports/waitlist`);
   for (const label of ["Total leads", "Verified leads", "Referral conversions", "Profiles completed"]) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }

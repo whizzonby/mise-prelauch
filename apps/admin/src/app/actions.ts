@@ -93,3 +93,21 @@ export async function eraseLead(_previous: FormState, form: FormData): Promise<F
   }
   redirect("/leads?erased=1");
 }
+
+/** Accepting a staff invitation: set a password, then sign in as usual. */
+export async function acceptInvitation(_previous: FormState, form: FormData): Promise<FormState> {
+  const invitation = String(form.get("token") ?? "");
+  const password = String(form.get("password") ?? "");
+  if (password !== String(form.get("confirm") ?? "")) return { error: "The two passwords do not match." };
+  try {
+    await api.admin.acceptInvitation(invitation, password);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.code === "validation_failed") return { error: error.fields?.[0]?.message ?? error.message };
+      if (error.status === 429) return { error: "Too many attempts. Wait a few minutes and try again." };
+      return { error: error.message };
+    }
+    return { error: "The Mise API could not be reached. Try again in a moment." };
+  }
+  redirect("/login?invited=1");
+}

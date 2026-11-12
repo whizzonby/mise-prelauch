@@ -100,3 +100,42 @@ func describeTTL(d time.Duration) string {
 		return fmt.Sprintf("%d hours", int(d.Hours()))
 	}
 }
+
+// StaffInviteSender emails staff invitations. The link token is made when
+// the email is sent (identity.PrepareInvitationEmail).
+type StaffInviteSender struct {
+	Staff interface {
+		PrepareInvitationEmail(ctx context.Context, invitationID string) (*identity.AccountEmail, error)
+	}
+	Sender *Sender
+}
+
+func (s *StaffInviteSender) Register(r *jobs.Runner) { r.Register(identity.JobStaffInvite, s.handle) }
+
+func (s *StaffInviteSender) handle(ctx context.Context, payload json.RawMessage) error {
+	var job struct {
+		InvitationID string `json:"invitation_id"`
+	}
+	if err := json.Unmarshal(payload, &job); err != nil {
+		return fmt.Errorf("decode payload: %w", err)
+	}
+	email, err := s.Staff.PrepareInvitationEmail(ctx, job.InvitationID)
+	if err != nil {
+		return err
+	}
+	if email == nil {
+		slog.InfoContext(ctx, "email skipped", "template", "staff_invite")
+		return nil
+	}
+	msg, err := renderAccount("staff_invite", accountEmailData{FirstName: email.FirstName, Subject: "You're invited to the Mise console",
+		SiteURL: s.Sender.SiteURL, ActionURL: email.ActionURL, LinkTTL: describeTTL(email.LinkTTL)})
+	if err != nil {
+		return err
+	}
+	msg.To = email.To
+	if err := s.Sender.Mailer.Send(ctx, msg); err != nil {
+		return err
+	}
+	slog.InfoContext(ctx, "email sent", "event", "email.sent", "template", "staff_invite")
+	return nil
+}

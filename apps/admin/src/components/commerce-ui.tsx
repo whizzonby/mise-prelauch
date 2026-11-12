@@ -27,10 +27,11 @@ export function SelectInput(props: ComponentPropsWithoutRef<"select">) {
   return <select {...props} className={cx(control, props.className)} />;
 }
 
-export function Panel({ title, children, className }: { title?: string; children: ReactNode; className?: string }) {
+export function Panel({ title, note, children, className }: { title?: string; note?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <section className={cx("border border-border bg-surface p-5 sm:p-6", className)}>
-      {title ? <h2 className="type-h4 mb-4">{title}</h2> : null}
+      {title ? <h2 className={cx("type-h4", note ? "mb-1" : "mb-4")}>{title}</h2> : null}
+      {note ? <p className="type-caption mb-4 text-muted">{note}</p> : null}
       {children}
     </section>
   );

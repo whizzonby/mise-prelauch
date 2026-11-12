@@ -50,6 +50,8 @@ type Config struct {
 
 	// CustomerAppURL is the customer web app origin, used in account emails.
 	CustomerAppURL string
+	// AdminAppURL is the admin console origin, used in staff invitations.
+	AdminAppURL string
 	// CustomerRegistrationEnabled opens POST /api/v1/auth/register. Off by
 	// default outside local: opening sign-ups is a business decision.
 	CustomerRegistrationEnabled bool
@@ -148,6 +150,7 @@ func Load() (Config, error) {
 		TermsVersion:   get("TERMS_VERSION", "draft-2026-11"),
 		BFFSharedKey:   strings.TrimSpace(os.Getenv("BFF_SHARED_KEY")),
 		CustomerAppURL: strings.TrimRight(get("CUSTOMER_APP_URL", "http://localhost:3102"), "/"),
+		AdminAppURL:    strings.TrimRight(get("ADMIN_APP_URL", "http://localhost:3101"), "/"),
 
 		Mail: MailConfig{
 			Driver:   get("MAIL_DRIVER", "log"),

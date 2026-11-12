@@ -20,6 +20,16 @@ type Entry struct {
 	TargetType  string
 	TargetID    string
 	Metadata    map[string]any
+	// Reason is the reason code given for a sensitive manual change.
+	Reason string
+}
+
+type reasonKey struct{}
+
+// WithReason attaches a reason code to every audit entry recorded with the
+// returned context (for a staff action that runs through shared code).
+func WithReason(ctx context.Context, reason string) context.Context {
+	return context.WithValue(ctx, reasonKey{}, reason)
 }
 
 // Record writes an entry using q, which may be a transaction: an audited
@@ -28,14 +38,17 @@ func Record(ctx context.Context, q db.Querier, e Entry) error {
 	if e.Metadata == nil {
 		e.Metadata = map[string]any{}
 	}
+	if r, ok := ctx.Value(reasonKey{}).(string); ok && e.Reason == "" {
+		e.Reason = r
+	}
 	body, err := json.Marshal(e.Metadata)
 	if err != nil {
 		return err
 	}
 	_, err = q.Exec(ctx, `
-		INSERT INTO audit_log (actor_user_id, action, target_type, target_id, metadata, request_id)
-		VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5::jsonb, NULLIF($6, ''))`,
-		nullIfEmpty(e.ActorUserID), e.Action, e.TargetType, e.TargetID, string(body), httpx.RequestID(ctx))
+		INSERT INTO audit_log (actor_user_id, action, target_type, target_id, metadata, request_id, reason)
+		VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), $5::jsonb, NULLIF($6, ''), NULLIF($7, ''))`,
+		nullIfEmpty(e.ActorUserID), e.Action, e.TargetType, e.TargetID, string(body), httpx.RequestID(ctx), e.Reason)
 	return err
 }
 

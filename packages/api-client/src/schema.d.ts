@@ -1815,6 +1815,749 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Operational overview: defined metrics, attention items the caller may act on, 12-week trends. Needs reports.read. */
+        get: operations["adminDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One report for a local date range (both days included). Needs reports.read. */
+        get: operations["adminReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Server-side search, filters, sorting and pages. Needs customers.read. */
+        get: operations["adminListCustomers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Customer 360 overview, from the owning modules. No allergies or addresses. Needs customers.read. */
+        get: operations["adminGetCustomer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs customers.read. */
+        get: operations["adminCustomerOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Billing cycles, invoices and every payment, including failed ones. Needs customers.read. */
+        get: operations["adminCustomerBilling"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Preferences, allergies, household, addresses and phone. Audited. Needs customers.sensitive. */
+        get: operations["adminCustomerSensitive"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Audit entries about the customer, account, subscriptions, orders and payments. Needs customers.read. */
+        get: operations["adminCustomerActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/customers/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs customers.read. */
+        get: operations["adminCustomerNotes"];
+        put?: never;
+        /** @description Internal only. Needs leads.manage. */
+        post: operations["adminAddCustomerNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/leads/{id}/crm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs leads.read. */
+        get: operations["adminLeadCRM"];
+        /** @description Stage and assignee. Never changes the lead's lifecycle or creates an account. Needs leads.manage. */
+        put: operations["adminSetLeadCRM"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/leads/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs leads.read. */
+        get: operations["adminLeadNotes"];
+        put?: never;
+        /** @description Needs leads.manage. */
+        post: operations["adminAddLeadNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With the number of customers each matches now. Needs campaigns.manage. */
+        get: operations["adminListSegments"];
+        put?: never;
+        /** @description Needs campaigns.manage. */
+        post: operations["adminCreateSegment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/segments/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Customers matching rules, first page and total. Needs campaigns.manage. */
+        post: operations["adminPreviewSegment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/segments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs campaigns.manage. */
+        get: operations["adminGetSegment"];
+        /** @description Needs campaigns.manage. */
+        put: operations["adminUpdateSegment"];
+        post?: never;
+        /** @description Needs campaigns.manage. */
+        delete: operations["adminDeleteSegment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs campaigns.manage. */
+        get: operations["adminListCampaigns"];
+        put?: never;
+        /** @description A record only; nothing is sent. Needs campaigns.manage. */
+        post: operations["adminCreateCampaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/campaigns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With first-touch attribution through its UTM value. Needs campaigns.manage. */
+        get: operations["adminGetCampaign"];
+        /** @description Needs campaigns.manage. */
+        put: operations["adminUpdateCampaign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/campaigns/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description draft, scheduled, active, completed, cancelled. Activating sends nothing. Audited. Needs campaigns.manage. */
+        post: operations["adminCampaignStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With suspicious-pattern flags for review. No rewards exist. Needs leads.read. */
+        get: operations["adminReferrals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Rule-based signals, no prediction. Needs customers.read. */
+        get: operations["adminRetention"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/support/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs cases.read. */
+        get: operations["adminListCases"];
+        put?: never;
+        /** @description Raises one staff alert. Needs cases.manage. */
+        post: operations["adminCreateCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/support/cases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With its full history. Needs cases.read. */
+        get: operations["adminGetCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Resolving or closing needs a resolution; closed cases are final. Needs cases.manage. */
+        patch: operations["adminUpdateCase"];
+        trace?: never;
+    };
+    "/api/v1/admin/support/cases/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs cases.manage. */
+        post: operations["adminCaseNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions/{id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description On the customer's behalf, same rules as theirs, with a reason code. Needs subscriptions.manage. */
+        post: operations["adminPauseSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs subscriptions.manage. */
+        post: operations["adminResumeSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs subscriptions.manage. */
+        post: operations["adminCancelSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs payments.read. */
+        get: operations["adminListInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The caller's own exports. Needs admin.access. */
+        get: operations["adminListExports"];
+        put?: never;
+        /** @description Built in the background; each kind has its own permission. Audited. Needs admin.access and the kind's permission. */
+        post: operations["adminRequestExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Requester only, within 24 hours. Audited. Needs admin.access. */
+        get: operations["adminDownloadExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Alerts the caller's permissions allow, with their own read state. Needs admin.access. */
+        get: operations["adminAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alerts/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Empty ids: all visible alerts. Needs admin.access. */
+        post: operations["adminReadAlerts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Contact settings, and policies owned elsewhere shown read-only. No secrets. Needs admin.access. */
+        get: operations["adminSettings"];
+        /** @description Audited with before and after. Needs settings.manage. */
+        put: operations["adminPutSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Status from configuration and real activity; never secrets. Needs settings.manage. */
+        get: operations["adminIntegrations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The append-only audit log. Needs audit.read. */
+        get: operations["adminAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Staff accounts and open invitations. Needs users.read. */
+        get: operations["adminListStaff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Only a super_admin may invite to super_admin or admin. The link is emailed. Needs users.manage. */
+        post: operations["adminInviteStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/invitations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Needs users.manage. */
+        delete: operations["adminRevokeInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/{id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Not on yourself; privileged roles need a super_admin. Reason required. Needs users.manage. */
+        post: operations["adminGrantRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/{id}/roles/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The last super_admin keeps the role. Needs users.manage. */
+        post: operations["adminRevokeRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Ends every session. Needs users.manage. */
+        post: operations["adminDisableStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs users.manage. */
+        post: operations["adminEnableStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/staff/{id}/signout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs users.manage. */
+        post: operations["adminSignOutStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read-only role and permission matrix. Needs users.read. */
+        get: operations["adminRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Public, with the emailed token. Single use, 7 days. MFA is set up at first sign-in outside local. */
+        post: operations["acceptStaffInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1966,7 +2709,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -2007,6 +2750,13 @@ export interface components {
             was_referred: boolean;
             /** Format: date-time */
             created_at: string;
+            /**
+             * @description CRM stage; converted and unsubscribed are derived from the lead's lifecycle.
+             * @enum {string}
+             */
+            stage: "new" | "contacted" | "qualified" | "unqualified" | "converted" | "unsubscribed";
+            /** Format: uuid */
+            assigned_to: string | null;
         };
         LeadPage: {
             items: components["schemas"]["LeadRow"][];
@@ -3306,6 +4056,525 @@ export interface components {
             /** @enum {string} */
             card?: "approve" | "decline";
         };
+        Metric: {
+            key: string;
+            label: string;
+            value: number;
+            /** @enum {string} */
+            kind: "count" | "money";
+            currency?: string;
+            definition: string;
+        };
+        SeriesPoint: {
+            /** Format: date */
+            period: string;
+            value: number;
+        };
+        Series: {
+            key: string;
+            label: string;
+            kind: string;
+            definition: string;
+            points: {
+                /** Format: date */
+                period: string;
+                value: number;
+            }[];
+        };
+        Share: {
+            label: string;
+            value: number;
+        };
+        AttentionItem: {
+            key: string;
+            label: string;
+            count: number;
+            /** @enum {string} */
+            severity: "info" | "warning" | "critical";
+            link: string;
+            permission: string;
+        };
+        Dashboard: {
+            /** Format: date-time */
+            generated_at: string;
+            time_zone: string;
+            period_label: string;
+            /** Format: date */
+            period_from: string;
+            /** Format: date */
+            period_to: string;
+            /** Format: date */
+            current_week: string;
+            metrics: components["schemas"]["Metric"][];
+            attention: components["schemas"]["AttentionItem"][];
+            charts: components["schemas"]["Series"][];
+            plan_distribution: components["schemas"]["Share"][];
+            /** Format: date-time */
+            next_cutoff_at: string | null;
+        };
+        Report: {
+            /** @enum {string} */
+            kind: "customers" | "subscriptions" | "orders" | "finance" | "marketing";
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @enum {string} */
+            interval: "day" | "week";
+            time_zone: string;
+            totals: components["schemas"]["Metric"][];
+            series: components["schemas"]["Series"][];
+            breakdowns: {
+                [key: string]: components["schemas"]["Share"][];
+            };
+            definitions: {
+                [key: string]: string;
+            };
+        };
+        CustomerRow: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: string;
+            /** @enum {string} */
+            status: "verified" | "unverified" | "disabled";
+            segment: string | null;
+            subscription_status: string | null;
+            plan_name: string | null;
+            region: string | null;
+            source: string;
+            /** Format: date-time */
+            joined_at: string;
+            /** Format: date-time */
+            last_login_at: string | null;
+            flags: ("payment_failed" | "open_case" | "payment_review")[];
+        };
+        CustomerPage: {
+            items: components["schemas"]["CustomerRow"][];
+            total: number;
+            page: number;
+            page_size: number;
+        };
+        CustomerSubscription: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            plan_name: string;
+            amount_minor: number;
+            currency: string;
+            /** Format: date */
+            first_week: string;
+            /** Format: date-time */
+            activated_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Customer360: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            first_name: string;
+            last_name: string;
+            email: string;
+            /** @enum {string} */
+            status: "verified" | "unverified" | "disabled";
+            /** Format: date-time */
+            email_verified_at: string | null;
+            /** Format: date-time */
+            last_login_at: string | null;
+            /** Format: date-time */
+            joined_at: string;
+            contact_channel: string;
+            region: string | null;
+            region_label: string | null;
+            dietary: string[];
+            household_size: number | null;
+            /** Format: uuid */
+            lead_id: string | null;
+            /** Format: date-time */
+            lead_linked_at: string | null;
+            source: string;
+            utm_campaign: string | null;
+            /** Format: uuid */
+            referred_by_lead_id: string | null;
+            segment: string | null;
+            orders: number;
+            open_cases: number;
+            marketing_consents: string[];
+            subscriptions: components["schemas"]["CustomerSubscription"][];
+            cases: components["schemas"]["SupportCase"][];
+            can_view_sensitive: boolean;
+        };
+        CustomerBilling: {
+            billing_cycles: components["schemas"]["BillingCycle"][];
+            invoices: components["schemas"]["InvoiceSummary"][];
+            payments: components["schemas"]["Payment"][];
+        };
+        /** @description Allergies, addresses and phone. Needs customers.sensitive; every view is audited. */
+        CustomerSensitive: {
+            preferences: components["schemas"]["Preferences"];
+            household: components["schemas"]["Household"] | null;
+            addresses: components["schemas"]["Address"][];
+            phone: string | null;
+            contact_channel: string;
+        };
+        ActivityEntry: {
+            /** Format: date-time */
+            at: string;
+            source: string;
+            action: string;
+            actor_name: string | null;
+            target_type: string | null;
+            reason: string | null;
+            metadata: Record<string, never> | null;
+        };
+        CrmNote: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** Format: uuid */
+            author_id: string | null;
+            author_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        NoteInput: {
+            body: string;
+        };
+        LeadCRM: {
+            /** @enum {string} */
+            stage: "new" | "contacted" | "qualified" | "unqualified";
+            /** Format: uuid */
+            assigned_to: string | null;
+            /** Format: date-time */
+            stage_changed_at: string | null;
+        };
+        LeadCRMInput: {
+            /** @enum {string} */
+            stage: "new" | "contacted" | "qualified" | "unqualified";
+            /** Format: uuid */
+            assigned_to?: string | null;
+        };
+        /** @description Explainable filters on stored data. Allergies are never a rule. */
+        SegmentRules: {
+            plan_ids?: string[];
+            subscription_statuses?: string[];
+            lifecycle?: ("prospect" | "subscriber" | "lapsed")[];
+            /** Format: date */
+            joined_from?: string;
+            /** Format: date */
+            joined_to?: string;
+            regions?: string[];
+            dietary?: string[];
+            sources?: string[];
+            min_orders?: number;
+            min_tenure_weeks?: number;
+            consent_topic?: string;
+        };
+        Segment: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            rules: components["schemas"]["SegmentRules"];
+            /** Format: date-time */
+            updated_at: string;
+            customers?: number;
+        };
+        SegmentInput: {
+            name: string;
+            description?: string;
+            rules: components["schemas"]["SegmentRules"];
+        };
+        Campaign: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            objective: string;
+            channel: string;
+            /** @enum {string} */
+            status: "draft" | "scheduled" | "active" | "completed" | "cancelled";
+            utm_campaign: string | null;
+            /** Format: uuid */
+            segment_id: string | null;
+            /** Format: uuid */
+            promotion_id: string | null;
+            /** Format: date-time */
+            starts_at: string | null;
+            /** Format: date-time */
+            ends_at: string | null;
+            notes: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CampaignInput: {
+            name: string;
+            /** @enum {string} */
+            objective: "acquisition" | "activation" | "retention" | "win_back" | "referral" | "awareness";
+            /** @enum {string} */
+            channel: "email" | "social" | "paid_social" | "search" | "partnership" | "events" | "other";
+            utm_campaign?: string;
+            segment_id?: string;
+            promotion_id?: string;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+            notes?: string;
+        };
+        Attribution: {
+            leads: number;
+            verified_leads: number;
+            customers: number;
+            subscribers: number;
+            orders: number;
+            definition: string;
+        };
+        ReferralRow: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            converted_at: string | null;
+            /** Format: uuid */
+            referrer_lead_id: string;
+            referrer_name: string;
+            referrer_email: string;
+            /** Format: uuid */
+            referred_lead_id: string;
+            referred_name: string;
+            referred_email: string;
+            referred_status: string;
+            referred_became_customer: boolean;
+            flags: ("same_network" | "burst" | "blocked" | "flagged_at_signup")[];
+        };
+        RetentionSignal: {
+            /** Format: uuid */
+            customer_id: string;
+            name: string;
+            email: string;
+            /** @enum {string} */
+            signal: "failed_renewal" | "recently_cancelled" | "missed_selections" | "inactive" | "stale_case";
+            detail: string;
+            /** Format: date-time */
+            since: string;
+        };
+        SupportCaseEvent: {
+            type: string;
+            body: string | null;
+            from: string | null;
+            to: string | null;
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SupportCase: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            /** Format: uuid */
+            customer_id: string | null;
+            /** Format: uuid */
+            lead_id: string | null;
+            subject: string;
+            /** @enum {string} */
+            category: "subscription" | "billing" | "meal_selection" | "delivery" | "account_access" | "product_feedback" | "general";
+            /** @enum {string} */
+            priority: "low" | "normal" | "high" | "urgent";
+            /** @enum {string} */
+            status: "open" | "in_progress" | "waiting_for_customer" | "resolved" | "closed";
+            /** Format: uuid */
+            assigned_to: string | null;
+            assignee_name: string;
+            resolution: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** Format: date-time */
+            closed_at: string | null;
+            events?: components["schemas"]["SupportCaseEvent"][];
+        };
+        SupportCasePage: {
+            items: components["schemas"]["SupportCase"][];
+            total: number;
+            page: number;
+        };
+        CaseInput: {
+            customer_id?: string;
+            lead_id?: string;
+            subject: string;
+            category: string;
+            priority?: string;
+            assigned_to?: string;
+            note?: string;
+        };
+        CaseUpdate: {
+            status?: string;
+            priority?: string;
+            assigned_to?: string | null;
+            resolution?: string;
+        };
+        StaffActionInput: {
+            /** @enum {string} */
+            reason: "customer_request" | "payment_issue" | "delivery_issue" | "quality_issue" | "duplicate_account" | "other";
+            note?: string;
+            weeks?: number;
+            cancel_reason?: string;
+        };
+        InvoiceRow: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            status: string;
+            /** Format: uuid */
+            customer_id: string;
+            customer: string;
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date */
+            period_start: string;
+            total_minor: number;
+            currency: string;
+        };
+        ExportRequest: {
+            /** @enum {string} */
+            kind: "customers" | "subscriptions" | "orders" | "payments" | "leads";
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            status?: string;
+            /** Format: uuid */
+            segment_id?: string;
+        };
+        Export: {
+            /** Format: uuid */
+            id: string;
+            kind: string;
+            params: Record<string, never>;
+            /** @enum {string} */
+            status: "queued" | "running" | "ready" | "failed" | "expired";
+            row_count: number | null;
+            truncated: boolean;
+            error: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        AdminAlert: {
+            id: number;
+            kind: string;
+            /** @enum {string} */
+            severity: "info" | "warning" | "critical";
+            title: string;
+            body: string;
+            resource_type: string | null;
+            resource_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            read: boolean;
+        };
+        Setting: {
+            key: string;
+            label: string;
+            value: string;
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        PolicyInfo: {
+            key: string;
+            label: string;
+            value: string;
+            owner: string;
+        };
+        Settings: {
+            editable: components["schemas"]["Setting"][];
+            policies: components["schemas"]["PolicyInfo"][];
+        };
+        IntegrationStatus: {
+            key: string;
+            name: string;
+            purpose: string;
+            /** @enum {string} */
+            status: "not_configured" | "test_mode" | "configured" | "working";
+            detail: string;
+            /** Format: date-time */
+            last_success_at: string | null;
+            last_error: string | null;
+            /** Format: date-time */
+            last_error_at: string | null;
+        };
+        AuditEntry: {
+            id: number;
+            /** Format: date-time */
+            at: string;
+            /** Format: uuid */
+            actor_id: string | null;
+            actor_name: string | null;
+            action: string;
+            target_type: string | null;
+            target_id: string | null;
+            reason: string | null;
+            request_id: string | null;
+            metadata: Record<string, never> | null;
+        };
+        StaffMember: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            status: "active" | "disabled";
+            roles: string[];
+            mfa_enrolled: boolean;
+            /** Format: date-time */
+            last_login_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        StaffInvitation: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name: string;
+            role: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        InviteInput: {
+            email: string;
+            name: string;
+            role: string;
+        };
+        RoleChangeInput: {
+            role?: string;
+            reason: string;
+        };
+        RoleInfo: {
+            key: string;
+            name: string;
+            description: string;
+            permissions: string[];
+        };
+        PermissionInfo: {
+            key: string;
+            description: string;
+        };
     };
     responses: {
         /** @description An error envelope. See API_STANDARDS.md for codes. */
@@ -4017,6 +5286,9 @@ export interface operations {
                 from?: components["parameters"]["From"];
                 /** @description Inclusive */
                 to?: components["parameters"]["To"];
+                stage?: "new" | "contacted" | "qualified" | "unqualified" | "converted" | "unsubscribed";
+                /** @description A staff user id, or none. */
+                assigned_to?: string;
                 page?: number;
                 page_size?: number;
             };
@@ -6873,6 +8145,1720 @@ export interface operations {
             };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
+        };
+    };
+    adminDashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Dashboard"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Report"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListCustomers: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: string;
+                subscription_status?: string;
+                plan_id?: string;
+                region?: string;
+                segment_id?: string;
+                sort?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Customers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminGetCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Customer. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Customer360"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminCustomerOrders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Orders. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["OrderSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminCustomerBilling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Billing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerBilling"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminCustomerSensitive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sensitive details. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerSensitive"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminCustomerActivity: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Activity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ActivityEntry"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCustomerNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["CrmNote"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAddCustomerNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CrmNote"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLeadCRM: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stage. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LeadCRM"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSetLeadCRM: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeadCRMInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LeadCRM"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLeadNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["CrmNote"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAddLeadNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CrmNote"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListSegments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Segments. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Segment"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Segment"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPreviewSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentRules"];
+            };
+        };
+        responses: {
+            /** @description Preview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Segment and preview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            segment: components["schemas"]["Segment"];
+                            preview: components["schemas"]["CustomerPage"];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Segment"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeleteSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            deleted: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListCampaigns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaigns. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Campaign"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Campaign"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Campaign. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            campaign: components["schemas"]["Campaign"];
+                            attribution: components["schemas"]["Attribution"];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CampaignInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Campaign"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCampaignStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    status: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Campaign"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminReferrals: {
+        parameters: {
+            query?: {
+                flagged?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Referrals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReferralRow"][];
+                            total: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["RetentionSignal"][];
+                            rules: {
+                                [key: string]: string;
+                            };
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminListCases: {
+        parameters: {
+            query?: {
+                status?: string;
+                open?: boolean;
+                customer_id?: string;
+                /** @description A staff id, or me. */
+                assigned_to?: string;
+                priority?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cases. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupportCasePage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupportCase"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminGetCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Case. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupportCase"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupportCase"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCaseNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupportCase"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPauseSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffActionInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminResumeSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffActionInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffActionInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SubscriptionEnvelope"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminListInvoices: {
+        parameters: {
+            query?: {
+                status?: string;
+                q?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Invoices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InvoiceRow"][];
+                            total: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminListExports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Exports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Export"][];
+                            limit: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRequestExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Export"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    adminDownloadExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            410: components["responses"]["Error"];
+        };
+    };
+    adminAlerts: {
+        parameters: {
+            query?: {
+                unread?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alerts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AdminAlert"][];
+                            unread: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReadAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ids: number[];
+                };
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            read: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Settings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminPutSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Settings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminIntegrations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Integrations. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntegrationStatus"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAuditEvents: {
+        parameters: {
+            query?: {
+                actor?: string;
+                /** @description A prefix, e.g. staff. */
+                action?: string;
+                target_type?: string;
+                target_id?: string;
+                from?: string;
+                to?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AuditEntry"][];
+                            total: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminListStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Staff. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StaffMember"][];
+                            invitations: components["schemas"]["StaffInvitation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminInviteStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteInput"];
+            };
+        };
+        responses: {
+            /** @description Invited. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StaffInvitation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRevokeInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            revoked: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminGrantRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Granted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            granted: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRevokeRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Revoked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            revoked: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDisableStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Disabled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            disabled: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminEnableStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Enabled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            disabled: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSignOutStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Signed out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            sessions_ended: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Roles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            roles: components["schemas"]["RoleInfo"][];
+                            permissions: components["schemas"]["PermissionInfo"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    acceptStaffInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Accepted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            accepted: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
         };
     };
 }

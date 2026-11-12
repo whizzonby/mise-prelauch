@@ -6,15 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mise.tt/api/internal/addresses"
 	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/billing"
 	"mise.tt/api/internal/catalog"
 	"mise.tt/api/internal/commerce"
+	"mise.tt/api/internal/crm"
 	"mise.tt/api/internal/customers"
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
@@ -33,7 +36,9 @@ import (
 	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/platform/token"
 	"mise.tt/api/internal/referrals"
+	"mise.tt/api/internal/reporting"
 	"mise.tt/api/internal/subscriptions"
+	"mise.tt/api/internal/support"
 )
 
 // NewLeadService builds the lead service from configuration. The worker uses
@@ -64,6 +69,7 @@ func NewIdentityService(cfg config.Config, pool *pgxpool.Pool) (*identity.Servic
 		RegistrationEnabled:    cfg.CustomerRegistrationEnabled,
 		TermsVersion:           cfg.TermsVersion,
 		CustomerAppURL:         cfg.CustomerAppURL,
+		AdminAppURL:            cfg.AdminAppURL,
 	}), nil
 }
 
@@ -173,6 +179,47 @@ func SeedDemoMenus(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, c
 		done = append(done, menus.FormatWeek(w))
 	}
 	return done, nil
+}
+
+// NewBackoffice builds the Sprint 4 administration services.
+func NewBackoffice(cfg config.Config, pool *pgxpool.Pool, ids *identity.Service, com *Commerce) *backoffice.Service {
+	b := backoffice.New(pool)
+	b.Reporting = reporting.New(pool)
+	// One clock for commerce and its reports (tests move it).
+	b.Now = func() time.Time { return com.Service.Now() }
+	b.Reporting.Now = b.Now
+	b.CRM = crm.NewService(pool)
+	b.Support = support.NewService(pool)
+	b.Support.Alerts = b
+	b.Commerce, b.Subs, b.Orders, b.Billing, b.Payments = com.Service, com.Subs, com.Orders, com.Billing, com.Payments
+	b.Identity, b.Delivery = ids, delivery.Zones{DB: pool}
+	provider, live, _, _ := com.Payments.Available()
+	b.Integ = backoffice.Integrations{Env: cfg.Env, MailDriver: cfg.Mail.Driver, MailHost: cfg.Mail.Host, PaymentsProvider: provider, PaymentsLive: live}
+	mfa := "Required for every staff account"
+	if !cfg.AdminMFARequired {
+		mfa = "Not required (local development only)"
+	}
+	payments := "None chosen"
+	if provider != "" {
+		payments = provider
+		if !live {
+			payments += " (test mode, no real money)"
+		}
+	}
+	b.Policies = []backoffice.Policy{
+		{Key: "currency", Label: "Currency", Value: "TTD", Owner: "Code"},
+		{Key: "time_zone", Label: "Business time zone", Value: menus.TimeZone, Owner: "Code"},
+		{Key: "cutoff", Label: "Meal selection cutoff", Value: cfg.Commerce.CutoffWeekday + " " + cfg.Commerce.CutoffTime + ", Trinidad and Tobago time", Owner: "Configuration (MENU_CUTOFF_*)"},
+		{Key: "renewal", Label: "Weekly billing", Value: "Charged " + cfg.Commerce.RenewalLead.String() + " before each week's cutoff", Owner: "Configuration (BILLING_RENEWAL_LEAD)"},
+		{Key: "tax", Label: "Tax", Value: cfg.Commerce.TaxMode, Owner: "Configuration (BILLING_TAX_*), not decided"},
+		{Key: "delivery_fee", Label: "Delivery fee (cents per week)", Value: strconv.FormatInt(cfg.Commerce.DeliveryFeeMinor, 10), Owner: "Configuration, not decided"},
+		{Key: "pause", Label: "Longest pause", Value: strconv.Itoa(cfg.Commerce.MaxPauseWeeks) + " weeks", Owner: "Configuration"},
+		{Key: "payments", Label: "Payment provider", Value: payments, Owner: "Configuration"},
+		{Key: "mfa", Label: "Staff two-factor sign-in", Value: mfa, Owner: "Configuration (ADMIN_MFA_REQUIRED)"},
+		{Key: "registration", Label: "Customer registration", Value: map[bool]string{true: "Open", false: "Closed"}[cfg.CustomerRegistrationEnabled], Owner: "Configuration"},
+		{Key: "delivery_zones", Label: "Delivery zones", Value: "Managed in the database (delivery_zones); all 15 regions active", Owner: "Database"},
+	}
+	return b
 }
 
 // RegisterCommerceJobs wires the commerce and payment job kinds.
@@ -288,6 +335,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	mux.Handle("POST /api/v1/events", limits.Events.ByIP(http.HandlerFunc(eventHandler.Ingest)))
 
 	identityHandler.Routes(mux, identity.Limits{Auth: limits.AdminLogin.ByIP, Token: limits.Token.ByIP})
+	identityHandler.StaffRoutes(mux, limits.AdminLogin.ByIP)
 	adminHandler.Routes(mux)
 	(&customers.Handler{Service: customerService}).Routes(mux)
 	(&addresses.Handler{Pool: pool, Identity: ids, Customers: customerService, Delivery: delivery.Zones{DB: pool}, InUse: com.Subs}).Routes(mux)
@@ -300,6 +348,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	if com.Testpay != nil {
 		com.Testpay.Routes(mux, limits.Token.ByIP)
 	}
+	(&backoffice.Handler{S: NewBackoffice(cfg, pool, ids, com)}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

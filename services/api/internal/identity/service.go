@@ -97,6 +97,8 @@ type Options struct {
 	TermsVersion           string
 	// CustomerAppURL is where account emails link to.
 	CustomerAppURL string
+	// AdminAppURL is where staff invitations link to.
+	AdminAppURL string
 }
 
 // Hooks lets the customers module act on account events inside the same

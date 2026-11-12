@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"mise.tt/api/internal/addresses"
+	"mise.tt/api/internal/audit"
 	"mise.tt/api/internal/billing"
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/identity"
@@ -34,12 +35,22 @@ func (s *Service) Current(ctx context.Context, p *identity.Principal) (*Subscrip
 // manage runs fn on the customer's subscription id, locked, in a
 // transaction, and returns the updated view.
 func (s *Service) manage(ctx context.Context, p *identity.Principal, id string, fn func(tx pgx.Tx, sub *subscriptions.Subscription) error) (*SubscriptionView, error) {
-	cid, err := s.customerID(ctx, p)
-	if err != nil {
-		return nil, err
+	_, byStaff := ctx.Value(staffActionKey{}).(bool)
+	cid := ""
+	if !byStaff {
+		var err error
+		if cid, err = s.customerID(ctx, p); err != nil {
+			return nil, err
+		}
 	}
-	err = db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
-		sub, err := s.Subs.ForCustomer(ctx, tx, cid, id, true)
+	err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
+		var sub *subscriptions.Subscription
+		var err error
+		if byStaff {
+			sub, err = s.Subs.Get(ctx, tx, id, true)
+		} else {
+			sub, err = s.Subs.ForCustomer(ctx, tx, cid, id, true)
+		}
 		if err != nil {
 			return err
 		}
@@ -53,6 +64,57 @@ func (s *Service) manage(ctx context.Context, p *identity.Principal, id string, 
 		return nil, err
 	}
 	return s.subscriptionView(ctx, s.pool, sub)
+}
+
+type staffActionKey struct{}
+
+// StaffReasons are the reason codes staff choose from when acting on a
+// customer's subscription.
+var StaffReasons = []string{"customer_request", "payment_issue", "delivery_issue", "quality_issue", "duplicate_account", "other"}
+
+func (s *Service) asStaff(ctx context.Context, reason, note string) (context.Context, error) {
+	ok := false
+	for _, r := range StaffReasons {
+		ok = ok || r == reason
+	}
+	note = strings.TrimSpace(note)
+	if !ok || len([]rune(note)) > 300 {
+		return nil, httpx.ValidationError([]httpx.FieldError{{Field: "reason", Code: "required", Message: "Choose a reason code (and keep the note under 300 characters)."}})
+	}
+	if note != "" {
+		reason += ": " + note
+	}
+	ctx = context.WithValue(ctx, staffActionKey{}, true)
+	return audit.WithReason(ctx, reason), nil
+}
+
+// StaffPause, StaffResume and StaffCancel act on a customer's subscription
+// on their behalf. They run the same code, and so the same policy, as the
+// customer's own request; the staff member is recorded as the actor and the
+// reason code goes into every audit entry. There is no way to set a status
+// directly.
+func (s *Service) StaffPause(ctx context.Context, actorID, id string, weeks int, reason, note string) (*SubscriptionView, error) {
+	ctx, err := s.asStaff(ctx, reason, note)
+	if err != nil {
+		return nil, err
+	}
+	return s.Pause(ctx, &identity.Principal{UserID: actorID}, id, PauseInput{Weeks: weeks})
+}
+
+func (s *Service) StaffResume(ctx context.Context, actorID, id, reason, note string) (*SubscriptionView, error) {
+	ctx, err := s.asStaff(ctx, reason, note)
+	if err != nil {
+		return nil, err
+	}
+	return s.Resume(ctx, &identity.Principal{UserID: actorID}, id)
+}
+
+func (s *Service) StaffCancel(ctx context.Context, actorID, id, cancelReason, reason, note string) (*SubscriptionView, error) {
+	ctx, err := s.asStaff(ctx, reason, note)
+	if err != nil {
+		return nil, err
+	}
+	return s.Cancel(ctx, &identity.Principal{UserID: actorID}, id, CancelInput{Reason: cancelReason})
 }
 
 func notAllowed(what string, st subscriptions.Status) error {

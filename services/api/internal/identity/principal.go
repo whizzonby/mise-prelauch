@@ -30,6 +30,19 @@ const (
 	PermPaymentsRead      Permission = "payments.read"
 	PermPaymentsRefund    Permission = "payments.refund"
 	PermPromotionsManage  Permission = "promotions.manage"
+	// Sprint 4: administration and CRM. users.read and users.manage are the
+	// staff permissions.
+	PermCustomersRead       Permission = "customers.read"
+	PermCustomersSensitive  Permission = "customers.sensitive"
+	PermCustomersExport     Permission = "customers.export"
+	PermCRMLeadsManage      Permission = "leads.manage"
+	PermCasesRead           Permission = "cases.read"
+	PermCasesManage         Permission = "cases.manage"
+	PermCampaignsManage     Permission = "campaigns.manage"
+	PermSubscriptionsManage Permission = "subscriptions.manage"
+	PermReportsRead         Permission = "reports.read"
+	PermAuditRead           Permission = "audit.read"
+	PermSettingsManage      Permission = "settings.manage"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -39,6 +52,8 @@ var AllPermissions = []Permission{
 	PermCatalogRead, PermCatalogManage, PermCatalogPublish, PermNutritionVerify,
 	PermPlansManage, PermMenusManage, PermMenusPublish, PermSubscriptionsRead,
 	PermOrdersRead, PermPaymentsRead, PermPaymentsRefund, PermPromotionsManage,
+	PermCustomersRead, PermCustomersSensitive, PermCustomersExport, PermCRMLeadsManage, PermCasesRead,
+	PermCasesManage, PermCampaignsManage, PermSubscriptionsManage, PermReportsRead, PermAuditRead, PermSettingsManage,
 }
 
 // RoleCustomer is the role every registered customer holds.

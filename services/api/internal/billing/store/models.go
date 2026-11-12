@@ -10,6 +10,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdminAlert struct {
+	ID           int64
+	DedupeKey    string
+	Kind         string
+	Severity     string
+	Title        string
+	Body         string
+	ResourceType *string
+	ResourceID   *string
+	Permission   string
+	CreatedAt    time.Time
+	ResolvedAt   *time.Time
+}
+
+type AdminAlertRead struct {
+	AlertID int64
+	UserID  string
+	ReadAt  time.Time
+}
+
 type AdminSession struct {
 	ID          string
 	AdminUserID string
@@ -41,6 +61,7 @@ type AuditLog struct {
 	CreatedAt    time.Time
 	ActorUserID  *string
 	RequestID    *string
+	Reason       *string
 }
 
 type AuthToken struct {
@@ -82,6 +103,13 @@ type BillingCycle struct {
 	UpdatedAt           time.Time
 }
 
+type BusinessSetting struct {
+	Key       string
+	Value     string
+	UpdatedBy *string
+	UpdatedAt time.Time
+}
+
 type CheckoutSession struct {
 	ID             string
 	CustomerID     string
@@ -108,6 +136,36 @@ type ChefProfile struct {
 	ImageAlt    *string
 	Status      string
 	IsDemo      bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type CrmLeadProfile struct {
+	LeadID         string
+	Stage          string
+	AssignedTo     *string
+	StageChangedAt time.Time
+	UpdatedBy      *string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type CrmNote struct {
+	ID         string
+	LeadID     *string
+	CustomerID *string
+	Body       string
+	AuthorID   *string
+	CreatedAt  time.Time
+}
+
+type CrmSegment struct {
+	ID          string
+	Name        string
+	Description string
+	Rules       []byte
+	CreatedBy   *string
+	UpdatedBy   *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -302,6 +360,24 @@ type LeadPreference struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	PackagingPreference *string
+}
+
+type MarketingCampaign struct {
+	ID          string
+	Name        string
+	Objective   string
+	Channel     string
+	Status      string
+	UtmCampaign *string
+	SegmentID   *string
+	PromotionID *string
+	StartsAt    *time.Time
+	EndsAt      *time.Time
+	Notes       string
+	CreatedBy   *string
+	UpdatedBy   *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Meal struct {
@@ -610,6 +686,21 @@ type Refund struct {
 	CompletedAt    *time.Time
 }
 
+type ReportExport struct {
+	ID          string
+	Kind        string
+	Params      []byte
+	Status      string
+	RequestedBy string
+	RowCount    *int32
+	Truncated   bool
+	Content     []byte
+	Error       *string
+	CreatedAt   time.Time
+	CompletedAt *time.Time
+	ExpiresAt   time.Time
+}
+
 type Role struct {
 	Key         string
 	Name        string
@@ -636,6 +727,21 @@ type Session struct {
 	ExpiresAt     time.Time
 	RevokedAt     *time.Time
 	RevokedReason *string
+}
+
+type StaffInvitation struct {
+	ID             string
+	Email          string
+	EmailCanonical string
+	Name           string
+	RoleKey        string
+	TokenHash      []byte
+	InvitedBy      *string
+	ExpiresAt      time.Time
+	AcceptedAt     *time.Time
+	AcceptedUserID *string
+	RevokedAt      *time.Time
+	CreatedAt      time.Time
 }
 
 type Subscription struct {
@@ -747,6 +853,35 @@ type SubscriptionPlanPrice struct {
 	Note          *string
 	CreatedBy     *string
 	CreatedAt     time.Time
+}
+
+type SupportCase struct {
+	ID         string
+	Number     int64
+	CustomerID *string
+	LeadID     *string
+	Subject    string
+	Category   string
+	Priority   string
+	Status     string
+	AssignedTo *string
+	Resolution *string
+	CreatedBy  *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	ResolvedAt *time.Time
+	ClosedAt   *time.Time
+}
+
+type SupportCaseEvent struct {
+	ID        int64
+	CaseID    string
+	Type      string
+	Body      *string
+	FromValue *string
+	ToValue   *string
+	ActorID   *string
+	CreatedAt time.Time
 }
 
 type TestpaySession struct {

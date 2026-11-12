@@ -10,6 +10,20 @@ import (
 	"time"
 )
 
+const acceptInvitation = `-- name: AcceptInvitation :exec
+UPDATE staff_invitations SET accepted_at = now(), accepted_user_id = $1 WHERE id = $2
+`
+
+type AcceptInvitationParams struct {
+	UserID *string
+	ID     string
+}
+
+func (q *Queries) AcceptInvitation(ctx context.Context, arg AcceptInvitationParams) error {
+	_, err := q.db.Exec(ctx, acceptInvitation, arg.UserID, arg.ID)
+	return err
+}
+
 const confirmTOTP = `-- name: ConfirmTOTP :exec
 UPDATE mfa_totp SET confirmed_at = now(), updated_at = now() WHERE user_id = $1 AND confirmed_at IS NULL
 `
@@ -53,6 +67,18 @@ func (q *Queries) ConsumeEmailChangeToken(ctx context.Context, tokenHash []byte)
 	var i ConsumeEmailChangeTokenRow
 	err := row.Scan(&i.UserID, &i.NewEmail)
 	return i, err
+}
+
+const countActiveWithRole = `-- name: CountActiveWithRole :one
+SELECT count(*)::int FROM users u JOIN user_roles ur ON ur.user_id = u.id AND ur.scope_type IS NULL
+WHERE ur.role_key = $1 AND u.status = 'active'
+`
+
+func (q *Queries) CountActiveWithRole(ctx context.Context, roleKey string) (int32, error) {
+	row := q.db.QueryRow(ctx, countActiveWithRole, roleKey)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const createAuthToken = `-- name: CreateAuthToken :exec
@@ -99,6 +125,50 @@ func (q *Queries) CreateEmailChangeToken(ctx context.Context, arg CreateEmailCha
 		arg.NewEmail,
 	)
 	return err
+}
+
+const createInvitation = `-- name: CreateInvitation :one
+INSERT INTO staff_invitations (email, email_canonical, name, role_key, token_hash, invited_by, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, email, email_canonical, name, role_key, token_hash, invited_by, expires_at, accepted_at, accepted_user_id, revoked_at, created_at
+`
+
+type CreateInvitationParams struct {
+	Email          string
+	EmailCanonical string
+	Name           string
+	RoleKey        string
+	TokenHash      []byte
+	InvitedBy      *string
+	ExpiresAt      time.Time
+}
+
+func (q *Queries) CreateInvitation(ctx context.Context, arg CreateInvitationParams) (StaffInvitation, error) {
+	row := q.db.QueryRow(ctx, createInvitation,
+		arg.Email,
+		arg.EmailCanonical,
+		arg.Name,
+		arg.RoleKey,
+		arg.TokenHash,
+		arg.InvitedBy,
+		arg.ExpiresAt,
+	)
+	var i StaffInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailCanonical,
+		&i.Name,
+		&i.RoleKey,
+		&i.TokenHash,
+		&i.InvitedBy,
+		&i.ExpiresAt,
+		&i.AcceptedAt,
+		&i.AcceptedUserID,
+		&i.RevokedAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const createSession = `-- name: CreateSession :one
@@ -290,6 +360,30 @@ func (q *Queries) FindLiveSession(ctx context.Context, arg FindLiveSessionParams
 	return i, err
 }
 
+const getInvitation = `-- name: GetInvitation :one
+SELECT id, email, email_canonical, name, role_key, token_hash, invited_by, expires_at, accepted_at, accepted_user_id, revoked_at, created_at FROM staff_invitations WHERE id = $1 FOR UPDATE
+`
+
+func (q *Queries) GetInvitation(ctx context.Context, id string) (StaffInvitation, error) {
+	row := q.db.QueryRow(ctx, getInvitation, id)
+	var i StaffInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailCanonical,
+		&i.Name,
+		&i.RoleKey,
+		&i.TokenHash,
+		&i.InvitedBy,
+		&i.ExpiresAt,
+		&i.AcceptedAt,
+		&i.AcceptedUserID,
+		&i.RevokedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getPasswordHash = `-- name: GetPasswordHash :one
 
 SELECT password_hash FROM password_credentials WHERE user_id = $1
@@ -407,6 +501,41 @@ func (q *Queries) InvalidateAuthTokens(ctx context.Context, arg InvalidateAuthTo
 	return err
 }
 
+const invitationByTokenHash = `-- name: InvitationByTokenHash :one
+SELECT id, email, email_canonical, name, role_key, token_hash, invited_by, expires_at, accepted_at, accepted_user_id, revoked_at, created_at FROM staff_invitations WHERE token_hash = $1 FOR UPDATE
+`
+
+func (q *Queries) InvitationByTokenHash(ctx context.Context, tokenHash []byte) (StaffInvitation, error) {
+	row := q.db.QueryRow(ctx, invitationByTokenHash, tokenHash)
+	var i StaffInvitation
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailCanonical,
+		&i.Name,
+		&i.RoleKey,
+		&i.TokenHash,
+		&i.InvitedBy,
+		&i.ExpiresAt,
+		&i.AcceptedAt,
+		&i.AcceptedUserID,
+		&i.RevokedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const isStaff = `-- name: IsStaff :one
+SELECT EXISTS (SELECT 1 FROM user_roles WHERE user_id = $1 AND scope_type IS NULL AND role_key <> 'customer')
+`
+
+func (q *Queries) IsStaff(ctx context.Context, userID string) (bool, error) {
+	row := q.db.QueryRow(ctx, isStaff, userID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const listLiveSessions = `-- name: ListLiveSessions :many
 SELECT id, audience, client, user_agent, created_at, last_seen_at, expires_at
 FROM sessions
@@ -458,6 +587,43 @@ func (q *Queries) ListLiveSessions(ctx context.Context, arg ListLiveSessionsPara
 	return items, nil
 }
 
+const listOpenInvitations = `-- name: ListOpenInvitations :many
+SELECT id, email, email_canonical, name, role_key, token_hash, invited_by, expires_at, accepted_at, accepted_user_id, revoked_at, created_at FROM staff_invitations WHERE accepted_at IS NULL AND revoked_at IS NULL ORDER BY created_at DESC
+`
+
+func (q *Queries) ListOpenInvitations(ctx context.Context) ([]StaffInvitation, error) {
+	rows, err := q.db.Query(ctx, listOpenInvitations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []StaffInvitation{}
+	for rows.Next() {
+		var i StaffInvitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.EmailCanonical,
+			&i.Name,
+			&i.RoleKey,
+			&i.TokenHash,
+			&i.InvitedBy,
+			&i.ExpiresAt,
+			&i.AcceptedAt,
+			&i.AcceptedUserID,
+			&i.RevokedAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPermissionKeys = `-- name: ListPermissionKeys :many
 SELECT key FROM permissions ORDER BY key
 `
@@ -475,6 +641,130 @@ func (q *Queries) ListPermissionKeys(ctx context.Context) ([]string, error) {
 			return nil, err
 		}
 		items = append(items, key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPermissions = `-- name: ListPermissions :many
+SELECT key, description FROM permissions ORDER BY key
+`
+
+type ListPermissionsRow struct {
+	Key         string
+	Description string
+}
+
+func (q *Queries) ListPermissions(ctx context.Context) ([]ListPermissionsRow, error) {
+	rows, err := q.db.Query(ctx, listPermissions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPermissionsRow{}
+	for rows.Next() {
+		var i ListPermissionsRow
+		if err := rows.Scan(&i.Key, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoles = `-- name: ListRoles :many
+SELECT r.key, r.name, r.description,
+       coalesce(array_agg(rp.permission_key ORDER BY rp.permission_key) FILTER (WHERE rp.permission_key IS NOT NULL), '{}')::text[] AS permissions
+FROM roles r LEFT JOIN role_permissions rp ON rp.role_key = r.key
+GROUP BY r.key, r.name, r.description
+ORDER BY r.key
+`
+
+type ListRolesRow struct {
+	Key         string
+	Name        string
+	Description string
+	Permissions []string
+}
+
+func (q *Queries) ListRoles(ctx context.Context) ([]ListRolesRow, error) {
+	rows, err := q.db.Query(ctx, listRoles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRolesRow{}
+	for rows.Next() {
+		var i ListRolesRow
+		if err := rows.Scan(
+			&i.Key,
+			&i.Name,
+			&i.Description,
+			&i.Permissions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStaff = `-- name: ListStaff :many
+
+SELECT u.id, u.email, u.first_name, u.last_name, u.status, u.last_login_at, u.created_at,
+       array_agg(DISTINCT ur.role_key ORDER BY ur.role_key)::text[] AS roles,
+       EXISTS (SELECT 1 FROM mfa_totp m WHERE m.user_id = u.id AND m.confirmed_at IS NOT NULL) AS mfa_enrolled
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id AND ur.scope_type IS NULL AND ur.role_key <> 'customer'
+GROUP BY u.id
+ORDER BY u.status, u.first_name, u.email
+`
+
+type ListStaffRow struct {
+	ID          string
+	Email       string
+	FirstName   string
+	LastName    string
+	Status      string
+	LastLoginAt *time.Time
+	CreatedAt   time.Time
+	Roles       []string
+	MfaEnrolled bool
+}
+
+// ---------------------------------------------------------------- staff (Sprint 4)
+// Every account holding a role other than customer, with its roles.
+func (q *Queries) ListStaff(ctx context.Context) ([]ListStaffRow, error) {
+	rows, err := q.db.Query(ctx, listStaff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListStaffRow{}
+	for rows.Next() {
+		var i ListStaffRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.FirstName,
+			&i.LastName,
+			&i.Status,
+			&i.LastLoginAt,
+			&i.CreatedAt,
+			&i.Roles,
+			&i.MfaEnrolled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -519,6 +809,18 @@ func (q *Queries) PendingEmailChange(ctx context.Context, userID string) (string
 	var new_email string
 	err := row.Scan(&new_email)
 	return new_email, err
+}
+
+const revokeInvitation = `-- name: RevokeInvitation :execrows
+UPDATE staff_invitations SET revoked_at = now() WHERE id = $1 AND accepted_at IS NULL AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeInvitation(ctx context.Context, id string) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeInvitation, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const revokeRole = `-- name: RevokeRole :execrows
@@ -588,6 +890,21 @@ func (q *Queries) RoleExists(ctx context.Context, key string) (bool, error) {
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const setInvitationToken = `-- name: SetInvitationToken :exec
+UPDATE staff_invitations SET token_hash = $1, expires_at = $2 WHERE id = $3 AND accepted_at IS NULL AND revoked_at IS NULL
+`
+
+type SetInvitationTokenParams struct {
+	TokenHash []byte
+	ExpiresAt time.Time
+	ID        string
+}
+
+func (q *Queries) SetInvitationToken(ctx context.Context, arg SetInvitationTokenParams) error {
+	_, err := q.db.Exec(ctx, setInvitationToken, arg.TokenHash, arg.ExpiresAt, arg.ID)
+	return err
 }
 
 const setPassword = `-- name: SetPassword :exec

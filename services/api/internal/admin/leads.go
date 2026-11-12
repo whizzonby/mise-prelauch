@@ -28,8 +28,12 @@ type LeadFilter struct {
 	// Referral is "referrer" (has at least one converted referral) or
 	// "referred" (was invited by someone).
 	Referral string
-	Page     int
-	PageSize int
+	// Stage is a CRM stage, or "converted" / "unsubscribed" (derived).
+	Stage string
+	// AssignedTo is a staff user id, or "none" for unassigned leads.
+	AssignedTo string
+	Page       int
+	PageSize   int
 }
 
 type LeadRow struct {
@@ -44,6 +48,10 @@ type LeadRow struct {
 	ReferralsConverted int       `json:"referrals_converted"`
 	WasReferred        bool      `json:"was_referred"`
 	CreatedAt          time.Time `json:"created_at"`
+	// Stage is the CRM stage (Sprint 4), or "converted" when the lead became
+	// a customer, or "unsubscribed". Lifecycle stays in Status.
+	Stage      string  `json:"stage"`
+	AssignedTo *string `json:"assigned_to"`
 }
 
 type LeadPage struct {
@@ -58,7 +66,13 @@ const sourceExpr = `CASE WHEN l.referred_by IS NOT NULL AND a.utm_source IS NULL
 
 const leadFrom = `FROM leads l
 	LEFT JOIN lead_attribution a ON a.lead_id = l.id AND a.touch = 'first'
-	LEFT JOIN lead_preferences p ON p.lead_id = l.id`
+	LEFT JOIN lead_preferences p ON p.lead_id = l.id
+	LEFT JOIN crm_lead_profiles cp ON cp.lead_id = l.id`
+
+// stageExpr: conversion and unsubscribing come from the lifecycle, never
+// from a CRM stage.
+const stageExpr = `CASE WHEN l.status = 'CONVERTED' OR EXISTS (SELECT 1 FROM customers cu WHERE cu.lead_id = l.id) THEN 'converted'
+	WHEN l.status = 'UNSUBSCRIBED' THEN 'unsubscribed' ELSE coalesce(cp.stage, 'new') END`
 
 // where builds the WHERE clause for a filter. Every value is a bound
 // parameter; no user input is concatenated into SQL.
@@ -103,6 +117,16 @@ func (f LeadFilter) where() (string, []any) {
 	case "referred":
 		clauses = append(clauses, "l.referred_by IS NOT NULL")
 	}
+	if f.Stage != "" {
+		clauses = append(clauses, "("+stageExpr+") = "+arg(f.Stage))
+	}
+	switch f.AssignedTo {
+	case "":
+	case "none":
+		clauses = append(clauses, "cp.assigned_to IS NULL")
+	default:
+		clauses = append(clauses, "cp.assigned_to = "+arg(f.AssignedTo)+"::uuid")
+	}
 	if len(clauses) == 0 {
 		return "", args
 	}
@@ -112,12 +136,12 @@ func (f LeadFilter) where() (string, []any) {
 const leadRowSelect = `SELECT l.id, l.first_name, l.last_name, l.email, l.status, l.location, ` + sourceExpr + `,
 	p.household_size,
 	(SELECT count(*) FROM referrals r WHERE r.referrer_lead_id = l.id AND r.status = 'converted'),
-	l.referred_by IS NOT NULL, l.created_at `
+	l.referred_by IS NOT NULL, l.created_at, ` + stageExpr + `, cp.assigned_to `
 
 func scanLeadRow(row pgx.CollectableRow) (LeadRow, error) {
 	var r LeadRow
 	err := row.Scan(&r.ID, &r.FirstName, &r.LastName, &r.Email, &r.Status, &r.Location, &r.Source, &r.HouseholdSize,
-		&r.ReferralsConverted, &r.WasReferred, &r.CreatedAt)
+		&r.ReferralsConverted, &r.WasReferred, &r.CreatedAt, &r.Stage, &r.AssignedTo)
 	return r, err
 }
 

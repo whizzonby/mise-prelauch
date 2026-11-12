@@ -7,7 +7,7 @@ import { api, sessionToken } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string; locked?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string; locked?: string; invited?: string }> }) {
   // Someone already signed in has no use for this page.
   const token = await sessionToken();
   if (token) {
@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     );
     if (valid) redirect("/");
   }
-  const { expired, locked } = await searchParams;
+  const { expired, locked, invited } = await searchParams;
 
   return (
     <main className="grid min-h-svh place-items-center px-5 py-12">
@@ -30,6 +30,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <Heading as="h1" size="h3">
             Sign in to the admin
           </Heading>
+          {invited ? (
+            <Text size="sm" className="mt-3 border-l-2 border-success pl-3">
+              Your password is set. Sign in with your email to start.
+            </Text>
+          ) : null}
           {expired ? (
             <Text size="sm" className="mt-3 border-l-2 border-warning pl-3">
               Your session ended. Sign in again to continue.

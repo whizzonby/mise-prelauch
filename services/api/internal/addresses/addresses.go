@@ -436,3 +436,21 @@ func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.JSON(w, r, http.StatusOK, map[string]bool{"removed": true})
 }
+
+// ForCustomer lists a customer's addresses (staff views, with permission).
+func ForCustomer(ctx context.Context, q db.Querier, elig delivery.Eligibility, customerID string) ([]Address, error) {
+	rows, err := store.New(q).ListAddresses(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	h := &Handler{Delivery: elig}
+	out := []Address{}
+	for _, a := range rows {
+		v, err := h.view(ctx, a)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}

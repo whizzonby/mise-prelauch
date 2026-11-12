@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.3.0
+  version: 1.4.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -57,6 +57,18 @@ tags:
     description: The test payment simulator. Never served in production.
   - name: admin-commerce
     description: Restricted commerce administration (Sprint 3).
+  - name: admin-overview
+    description: Operational overview and reports (Sprint 4).
+  - name: admin-customers
+    description: Customer list and Customer 360 (Sprint 4).
+  - name: admin-crm
+    description: Lead stages, notes, segments, campaigns, referrals and retention (Sprint 4).
+  - name: admin-support
+    description: Internal support cases (Sprint 4).
+  - name: admin-staff
+    description: Staff accounts, invitations and roles (Sprint 4).
+  - name: admin-system
+    description: Exports, alerts, settings, integrations and the audit log (Sprint 4).
 paths:
   /api/v1/health:
     get:
@@ -563,6 +575,8 @@ paths:
         - $ref: "#/components/parameters/LeadPackaging"
         - $ref: "#/components/parameters/From"
         - $ref: "#/components/parameters/To"
+        - { name: stage, in: query, schema: { type: string, enum: [new, contacted, qualified, unqualified, converted, unsubscribed] } }
+        - { name: assigned_to, in: query, description: "A staff user id, or none.", schema: { type: string } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
       responses:
@@ -2885,6 +2899,1574 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
 
+  /api/v1/admin/dashboard:
+    get:
+      tags: [admin-overview]
+      operationId: adminDashboard
+      description: "Operational overview: defined metrics, attention items the caller may act on, 12-week trends. Needs reports.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Overview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Dashboard" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/{kind}:
+    get:
+      tags: [admin-overview]
+      operationId: adminReport
+      description: One report for a local date range (both days included). Needs reports.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Report" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers:
+    get:
+      tags: [admin-customers]
+      operationId: adminListCustomers
+      description: "Server-side search, filters, sorting and pages. Needs customers.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: subscription_status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: region
+          in: query
+          required: false
+          schema: { type: string }
+        - name: segment_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: sort
+          in: query
+          required: false
+          schema: { type: string }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Customers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}:
+    get:
+      tags: [admin-customers]
+      operationId: adminGetCustomer
+      description: "Customer 360 overview, from the owning modules. No allergies or addresses. Needs customers.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Customer.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Customer360" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}/orders:
+    get:
+      tags: [admin-customers]
+      operationId: adminCustomerOrders
+      description: Needs customers.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/OrderSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}/billing:
+    get:
+      tags: [admin-customers]
+      operationId: adminCustomerBilling
+      description: "Billing cycles, invoices and every payment, including failed ones. Needs customers.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Billing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerBilling" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}/preferences:
+    get:
+      tags: [admin-customers]
+      operationId: adminCustomerSensitive
+      description: "Preferences, allergies, household, addresses and phone. Audited. Needs customers.sensitive."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Sensitive details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerSensitive" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}/activity:
+    get:
+      tags: [admin-customers]
+      operationId: adminCustomerActivity
+      description: "Audit entries about the customer, account, subscriptions, orders and payments. Needs customers.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Activity.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ActivityEntry" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/customers/{id}/notes:
+    get:
+      tags: [admin-customers]
+      operationId: adminCustomerNotes
+      description: Needs customers.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Notes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CrmNote" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-customers]
+      operationId: adminAddCustomerNote
+      description: Internal only. Needs leads.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteInput" }
+      responses:
+        "201":
+          description: Added.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CrmNote" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/leads/{id}/crm:
+    get:
+      tags: [admin-crm]
+      operationId: adminLeadCRM
+      description: Needs leads.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Stage.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/LeadCRM" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-crm]
+      operationId: adminSetLeadCRM
+      description: "Stage and assignee. Never changes the lead's lifecycle or creates an account. Needs leads.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadCRMInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/LeadCRM" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/leads/{id}/notes:
+    get:
+      tags: [admin-crm]
+      operationId: adminLeadNotes
+      description: Needs leads.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Notes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CrmNote" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-crm]
+      operationId: adminAddLeadNote
+      description: Needs leads.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteInput" }
+      responses:
+        "201":
+          description: Added.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CrmNote" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/segments:
+    get:
+      tags: [admin-crm]
+      operationId: adminListSegments
+      description: With the number of customers each matches now. Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Segments.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Segment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-crm]
+      operationId: adminCreateSegment
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SegmentInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Segment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/segments/preview:
+    post:
+      tags: [admin-crm]
+      operationId: adminPreviewSegment
+      description: "Customers matching rules, first page and total. Needs campaigns.manage."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SegmentRules" }
+      responses:
+        "200":
+          description: Preview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/segments/{id}:
+    get:
+      tags: [admin-crm]
+      operationId: adminGetSegment
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Segment and preview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [segment, preview]
+                    properties:
+                      segment: { $ref: "#/components/schemas/Segment" }
+                      preview: { $ref: "#/components/schemas/CustomerPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-crm]
+      operationId: adminUpdateSegment
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SegmentInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Segment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [admin-crm]
+      operationId: adminDeleteSegment
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [deleted]
+                    properties:
+                      deleted: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/campaigns:
+    get:
+      tags: [admin-crm]
+      operationId: adminListCampaigns
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Campaigns.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Campaign" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-crm]
+      operationId: adminCreateCampaign
+      description: A record only; nothing is sent. Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CampaignInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Campaign" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/campaigns/{id}:
+    get:
+      tags: [admin-crm]
+      operationId: adminGetCampaign
+      description: With first-touch attribution through its UTM value. Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Campaign.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [campaign, attribution]
+                    properties:
+                      campaign: { $ref: "#/components/schemas/Campaign" }
+                      attribution: { $ref: "#/components/schemas/Attribution" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-crm]
+      operationId: adminUpdateCampaign
+      description: Needs campaigns.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CampaignInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Campaign" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/campaigns/{id}/status:
+    post:
+      tags: [admin-crm]
+      operationId: adminCampaignStatus
+      description: "draft, scheduled, active, completed, cancelled. Activating sends nothing. Audited. Needs campaigns.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              additionalProperties: false
+              properties:
+                status: { type: string }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Campaign" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/referrals:
+    get:
+      tags: [admin-crm]
+      operationId: adminReferrals
+      description: With suspicious-pattern flags for review. No rewards exist. Needs leads.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: flagged
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Referrals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, total]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReferralRow" }
+                      total: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/retention:
+    get:
+      tags: [admin-crm]
+      operationId: adminRetention
+      description: "Rule-based signals, no prediction. Needs customers.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Signals.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, rules]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/RetentionSignal" }
+                      rules:
+                        type: object
+                        additionalProperties: { type: string }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/support/cases:
+    get:
+      tags: [admin-support]
+      operationId: adminListCases
+      description: Needs cases.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: open
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: assigned_to
+          in: query
+          required: false
+          schema: { type: string }
+          description: "A staff id, or me."
+        - name: priority
+          in: query
+          required: false
+          schema: { type: string }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cases.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupportCasePage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-support]
+      operationId: adminCreateCase
+      description: Raises one staff alert. Needs cases.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaseInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupportCase" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/support/cases/{id}:
+    get:
+      tags: [admin-support]
+      operationId: adminGetCase
+      description: With its full history. Needs cases.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Case.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupportCase" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-support]
+      operationId: adminUpdateCase
+      description: Resolving or closing needs a resolution; closed cases are final. Needs cases.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaseUpdate" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupportCase" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/support/cases/{id}/notes:
+    post:
+      tags: [admin-support]
+      operationId: adminCaseNote
+      description: Needs cases.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteInput" }
+      responses:
+        "201":
+          description: Added.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupportCase" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/subscriptions/{id}/pause:
+    post:
+      tags: [admin-commerce]
+      operationId: adminPauseSubscription
+      description: "On the customer's behalf, same rules as theirs, with a reason code. Needs subscriptions.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffActionInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/subscriptions/{id}/resume:
+    post:
+      tags: [admin-commerce]
+      operationId: adminResumeSubscription
+      description: Needs subscriptions.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffActionInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/subscriptions/{id}/cancel:
+    post:
+      tags: [admin-commerce]
+      operationId: adminCancelSubscription
+      description: Needs subscriptions.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StaffActionInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SubscriptionEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/invoices:
+    get:
+      tags: [admin-commerce]
+      operationId: adminListInvoices
+      description: Needs payments.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Invoices.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, total]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InvoiceRow" }
+                      total: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/exports:
+    get:
+      tags: [admin-system]
+      operationId: adminListExports
+      description: "The caller's own exports. Needs admin.access."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Exports.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, limit]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Export" }
+                      limit: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-system]
+      operationId: adminRequestExport
+      description: "Built in the background; each kind has its own permission. Audited. Needs admin.access and the kind's permission."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExportRequest" }
+      responses:
+        "202":
+          description: Queued.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Export" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/exports/{id}/download:
+    get:
+      tags: [admin-system]
+      operationId: adminDownloadExport
+      description: "Requester only, within 24 hours. Audited. Needs admin.access."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: CSV.
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/alerts:
+    get:
+      tags: [admin-system]
+      operationId: adminAlerts
+      description: "Alerts the caller's permissions allow, with their own read state. Needs admin.access."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: unread, in: query, required: false, schema: { type: boolean } }]
+      responses:
+        "200":
+          description: Alerts.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, unread]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AdminAlert" }
+                      unread: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/alerts/read:
+    post:
+      tags: [admin-system]
+      operationId: adminReadAlerts
+      description: "Empty ids: all visible alerts. Needs admin.access."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              additionalProperties: false
+              properties:
+                ids:
+                  type: array
+                  items: { type: integer }
+      responses:
+        "200":
+          description: Done.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [read]
+                    properties:
+                      read: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/settings:
+    get:
+      tags: [admin-system]
+      operationId: adminSettings
+      description: "Contact settings, and policies owned elsewhere shown read-only. No secrets. Needs admin.access."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Settings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-system]
+      operationId: adminPutSettings
+      description: Audited with before and after. Needs settings.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Settings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/integrations:
+    get:
+      tags: [admin-system]
+      operationId: adminIntegrations
+      description: Status from configuration and real activity; never secrets. Needs settings.manage.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Integrations.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/IntegrationStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/audit-events:
+    get:
+      tags: [admin-system]
+      operationId: adminAuditEvents
+      description: The append-only audit log. Needs audit.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: actor
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: action
+          in: query
+          required: false
+          schema: { type: string }
+          description: "A prefix, e.g. staff."
+        - name: target_type
+          in: query
+          required: false
+          schema: { type: string }
+        - name: target_id
+          in: query
+          required: false
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, total]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AuditEntry" }
+                      total: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff:
+    get:
+      tags: [admin-staff]
+      operationId: adminListStaff
+      description: Staff accounts and open invitations. Needs users.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Staff.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items, invitations]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StaffMember" }
+                      invitations:
+                        type: array
+                        items: { $ref: "#/components/schemas/StaffInvitation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/invitations:
+    post:
+      tags: [admin-staff]
+      operationId: adminInviteStaff
+      description: Only a super_admin may invite to super_admin or admin. The link is emailed. Needs users.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InviteInput" }
+      responses:
+        "201":
+          description: Invited.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StaffInvitation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/invitations/{id}:
+    delete:
+      tags: [admin-staff]
+      operationId: adminRevokeInvitation
+      description: Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Revoked.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [revoked]
+                    properties:
+                      revoked: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/{id}/roles:
+    post:
+      tags: [admin-staff]
+      operationId: adminGrantRole
+      description: Not on yourself; privileged roles need a super_admin. Reason required. Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleChangeInput" }
+      responses:
+        "200":
+          description: Granted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [granted]
+                    properties:
+                      granted: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/{id}/roles/revoke:
+    post:
+      tags: [admin-staff]
+      operationId: adminRevokeRole
+      description: The last super_admin keeps the role. Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleChangeInput" }
+      responses:
+        "200":
+          description: Revoked.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [revoked]
+                    properties:
+                      revoked: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/{id}/disable:
+    post:
+      tags: [admin-staff]
+      operationId: adminDisableStaff
+      description: Ends every session. Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleChangeInput" }
+      responses:
+        "200":
+          description: Disabled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [disabled]
+                    properties:
+                      disabled: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/{id}/enable:
+    post:
+      tags: [admin-staff]
+      operationId: adminEnableStaff
+      description: Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleChangeInput" }
+      responses:
+        "200":
+          description: Enabled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [disabled]
+                    properties:
+                      disabled: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/staff/{id}/signout:
+    post:
+      tags: [admin-staff]
+      operationId: adminSignOutStaff
+      description: Needs users.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleChangeInput" }
+      responses:
+        "200":
+          description: Signed out.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [sessions_ended]
+                    properties:
+                      sessions_ended: { type: integer }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/roles:
+    get:
+      tags: [admin-staff]
+      operationId: adminRoles
+      description: Read-only role and permission matrix. Needs users.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Roles.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [roles, permissions]
+                    properties:
+                      roles:
+                        type: array
+                        items: { $ref: "#/components/schemas/RoleInfo" }
+                      permissions:
+                        type: array
+                        items: { $ref: "#/components/schemas/PermissionInfo" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/auth/invitations/accept:
+    post:
+      tags: [admin-staff]
+      operationId: acceptStaffInvitation
+      description: "Public, with the emailed token. Single use, 7 days. MFA is set up at first sign-in outside local."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              additionalProperties: false
+              properties:
+                token: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [accepted]
+                    properties:
+                      accepted: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -3194,7 +4776,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -3231,7 +4813,7 @@ components:
         locations: { type: array, items: { $ref: "#/components/schemas/Bucket" } }
     LeadRow:
       type: object
-      required: [id, first_name, last_name, email, status, location, source, household_size, referrals_converted, was_referred, created_at]
+      required: [id, first_name, last_name, email, status, location, source, household_size, referrals_converted, was_referred, created_at, stage, assigned_to]
       properties:
         id: { type: string, format: uuid }
         first_name: { type: string }
@@ -3244,6 +4826,11 @@ components:
         referrals_converted: { type: integer }
         was_referred: { type: boolean }
         created_at: { type: string, format: date-time }
+        stage:
+          type: string
+          enum: [new, contacted, qualified, unqualified, converted, unsubscribed]
+          description: CRM stage; converted and unsubscribed are derived from the lead's lifecycle.
+        assigned_to: { type: [string, "null"], format: uuid }
     LeadPage:
       type: object
       required: [items, total, page, page_size]
@@ -4706,3 +6293,590 @@ components:
       properties:
         outcome: { type: string, enum: [approve, decline, cancel] }
         card: { type: string, enum: [approve, decline] }
+    # ---------------- Sprint 4: administration and CRM
+    Metric:
+      type: object
+      required: [key, label, value, kind, definition]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: integer }
+        kind: { type: string, enum: [count, money] }
+        currency: { type: string }
+        definition: { type: string }
+    SeriesPoint:
+      type: object
+      required: [period, value]
+      properties:
+        period: { type: string, format: date }
+        value: { type: integer }
+    Series:
+      type: object
+      required: [key, label, kind, definition, points]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        kind: { type: string }
+        definition: { type: string }
+        points:
+          type: array
+          items:
+            type: object
+            required: [period, value]
+            properties:
+              period: { type: string, format: date }
+              value: { type: integer }
+    Share:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: integer }
+    AttentionItem:
+      type: object
+      required: [key, label, count, severity, link, permission]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        count: { type: integer }
+        severity: { type: string, enum: [info, warning, critical] }
+        link: { type: string }
+        permission: { type: string }
+    Dashboard:
+      type: object
+      required: [generated_at, time_zone, period_label, period_from, period_to, current_week, metrics, attention, charts, plan_distribution, next_cutoff_at]
+      properties:
+        generated_at: { type: string, format: date-time }
+        time_zone: { type: string }
+        period_label: { type: string }
+        period_from: { type: string, format: date }
+        period_to: { type: string, format: date }
+        current_week: { type: string, format: date }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/Metric" }
+        attention:
+          type: array
+          items: { $ref: "#/components/schemas/AttentionItem" }
+        charts:
+          type: array
+          items: { $ref: "#/components/schemas/Series" }
+        plan_distribution:
+          type: array
+          items: { $ref: "#/components/schemas/Share" }
+        next_cutoff_at: { type: [string, "null"], format: date-time }
+    Report:
+      type: object
+      required: [kind, from, to, interval, time_zone, totals, series, breakdowns, definitions]
+      properties:
+        kind: { type: string, enum: [customers, subscriptions, orders, finance, marketing] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        interval: { type: string, enum: [day, week] }
+        time_zone: { type: string }
+        totals:
+          type: array
+          items: { $ref: "#/components/schemas/Metric" }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/Series" }
+        breakdowns:
+          type: object
+          additionalProperties:
+            type: array
+            items: { $ref: "#/components/schemas/Share" }
+        definitions:
+          type: object
+          additionalProperties: { type: string }
+    CustomerRow:
+      type: object
+      required: [id, name, email, status, segment, subscription_status, plan_name, region, source, joined_at, last_login_at, flags]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+        status: { type: string, enum: [verified, unverified, disabled] }
+        segment: { type: [string, "null"] }
+        subscription_status: { type: [string, "null"] }
+        plan_name: { type: [string, "null"] }
+        region: { type: [string, "null"] }
+        source: { type: string }
+        joined_at: { type: string, format: date-time }
+        last_login_at: { type: [string, "null"], format: date-time }
+        flags:
+          type: array
+          items: { type: string, enum: [payment_failed, open_case, payment_review] }
+    CustomerPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CustomerRow" }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    CustomerSubscription:
+      type: object
+      required: [id, status, plan_name, amount_minor, currency, first_week, activated_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string }
+        plan_name: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        first_week: { type: string, format: date }
+        activated_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    Customer360:
+      type: object
+      required: [id, user_id, first_name, last_name, email, status, email_verified_at, last_login_at, joined_at, contact_channel, region, region_label, dietary, household_size, lead_id, lead_linked_at, source, utm_campaign, referred_by_lead_id, segment, orders, open_cases, marketing_consents, subscriptions, cases, can_view_sensitive]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        first_name: { type: string }
+        last_name: { type: string }
+        email: { type: string }
+        status: { type: string, enum: [verified, unverified, disabled] }
+        email_verified_at: { type: [string, "null"], format: date-time }
+        last_login_at: { type: [string, "null"], format: date-time }
+        joined_at: { type: string, format: date-time }
+        contact_channel: { type: string }
+        region: { type: [string, "null"] }
+        region_label: { type: [string, "null"] }
+        dietary:
+          type: array
+          items: { type: string }
+        household_size: { type: [integer, "null"] }
+        lead_id: { type: [string, "null"], format: uuid }
+        lead_linked_at: { type: [string, "null"], format: date-time }
+        source: { type: string }
+        utm_campaign: { type: [string, "null"] }
+        referred_by_lead_id: { type: [string, "null"], format: uuid }
+        segment: { type: [string, "null"] }
+        orders: { type: integer }
+        open_cases: { type: integer }
+        marketing_consents:
+          type: array
+          items: { type: string }
+        subscriptions:
+          type: array
+          items: { $ref: "#/components/schemas/CustomerSubscription" }
+        cases:
+          type: array
+          items: { $ref: "#/components/schemas/SupportCase" }
+        can_view_sensitive: { type: boolean }
+    CustomerBilling:
+      type: object
+      required: [billing_cycles, invoices, payments]
+      properties:
+        billing_cycles:
+          type: array
+          items: { $ref: "#/components/schemas/BillingCycle" }
+        invoices:
+          type: array
+          items: { $ref: "#/components/schemas/InvoiceSummary" }
+        payments:
+          type: array
+          items: { $ref: "#/components/schemas/Payment" }
+    CustomerSensitive:
+      type: object
+      required: [preferences, household, addresses, phone, contact_channel]
+      properties:
+        preferences: { $ref: "#/components/schemas/Preferences" }
+        household:
+          oneOf: [{ $ref: "#/components/schemas/Household" }, { type: "null" }]
+        addresses:
+          type: array
+          items: { $ref: "#/components/schemas/Address" }
+        phone: { type: [string, "null"] }
+        contact_channel: { type: string }
+      description: "Allergies, addresses and phone. Needs customers.sensitive; every view is audited."
+    ActivityEntry:
+      type: object
+      required: [at, source, action, actor_name, target_type, reason, metadata]
+      properties:
+        at: { type: string, format: date-time }
+        source: { type: string }
+        action: { type: string }
+        actor_name: { type: [string, "null"] }
+        target_type: { type: [string, "null"] }
+        reason: { type: [string, "null"] }
+        metadata: { type: [object, "null"] }
+    CrmNote:
+      type: object
+      required: [id, body, author_id, author_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        body: { type: string }
+        author_id: { type: [string, "null"], format: uuid }
+        author_name: { type: string }
+        created_at: { type: string, format: date-time }
+    NoteInput:
+      type: object
+      required: [body]
+      additionalProperties: false
+      properties:
+        body: { type: string, minLength: 1, maxLength: 2000 }
+    LeadCRM:
+      type: object
+      required: [stage, assigned_to, stage_changed_at]
+      properties:
+        stage: { type: string, enum: [new, contacted, qualified, unqualified] }
+        assigned_to: { type: [string, "null"], format: uuid }
+        stage_changed_at: { type: [string, "null"], format: date-time }
+    LeadCRMInput:
+      type: object
+      required: [stage]
+      additionalProperties: false
+      properties:
+        stage: { type: string, enum: [new, contacted, qualified, unqualified] }
+        assigned_to: { type: [string, "null"], format: uuid }
+    SegmentRules:
+      type: object
+      additionalProperties: false
+      properties:
+        plan_ids:
+          type: array
+          items: { type: string, format: uuid }
+        subscription_statuses:
+          type: array
+          items: { type: string }
+        lifecycle:
+          type: array
+          items: { type: string, enum: [prospect, subscriber, lapsed] }
+        joined_from: { type: string, format: date }
+        joined_to: { type: string, format: date }
+        regions:
+          type: array
+          items: { type: string }
+        dietary:
+          type: array
+          items: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        min_orders: { type: integer }
+        min_tenure_weeks: { type: integer }
+        consent_topic: { type: string }
+      description: Explainable filters on stored data. Allergies are never a rule.
+    Segment:
+      type: object
+      required: [id, name, description, rules, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        rules: { $ref: "#/components/schemas/SegmentRules" }
+        updated_at: { type: string, format: date-time }
+        customers: { type: integer }
+    SegmentInput:
+      type: object
+      required: [name, rules]
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        description: { type: string }
+        rules: { $ref: "#/components/schemas/SegmentRules" }
+    Campaign:
+      type: object
+      required: [id, name, objective, channel, status, utm_campaign, segment_id, promotion_id, starts_at, ends_at, notes, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        objective: { type: string }
+        channel: { type: string }
+        status: { type: string, enum: [draft, scheduled, active, completed, cancelled] }
+        utm_campaign: { type: [string, "null"] }
+        segment_id: { type: [string, "null"], format: uuid }
+        promotion_id: { type: [string, "null"], format: uuid }
+        starts_at: { type: [string, "null"], format: date-time }
+        ends_at: { type: [string, "null"], format: date-time }
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CampaignInput:
+      type: object
+      required: [name, objective, channel]
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        objective: { type: string, enum: [acquisition, activation, retention, win_back, referral, awareness] }
+        channel: { type: string, enum: [email, social, paid_social, search, partnership, events, other] }
+        utm_campaign: { type: string }
+        segment_id: { type: string }
+        promotion_id: { type: string }
+        starts_at: { type: [string, "null"], format: date-time }
+        ends_at: { type: [string, "null"], format: date-time }
+        notes: { type: string }
+    Attribution:
+      type: object
+      required: [leads, verified_leads, customers, subscribers, orders, definition]
+      properties:
+        leads: { type: integer }
+        verified_leads: { type: integer }
+        customers: { type: integer }
+        subscribers: { type: integer }
+        orders: { type: integer }
+        definition: { type: string }
+    ReferralRow:
+      type: object
+      required: [id, status, created_at, converted_at, referrer_lead_id, referrer_name, referrer_email, referred_lead_id, referred_name, referred_email, referred_status, referred_became_customer, flags]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string }
+        created_at: { type: string, format: date-time }
+        converted_at: { type: [string, "null"], format: date-time }
+        referrer_lead_id: { type: string, format: uuid }
+        referrer_name: { type: string }
+        referrer_email: { type: string }
+        referred_lead_id: { type: string, format: uuid }
+        referred_name: { type: string }
+        referred_email: { type: string }
+        referred_status: { type: string }
+        referred_became_customer: { type: boolean }
+        flags:
+          type: array
+          items: { type: string, enum: [same_network, burst, blocked, flagged_at_signup] }
+    RetentionSignal:
+      type: object
+      required: [customer_id, name, email, signal, detail, since]
+      properties:
+        customer_id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+        signal: { type: string, enum: [failed_renewal, recently_cancelled, missed_selections, inactive, stale_case] }
+        detail: { type: string }
+        since: { type: string, format: date-time }
+    SupportCaseEvent:
+      type: object
+      required: [type, body, from, to, actor_name, created_at]
+      properties:
+        type: { type: string }
+        body: { type: [string, "null"] }
+        from: { type: [string, "null"] }
+        to: { type: [string, "null"] }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    SupportCase:
+      type: object
+      required: [id, number, customer_id, lead_id, subject, category, priority, status, assigned_to, assignee_name, resolution, created_at, updated_at, resolved_at, closed_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: integer }
+        customer_id: { type: [string, "null"], format: uuid }
+        lead_id: { type: [string, "null"], format: uuid }
+        subject: { type: string }
+        category:
+          type: string
+          enum: [subscription, billing, meal_selection, delivery, account_access, product_feedback, general]
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        status: { type: string, enum: [open, in_progress, waiting_for_customer, resolved, closed] }
+        assigned_to: { type: [string, "null"], format: uuid }
+        assignee_name: { type: string }
+        resolution: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        resolved_at: { type: [string, "null"], format: date-time }
+        closed_at: { type: [string, "null"], format: date-time }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/SupportCaseEvent" }
+    SupportCasePage:
+      type: object
+      required: [items, total, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SupportCase" }
+        total: { type: integer }
+        page: { type: integer }
+    CaseInput:
+      type: object
+      required: [subject, category]
+      additionalProperties: false
+      properties:
+        customer_id: { type: string }
+        lead_id: { type: string }
+        subject: { type: string }
+        category: { type: string }
+        priority: { type: string }
+        assigned_to: { type: string }
+        note: { type: string }
+    CaseUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        status: { type: string }
+        priority: { type: string }
+        assigned_to: { type: [string, "null"] }
+        resolution: { type: string }
+    StaffActionInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          enum: [customer_request, payment_issue, delivery_issue, quality_issue, duplicate_account, other]
+        note: { type: string, maxLength: 300 }
+        weeks: { type: integer }
+        cancel_reason: { type: string }
+    InvoiceRow:
+      type: object
+      required: [id, number, status, customer_id, customer, issued_at, period_start, total_minor, currency]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status: { type: string }
+        customer_id: { type: string, format: uuid }
+        customer: { type: string }
+        issued_at: { type: string, format: date-time }
+        period_start: { type: string, format: date }
+        total_minor: { type: integer }
+        currency: { type: string }
+    ExportRequest:
+      type: object
+      required: [kind]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [customers, subscriptions, orders, payments, leads] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        status: { type: string }
+        segment_id: { type: string, format: uuid }
+    Export:
+      type: object
+      required: [id, kind, params, status, row_count, truncated, error, created_at, completed_at, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string }
+        params: { type: object }
+        status: { type: string, enum: [queued, running, ready, failed, expired] }
+        row_count: { type: [integer, "null"] }
+        truncated: { type: boolean }
+        error: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        expires_at: { type: string, format: date-time }
+    AdminAlert:
+      type: object
+      required: [id, kind, severity, title, body, resource_type, resource_id, created_at, resolved_at, read]
+      properties:
+        id: { type: integer }
+        kind: { type: string }
+        severity: { type: string, enum: [info, warning, critical] }
+        title: { type: string }
+        body: { type: string }
+        resource_type: { type: [string, "null"] }
+        resource_id: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        resolved_at: { type: [string, "null"], format: date-time }
+        read: { type: boolean }
+    Setting:
+      type: object
+      required: [key, label, value, updated_at]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: string }
+        updated_at: { type: [string, "null"], format: date-time }
+    PolicyInfo:
+      type: object
+      required: [key, label, value, owner]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: string }
+        owner: { type: string }
+    Settings:
+      type: object
+      required: [editable, policies]
+      properties:
+        editable:
+          type: array
+          items: { $ref: "#/components/schemas/Setting" }
+        policies:
+          type: array
+          items: { $ref: "#/components/schemas/PolicyInfo" }
+    IntegrationStatus:
+      type: object
+      required: [key, name, purpose, status, detail, last_success_at, last_error, last_error_at]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        purpose: { type: string }
+        status: { type: string, enum: [not_configured, test_mode, configured, working] }
+        detail: { type: string }
+        last_success_at: { type: [string, "null"], format: date-time }
+        last_error: { type: [string, "null"] }
+        last_error_at: { type: [string, "null"], format: date-time }
+    AuditEntry:
+      type: object
+      required: [id, at, actor_id, actor_name, action, target_type, target_id, reason, request_id, metadata]
+      properties:
+        id: { type: integer }
+        at: { type: string, format: date-time }
+        actor_id: { type: [string, "null"], format: uuid }
+        actor_name: { type: [string, "null"] }
+        action: { type: string }
+        target_type: { type: [string, "null"] }
+        target_id: { type: [string, "null"] }
+        reason: { type: [string, "null"] }
+        request_id: { type: [string, "null"] }
+        metadata: { type: [object, "null"] }
+    StaffMember:
+      type: object
+      required: [id, email, name, status, roles, mfa_enrolled, last_login_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [active, disabled] }
+        roles:
+          type: array
+          items: { type: string }
+        mfa_enrolled: { type: boolean }
+        last_login_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    StaffInvitation:
+      type: object
+      required: [id, email, name, role, expires_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        name: { type: string }
+        role: { type: string }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    InviteInput:
+      type: object
+      required: [email, name, role]
+      additionalProperties: false
+      properties:
+        email: { type: string }
+        name: { type: string }
+        role: { type: string }
+    RoleChangeInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        role: { type: string }
+        reason: { type: string, minLength: 3, maxLength: 300 }
+    RoleInfo:
+      type: object
+      required: [key, name, description, permissions]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        permissions:
+          type: array
+          items: { type: string }
+    PermissionInfo:
+      type: object
+      required: [key, description]
+      properties:
+        key: { type: string }
+        description: { type: string }

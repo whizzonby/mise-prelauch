@@ -414,6 +414,13 @@ func (s *Service) UpdateMeal(ctx context.Context, actor, id string, in MealInput
 		if err := s.checkRefs(ctx, q, in); err != nil {
 			return err
 		}
+		if !sameSet(in.Allergens, cur.Allergens) || in.AllergenStatus != cur.AllergenStatus {
+			if locked, err := recipeLocked(ctx, tx, id); err != nil {
+				return err
+			} else if locked {
+				return errRecipeControlsClaims
+			}
+		}
 		if cur.Status == "published" {
 			if in.IsDemo && !s.opts.AllowDemo {
 				return errDemoLocked
@@ -535,6 +542,11 @@ func (s *Service) SetNutrition(ctx context.Context, actor, id string, in Nutriti
 			return httpx.ErrNotFound
 		} else if err != nil {
 			return err
+		}
+		if locked, err := recipeLocked(ctx, tx, id); err != nil {
+			return err
+		} else if locked {
+			return errRecipeControlsClaims
 		}
 		if _, err := q.UpsertNutrition(ctx, params); err != nil {
 			return err

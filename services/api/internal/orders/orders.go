@@ -401,3 +401,70 @@ func (s *Service) IDForCycle(ctx context.Context, q db.Querier, cycleID string) 
 	}
 	return o.ID, true
 }
+
+// SourceLine is one meal of one order, as production demand snapshots read
+// it. Only orders that exist are counted: an order is made at the cutoff
+// only for a paid (or promotion-free) week with confirmed meals, so unpaid
+// weeks, carts and draft selections never appear here.
+type SourceLine struct {
+	OrderID           string
+	OrderNumber       string
+	MealID            string
+	MealVersion       int
+	MealName          string
+	Quantity          int
+	Servings          int
+	DietaryTags       []string
+	CustomerAllergens []string
+}
+
+// DemandLines returns every meal line of the week's live orders (not
+// pending, not cancelled), in a stable order.
+func (s *Service) DemandLines(ctx context.Context, q db.Querier, week time.Time) ([]SourceLine, error) {
+	rows, err := q.Query(ctx, `
+		SELECT o.id, o.number, i.meal_id, i.meal_version, i.meal_name, i.quantity, i.servings, i.dietary_tags, o.customer_allergens
+		FROM order_items i JOIN orders o ON o.id = i.order_id
+		WHERE o.week_start = $1 AND o.status NOT IN ('pending', 'cancelled')
+		ORDER BY o.number, i.meal_id`, week)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []SourceLine{}
+	for rows.Next() {
+		var l SourceLine
+		var v, qn, sv int32
+		if err := rows.Scan(&l.OrderID, &l.OrderNumber, &l.MealID, &v, &l.MealName, &qn, &sv, &l.DietaryTags, &l.CustomerAllergens); err != nil {
+			return nil, err
+		}
+		l.MealVersion, l.Quantity, l.Servings = int(v), int(qn), int(sv)
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}
+
+// Advance moves orders to a production status, only from the statuses
+// given (so it never moves an order backwards or out of cancelled), and
+// records each change in the order's history. It returns how many moved.
+func (s *Service) Advance(ctx context.Context, q db.Querier, orderIDs []string, from []string, to, reason, actor string) (int, error) {
+	if len(orderIDs) == 0 {
+		return 0, nil
+	}
+	rows, err := q.Query(ctx, `
+		WITH moved AS (
+			SELECT id, status FROM orders WHERE id = ANY($1::uuid[]) AND status = ANY($2::text[]) FOR UPDATE
+		), upd AS (
+			UPDATE orders o SET status = $3, updated_at = now() FROM moved WHERE o.id = moved.id RETURNING o.id, moved.status AS from_status
+		)
+		INSERT INTO order_status_history (order_id, from_status, to_status, reason, actor_user_id)
+		SELECT id, from_status, $3, $4, $5::uuid FROM upd RETURNING order_id`, orderIDs, from, to, reason, nilIfEmpty(actor))
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		n++
+	}
+	return n, rows.Err()
+}

@@ -374,20 +374,21 @@ func TestAdminPermissionsComeFromTheDatabase(t *testing.T) {
 func TestScopedRolesDoNotGrantGlobalAccess(t *testing.T) {
 	h := newHarness(t)
 	ctx := context.Background()
-	// A chef holds no admin.access, so the admin console is closed to them.
-	if err := h.ids.UpsertStaff(ctx, "chef@mise.test", "Chef", "chef", "correct horse battery staple"); err != nil {
+	// A farmer holds no admin.access, so the admin console is closed to them.
+	// (Chefs gained console access with the Sprint 5 recipe workspace.)
+	if err := h.ids.UpsertStaff(ctx, "farmer@mise.test", "Farmer", "farmer", "correct horse battery staple"); err != nil {
 		t.Fatal(err)
 	}
 	login := func() int {
-		return h.do("POST", "/api/v1/admin/auth/login", map[string]string{"email": "chef@mise.test", "password": "correct horse battery staple"}).Status
+		return h.do("POST", "/api/v1/admin/auth/login", map[string]string{"email": "farmer@mise.test", "password": "correct horse battery staple"}).Status
 	}
 	if got := login(); got != http.StatusUnauthorized {
-		t.Fatalf("chef admin login = %d, want 401", got)
+		t.Fatalf("farmer admin login = %d, want 401", got)
 	}
 	// An admin role held only inside one kitchen grants nothing globally.
 	if _, err := h.pool.Exec(ctx, `
 		INSERT INTO user_roles (user_id, role_key, scope_type, scope_id)
-		SELECT id, 'admin', 'kitchen', gen_random_uuid() FROM users WHERE email = 'chef@mise.test'`); err != nil {
+		SELECT id, 'admin', 'kitchen', gen_random_uuid() FROM users WHERE email = 'farmer@mise.test'`); err != nil {
 		t.Fatal(err)
 	}
 	if got := login(); got != http.StatusUnauthorized {

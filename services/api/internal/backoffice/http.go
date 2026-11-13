@@ -26,6 +26,8 @@ func (h *Handler) Routes(mux httpx.Router) {
 	// Overview and reports.
 	mux.Handle("GET /api/v1/admin/dashboard", adm(P("reports.read"), h.dashboard))
 	mux.Handle("GET /api/v1/admin/reports/{kind}", adm(P("reports.read"), h.report))
+	// Sprint 5: production reporting has its own permission.
+	mux.Handle("GET /api/v1/admin/reports/production", adm(P("production_reports.read"), h.productionReport))
 	// Customers.
 	mux.Handle("GET /api/v1/admin/customers", adm(P("customers.read"), h.customers))
 	mux.Handle("GET /api/v1/admin/customers/{id}", adm(P("customers.read"), h.customer))
@@ -130,6 +132,12 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) report(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	rep, err := h.S.Reporting.Report(r.Context(), r.PathValue("kind"), q.Get("from"), q.Get("to"))
+	respond(w, r, http.StatusOK, rep, err)
+}
+
+func (h *Handler) productionReport(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	rep, err := h.S.Reporting.Report(r.Context(), "production", q.Get("from"), q.Get("to"))
 	respond(w, r, http.StatusOK, rep, err)
 }
 

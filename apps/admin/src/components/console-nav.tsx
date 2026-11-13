@@ -25,6 +25,12 @@ function isCurrent(pathname: string, href: string) {
  */
 export function ConsoleNav({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
+  // The most specific matching link is the current one ("/production/tasks"
+  // rather than "/production").
+  const best = groups
+    .flatMap((g) => g.items)
+    .filter((i) => isCurrent(pathname, i.href))
+    .reduce<string | null>((a, i) => (a === null || i.href.length > a.length ? i.href : a), null);
   return (
     <nav aria-label="Admin" className="w-full">
       <ul className="flex gap-x-1 gap-y-3 overflow-x-auto lg:flex-col lg:overflow-visible">
@@ -35,7 +41,7 @@ export function ConsoleNav({ groups }: { groups: NavGroup[] }) {
               <p className="type-caption hidden px-3 pb-1 font-semibold uppercase tracking-[0.08em] text-primary-foreground/60 lg:block">{g.label}</p>
               <ul className="flex gap-1 lg:flex-col lg:gap-0">
                 {g.items.map((item) => {
-                  const current = isCurrent(pathname, item.href);
+                  const current = item.href === best;
                   return (
                     <li key={item.href} className="shrink-0">
                       <Link

@@ -2,6 +2,7 @@ import { cx } from "@mise/ui";
 import { AlertTriangle, CircleAlert, Info } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { EmptyState, MetricTile, PageHeader, WeeklyBars } from "@/components/admin-ui";
 import { BarList } from "@/components/charts";
@@ -21,6 +22,10 @@ const severityIcon = { critical: AlertTriangle, warning: CircleAlert, info: Info
 export default async function OverviewPage() {
   const { token, admin } = await requireAdmin();
   if (!can(admin, "reports.read")) {
+    // Kitchen staff and chefs start in their own workspace.
+    if (can(admin, "production.execute")) redirect("/production/tasks");
+    if (can(admin, "production.read")) redirect("/production");
+    if (can(admin, "recipes.read")) redirect("/recipes");
     return (
       <>
         <PageHeader title={`Hello, ${admin.name.split(" ")[0]}`} description="Your role does not include the business overview. Use the menu to get to your work." />

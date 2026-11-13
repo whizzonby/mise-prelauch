@@ -27,6 +27,8 @@ type Report struct {
 // ReportKinds are the reports available.
 var ReportKinds = []string{"customers", "subscriptions", "orders", "finance", "marketing"}
 
+// The production report has its own route and permission (production_reports.read).
+
 var errRange = httpx.ValidationError([]httpx.FieldError{{Field: "from", Code: "range",
 	Message: "Choose a range of 1 day to 2 years, with from before to (YYYY-MM-DD)."}})
 
@@ -194,6 +196,50 @@ func (s *Service) Report(ctx context.Context, kind, from, to string) (*Report, e
 		add(breakdown("leads_by_campaign", "Leads from the range by first-touch utm_campaign (none when blank).",
 			`SELECT coalesce(la.utm_campaign, 'none'), count(*) FROM leads l LEFT JOIN lead_attribution la ON la.lead_id = l.id AND la.touch = 'first'
 			 WHERE `+inRange("l.created_at")+` GROUP BY 1 ORDER BY 2 DESC, 1`, rng...))
+	case "production":
+		// Batches by production date. Cancelled batches count nowhere except
+		// the cancelled total.
+		live := `b.production_date BETWEEN $1::date AND $2::date AND b.status <> 'cancelled'`
+		add(series("planned_kits", "Planned kits", "count", "Kits planned in batches, by production date (cancelled batches excluded).",
+			`coalesce(sum(pb.planned_kits), 0)::bigint FROM (`+buckets+`) b(g) LEFT JOIN production_batches pb ON date_trunc($3, pb.production_date::timestamp)::date = b.g
+			 AND pb.production_date BETWEEN $1::date AND $2::date AND pb.status <> 'cancelled' GROUP BY b.g ORDER BY b.g`))
+		add(series("accepted_kits", "Completed kits", "count", "Accepted kits of completed batches, by production date: produced minus rejected, reworked kits counted once.",
+			`coalesce(sum(y.accepted_kits), 0)::bigint FROM (`+buckets+`) b(g) LEFT JOIN production_batches pb ON date_trunc($3, pb.production_date::timestamp)::date = b.g
+			 AND pb.production_date BETWEEN $1::date AND $2::date AND pb.status = 'completed' LEFT JOIN production_yield_records y ON y.batch_id = pb.id GROUP BY b.g ORDER BY b.g`))
+		add(total("planned_kits", "Planned kits", "count", "Kits planned in batches with a production date in the range (cancelled batches excluded).",
+			`SELECT coalesce(sum(planned_kits), 0) FROM production_batches b WHERE `+live, rng...))
+		add(total("completed_kits", "Completed kits", "count", "Accepted kits of batches completed (ready for fulfilment) with a production date in the range. Rejected kits are never counted.",
+			`SELECT coalesce(sum(y.accepted_kits), 0) FROM production_batches b JOIN production_yield_records y ON y.batch_id = b.id
+			 WHERE b.production_date BETWEEN $1::date AND $2::date AND b.status = 'completed'`, rng...))
+		add(total("batch_completion_rate", "Batch completion rate (%)", "percent", "Completed batches as a whole percentage of batches due in the range (cancelled batches excluded). 0 when none were due.",
+			`SELECT CASE WHEN count(*) = 0 THEN 0 ELSE round(100.0 * count(*) FILTER (WHERE b.status = 'completed') / count(*)) END FROM production_batches b WHERE `+live, rng...))
+		add(total("batches", "Batches", "count", "Batches with a production date in the range (cancelled excluded).",
+			`SELECT count(*) FROM production_batches b WHERE `+live, rng...))
+		add(total("cancelled_batches", "Cancelled batches", "count", "Batches with a production date in the range that were cancelled or discarded.",
+			`SELECT count(*) FROM production_batches b WHERE b.production_date BETWEEN $1::date AND $2::date AND b.status = 'cancelled'`, rng...))
+		add(total("quality_holds", "Quality holds", "count", "Holds placed on batches with a production date in the range, whatever their outcome.",
+			`SELECT count(*) FROM quality_holds h JOIN production_batches b ON b.id = h.batch_id WHERE b.production_date BETWEEN $1::date AND $2::date`, rng...))
+		add(total("rejected_kits", "Rejected kits", "count", "Kits rejected during production (never available for fulfilment).",
+			`SELECT coalesce(sum(y.rejected_kits), 0) FROM production_yield_records y JOIN production_batches b ON b.id = y.batch_id WHERE b.production_date BETWEEN $1::date AND $2::date`, rng...))
+		add(total("reworked_kits", "Reworked kits", "count", "Kits that failed and were fixed; already inside the completed kits, not added again.",
+			`SELECT coalesce(sum(y.reworked_kits), 0) FROM production_yield_records y JOIN production_batches b ON b.id = y.batch_id WHERE b.production_date BETWEEN $1::date AND $2::date`, rng...))
+		add(total("yield_variance", "Yield variance (kits)", "count", "Accepted minus planned kits, over batches whose output was recorded. Negative means fewer kits than planned.",
+			`SELECT coalesce(sum(y.accepted_kits - y.planned_kits), 0) FROM production_yield_records y JOIN production_batches b ON b.id = y.batch_id WHERE b.production_date BETWEEN $1::date AND $2::date`, rng...))
+		add(total("waste_records", "Waste records", "count", "Waste entries recorded in the range.",
+			`SELECT count(*) FROM production_waste w WHERE `+inRange("w.created_at"), rng...))
+		add(breakdown("by_meal", "Accepted kits of completed batches in the range, by meal.",
+			`SELECT b.meal_name, coalesce(sum(y.accepted_kits), 0)::bigint FROM production_batches b JOIN production_yield_records y ON y.batch_id = b.id
+			 WHERE b.production_date BETWEEN $1::date AND $2::date AND b.status = 'completed' GROUP BY 1 ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("planned_by_meal", "Planned kits in the range, by meal.",
+			`SELECT b.meal_name, sum(b.planned_kits)::bigint FROM production_batches b WHERE `+live+` GROUP BY 1 ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("waste", "Waste recorded in the range by category and unit, rounded to whole units (quantities as weighed or counted).",
+			`SELECT replace(w.category, '_', ' ') || ' (' || w.unit || ')', round(sum(w.quantity))::bigint FROM production_waste w WHERE `+inRange("w.created_at")+`
+			 GROUP BY w.category, w.unit ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("requirements", "Ingredient requirements of live plans with a production date in the range, in each ingredient's base unit, rounded to whole units. Lines that could not be calculated are left out.",
+			`SELECT i.name || CASE WHEN r.preparation <> '' THEN ', ' || r.preparation ELSE '' END || ' (' || r.unit || ')', round(sum(r.quantity))::bigint
+			 FROM ingredient_requirements r JOIN production_plans p ON p.id = r.plan_id JOIN ingredients i ON i.id = r.ingredient_id
+			 WHERE p.status <> 'cancelled' AND p.production_date BETWEEN $1::date AND $2::date AND r.status = 'ok'
+			 GROUP BY i.name, r.preparation, r.unit ORDER BY 1`, rng...))
 	default:
 		return nil, httpx.NewError(http.StatusNotFound, "not_found", "Unknown report.")
 	}

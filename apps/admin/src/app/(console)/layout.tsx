@@ -48,6 +48,30 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       ],
     },
     {
+      label: "Kitchen & Production",
+      items: [
+        ...item(admin, "production.read", "/production", "Production overview"),
+        ...item(admin, "production.read", "/production/tasks", "Kitchen tasks"),
+        ...item(admin, "production.read", "/production/calendar", "Calendar"),
+        ...item(admin, "production.read", "/production/plans", "Production plans"),
+        ...item(admin, "production.read", "/production/batches", "Batches"),
+        ...item(admin, "quality.read", "/production/quality", "Quality control"),
+        ...item(admin, "packaging.manage", "/production/packaging", "Packaging"),
+        ...item(admin, "production.read", "/production/waste", "Waste & yield"),
+        ...item(admin, "production.configure", "/production/settings", "Kitchen settings"),
+      ],
+    },
+    {
+      label: "Culinary",
+      items: [
+        ...item(admin, "recipes.read", "/recipes", "Recipes"),
+        ...item(admin, "ingredients.read", "/ingredients", "Ingredients"),
+        ...item(admin, "recipes.read", "/chefs", "Chefs"),
+        ...item(admin, "nutrition.read", "/nutrition", "Nutrition reviews"),
+        ...item(admin, "recipes.review", "/recipe-approvals", "Recipe approvals"),
+      ],
+    },
+    {
       label: "Catalog",
       items: [
         ...item(admin, "catalog.read", "/meals", "Meals"),
@@ -59,6 +83,8 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       label: "Reports",
       items: [
         ...item(admin, "reports.read", "/reports", "Reports"),
+        ...item(admin, "production_reports.read", "/reports/production", "Production"),
+        ...item(admin, "production.read", "/production/requirements", "Ingredient requirements"),
         ...item(admin, "analytics.view", "/reports/waitlist", "Waitlist"),
         { href: "/exports", label: "Exports" },
       ],

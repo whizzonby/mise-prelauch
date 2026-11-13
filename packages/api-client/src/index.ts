@@ -480,6 +480,62 @@ function toQuery(query?: object): string {
   return text ? `?${text}` : "";
 }
 
+// ---------- Sprint 5: Chef and Production ERP (generated types) ----------
+
+export type Unit = S["Unit"];
+export type UnitConversion = S["UnitConversion"];
+export type CostRef = S["CostRef"];
+export type Ingredient = S["Ingredient"];
+export type IngredientPage = S["IngredientPage"];
+export type IngredientInput = S["CatalogIngredientInput"];
+export type ConversionInput = S["ConversionInput"];
+export type CostInput = S["CostInput"];
+export type Chef = S["Chef"];
+export type ChefTeamInput = S["ChefTeamInput"];
+export type Recipe = S["Recipe"];
+export type RecipePage = S["RecipePage"];
+export type RecipeInput = S["RecipeInput"];
+export type RecipeVersionSummary = S["RecipeVersionSummary"];
+export type RecipeVersion = S["RecipeVersion"];
+export type RecipeLine = S["RecipeLine"];
+export type RecipeLineInput = S["RecipeLineInput"];
+export type RecipeNutrition = S["RecipeNutrition"];
+export type RecipeReview = S["RecipeReview"];
+export type DraftInput = S["DraftInput"];
+export type ReviewInput = S["ReviewInput"];
+export type QueueItem = S["QueueItem"];
+export type Costing = S["Costing"];
+export type DemandMeal = S["DemandMeal"];
+export type DemandSnapshot = S["DemandSnapshot"];
+export type ProductionDemand = S["ProductionDemand"];
+export type ProductionPlan = S["ProductionPlan"];
+export type PlanItem = S["PlanItem"];
+export type Requirement = S["Requirement"];
+export type RequirementRow = S["RequirementRow"];
+export type Batch = S["Batch"];
+export type BatchYield = S["Yield"];
+export type BatchPackaging = S["Packaging"];
+export type QualityCheck = S["QualityCheck"];
+export type ChecklistRow = S["ChecklistRow"];
+export type QualityHold = S["QualityHold"];
+export type KitchenTask = S["Task"];
+export type Waste = S["Waste"];
+export type KitLabel = S["KitLabel"];
+export type TaskTemplate = S["TaskTemplate"];
+export type TaskTemplateInput = S["TaskTemplateInput"];
+export type QualityTemplate = S["QualityTemplate"];
+export type QualityTemplateInput = S["QualityTemplateInput"];
+export type ScheduleSlot = S["ScheduleSlot"];
+export type ProductionSettings = S["ProductionSettings"];
+export type ProductionSettingsInput = S["ProductionSettingsInput"];
+export type ProductionOverview = S["ProductionOverview"];
+export type ProductionCalendar = S["ProductionCalendar"];
+export type CalendarDay = S["CalendarDay"];
+export type WasteInput = S["WasteInput"];
+export type PackagingInput = S["PackagingInput"];
+export type OutputInput = S["OutputInput"];
+export type TaskInput = S["TaskInput"];
+
 export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extraHeaders }: ClientOptions) {
   const base = baseUrl.replace(/\/$/, "");
 
@@ -872,6 +928,125 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
           body: { token: invitationToken, password },
           cache: "no-store",
         }),
+    },
+
+    /** Sprint 5: culinary (ingredients, recipes, reviews) and production. Server-side only. */
+    kitchen: {
+      units: (token: string) => request<{ items: Unit[] }>("/admin/units", { token, cache: "no-store" }),
+      ingredients: (token: string, query: { q?: string; category?: string; active?: string; page?: number; page_size?: number } = {}) =>
+        request<IngredientPage>("/admin/ingredients", { token, query, cache: "no-store" }),
+      ingredient: (token: string, id: string) => request<Ingredient>(`/admin/ingredients/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createIngredient: (token: string, input: IngredientInput) =>
+        request<Ingredient>("/admin/ingredients", { method: "POST", body: input, token, cache: "no-store" }),
+      updateIngredient: (token: string, id: string, input: IngredientInput) =>
+        request<Ingredient>(`/admin/ingredients/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      setConversion: (token: string, id: string, input: ConversionInput) =>
+        request<Ingredient>(`/admin/ingredients/${encodeURIComponent(id)}/conversions`, { method: "POST", body: input, token, cache: "no-store" }),
+      costReferences: (token: string, kind: "ingredient" | "packaging" = "packaging") =>
+        request<{ items: CostRef[] }>("/admin/cost-references", { token, query: { kind }, cache: "no-store" }),
+      addCost: (token: string, input: CostInput) =>
+        request<CostRef>("/admin/cost-references", { method: "POST", body: input, token, cache: "no-store" }),
+      chefs: (token: string) => request<{ items: Chef[] }>("/admin/chefs/team", { token, cache: "no-store" }),
+      updateChef: (token: string, id: string, input: ChefTeamInput) =>
+        request<{ items: Chef[] }>(`/admin/chefs/${encodeURIComponent(id)}/team`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      recipes: (token: string, query: { q?: string; status?: string; mine?: boolean; chef_id?: string; page?: number } = {}) =>
+        request<RecipePage>("/admin/recipes", { token, query: { ...query, mine: query.mine || undefined }, cache: "no-store" }),
+      queue: (token: string, stage: "culinary" | "nutrition" | "final" | "publish") =>
+        request<{ items: QueueItem[] }>("/admin/recipes/queue", { token, query: { stage }, cache: "no-store" }),
+      recipe: (token: string, id: string) => request<Recipe>(`/admin/recipes/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createRecipe: (token: string, input: RecipeInput) =>
+        request<Recipe>("/admin/recipes", { method: "POST", body: input, token, cache: "no-store" }),
+      updateRecipe: (token: string, id: string, input: RecipeInput) =>
+        request<Recipe>(`/admin/recipes/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      version: (token: string, id: string, n = 0) =>
+        request<RecipeVersion>(`/admin/recipes/${encodeURIComponent(id)}/versions/${n}`, { token, cache: "no-store" }),
+      saveDraft: (token: string, id: string, input: DraftInput) =>
+        request<RecipeVersion>(`/admin/recipes/${encodeURIComponent(id)}/draft`, { method: "PUT", body: input, token, cache: "no-store" }),
+      recipeAction: (
+        token: string,
+        id: string,
+        action: "submit" | "review" | "request-changes" | "approve" | "publish" | "archive" | "revise",
+        body: Record<string, unknown> = {},
+      ) => request<RecipeVersion>(`/admin/recipes/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      nutritionQueue: (token: string) => request<{ items: QueueItem[] }>("/admin/nutrition/reviews", { token, cache: "no-store" }),
+      nutritionAction: (token: string, id: string, action: "approve" | "request-changes", body: Record<string, unknown> = {}) =>
+        request<RecipeVersion>(`/admin/nutrition/reviews/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      costing: (token: string, id: string, version = 0) =>
+        request<Costing>(`/admin/recipes/${encodeURIComponent(id)}/costing`, { token, query: { version: version || undefined }, cache: "no-store" }),
+
+      overview: (token: string) => request<ProductionOverview>("/admin/production/overview", { token, cache: "no-store" }),
+      calendar: (token: string, from?: string, days?: number) =>
+        request<ProductionCalendar>("/admin/production/calendar", { token, query: { from, days }, cache: "no-store" }),
+      demand: (token: string, week?: string) => request<ProductionDemand>("/admin/production/demand", { token, query: { week }, cache: "no-store" }),
+      snapshot: (token: string, week: string) =>
+        request<{ snapshot: DemandSnapshot; created: boolean }>("/admin/production/snapshots", { method: "POST", body: { week }, token, cache: "no-store" }),
+      plans: (token: string, status?: string) => request<{ items: ProductionPlan[] }>("/admin/production/plans", { token, query: { status }, cache: "no-store" }),
+      plan: (token: string, id: string) => request<ProductionPlan>(`/admin/production/plans/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createPlan: (token: string, input: { week: string; production_date?: string; notes?: string }) =>
+        request<ProductionPlan>("/admin/production/plans", { method: "POST", body: input, token, cache: "no-store" }),
+      adjustItem: (token: string, id: string, item: string, input: { planned_kits: number; reason?: string }) =>
+        request<ProductionPlan>(`/admin/production/plans/${encodeURIComponent(id)}/items/${encodeURIComponent(item)}`, {
+          method: "PATCH",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      planAction: (token: string, id: string, action: "approve" | "release" | "cancel", body?: { reason: string }) =>
+        request<ProductionPlan>(`/admin/production/plans/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      requirements: (token: string, query: { plan_id?: string; from?: string; to?: string } = {}) =>
+        request<{ items: RequirementRow[] }>("/admin/production/requirements", { token, query, cache: "no-store" }),
+      /** The raw CSV response, to stream to the browser. */
+      requirementsCsv: (token: string, query: { plan_id?: string; from?: string; to?: string } = {}) =>
+        send("/admin/production/requirements", { token, query: { ...query, format: "csv" }, cache: "no-store" }),
+      batches: (token: string, query: { plan_id?: string; status?: string; date?: string; from?: string; to?: string; open?: boolean } = {}) =>
+        request<{ items: Batch[] }>("/admin/production/batches", { token, query: { ...query, open: query.open || undefined }, cache: "no-store" }),
+      batch: (token: string, id: string) => request<Batch>(`/admin/production/batches/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      batchAction: (token: string, id: string, action: "start" | "output" | "complete" | "cancel", body?: Record<string, unknown>) =>
+        request<Batch>(`/admin/production/batches/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      packaging: (token: string, id: string, input: PackagingInput) =>
+        request<Batch>(`/admin/production/batches/${encodeURIComponent(id)}/packaging`, { method: "PUT", body: input, token, cache: "no-store" }),
+      label: (token: string, id: string) => request<KitLabel>(`/admin/production/batches/${encodeURIComponent(id)}/label`, { token, cache: "no-store" }),
+      tasks: (token: string, query: { batch_id?: string; date?: string; status?: string; mine?: boolean; all?: boolean } = {}) =>
+        request<{ items: KitchenTask[] }>("/admin/production/tasks", {
+          token,
+          query: { ...query, mine: query.mine || undefined, all: query.all || undefined },
+          cache: "no-store",
+        }),
+      updateTask: (token: string, id: string, input: TaskInput) =>
+        request<KitchenTask>(`/admin/production/tasks/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      taskTemplates: (token: string) => request<{ items: TaskTemplate[] }>("/admin/production/task-templates", { token, cache: "no-store" }),
+      saveTaskTemplate: (token: string, input: TaskTemplateInput, id?: string) =>
+        request<{ items: TaskTemplate[] }>(id ? `/admin/production/task-templates/${encodeURIComponent(id)}` : "/admin/production/task-templates", {
+          method: id ? "PATCH" : "POST",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      settings: (token: string) => request<ProductionSettings>("/admin/production/settings", { token, cache: "no-store" }),
+      saveSettings: (token: string, input: ProductionSettingsInput) =>
+        request<ProductionSettings>("/admin/production/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      waste: (token: string, query: { batch_id?: string; from?: string; to?: string } = {}) =>
+        request<{ items: Waste[] }>("/admin/production/waste", { token, query, cache: "no-store" }),
+      recordWaste: (token: string, input: WasteInput) =>
+        request<Waste>("/admin/production/waste", { method: "POST", body: input, token, cache: "no-store" }),
+      qualityTemplates: (token: string) => request<{ items: QualityTemplate[] }>("/admin/quality/templates", { token, cache: "no-store" }),
+      saveQualityTemplate: (token: string, input: QualityTemplateInput, id?: string) =>
+        request<{ items: QualityTemplate[] }>(id ? `/admin/quality/templates/${encodeURIComponent(id)}` : "/admin/quality/templates", {
+          method: id ? "PATCH" : "POST",
+          body: input,
+          token,
+          cache: "no-store",
+        }),
+      recordCheck: (token: string, input: { batch_id: string; template_id: string; result: "pass" | "fail"; notes?: string; evidence_ref?: string }) =>
+        request<Batch>("/admin/quality/checks", { method: "POST", body: input, token, cache: "no-store" }),
+      holds: (token: string, open = false) =>
+        request<{ items: QualityHold[] }>("/admin/quality/holds", { token, query: { open: open || undefined }, cache: "no-store" }),
+      placeHold: (token: string, input: { batch_id: string; reason: string }) =>
+        request<Batch>("/admin/quality/holds", { method: "POST", body: input, token, cache: "no-store" }),
+      resolveHold: (token: string, id: string, input: { decision: "release" | "discard"; notes: string }) =>
+        request<Batch>(`/admin/quality/holds/${encodeURIComponent(id)}/release`, { method: "POST", body: input, token, cache: "no-store" }),
+      productionReport: (token: string, from: string, to: string) =>
+        request<Report>("/admin/reports/production", { token, query: { from, to }, cache: "no-store" }),
     },
 
     /** Plans and published menus. Public: the same for everyone. */

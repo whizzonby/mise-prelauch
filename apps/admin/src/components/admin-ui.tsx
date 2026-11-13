@@ -97,7 +97,7 @@ export function MetricTile({ label, value, kind, currency, definition }: { label
   return (
     <div className="border border-border bg-surface p-4">
       <p className="type-caption font-semibold uppercase tracking-[0.06em] text-muted">{label}</p>
-      <p className="type-figures mt-1 font-display text-[1.75rem] leading-tight">{kind === "money" ? money(value, currency) : number.format(value)}</p>
+      <p className="type-figures mt-1 font-display text-[1.75rem] leading-tight">{kind === "money" ? money(value, currency) : kind === "percent" ? `${number.format(value)}%` : number.format(value)}</p>
       <details className="mt-1">
         <summary className="type-caption cursor-pointer text-muted underline decoration-dotted underline-offset-2">What this counts</summary>
         <p className="type-caption mt-1 text-muted">{definition}</p>

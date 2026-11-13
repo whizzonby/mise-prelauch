@@ -165,6 +165,21 @@ func (s *Service) Dashboard(ctx context.Context) (*Dashboard, error) {
 			`SELECT count(*) FROM support_cases WHERE status IN ('open', 'in_progress', 'waiting_for_customer')`, nil},
 		{Attention{Key: "failed_jobs", Label: "Background jobs that failed", Severity: "warning", Link: "/payments", Permission: "payments.read"},
 			`SELECT count(*) FROM jobs WHERE status = 'failed' AND finished_at > $1::timestamptz - interval '7 days'`, []any{now}},
+		// Sprint 5: production. Each is shown only to staff who act on it.
+		{Attention{Key: "quality_holds", Label: "Batches on quality hold", Severity: "critical", Link: "/production/quality", Permission: "quality.read"},
+			`SELECT count(*) FROM quality_holds WHERE status = 'open'`, nil},
+		{Attention{Key: "production_delays", Label: "Batches past their production date and not complete", Severity: "critical", Link: "/production/batches?open=true", Permission: "production.read"},
+			`SELECT count(*) FROM production_batches WHERE status NOT IN ('completed', 'cancelled') AND production_date < ($1::timestamptz AT TIME ZONE '` + TimeZone + `')::date`, []any{now}},
+		{Attention{Key: "plans_awaiting_approval", Label: "Production plans awaiting approval", Severity: "warning", Link: "/production/plans?status=draft", Permission: "production.approve"},
+			`SELECT count(*) FROM production_plans WHERE status = 'draft'`, nil},
+		{Attention{Key: "requirement_exceptions", Label: "Ingredient requirements that cannot be calculated", Severity: "warning", Link: "/production/plans?status=draft", Permission: "production.plan"},
+			`SELECT count(*) FROM ingredient_requirements r JOIN production_plans p ON p.id = r.plan_id WHERE p.status IN ('draft', 'approved') AND r.status <> 'ok'`, nil},
+		{Attention{Key: "batches_due_today", Label: "Batches due today", Severity: "info", Link: "/production/batches?date=today", Permission: "production.read"},
+			`SELECT count(*) FROM production_batches WHERE status NOT IN ('completed', 'cancelled') AND production_date = ($1::timestamptz AT TIME ZONE '` + TimeZone + `')::date`, []any{now}},
+		{Attention{Key: "batches_in_progress", Label: "Batches in progress", Severity: "info", Link: "/production/batches?status=in_progress", Permission: "production.read"},
+			`SELECT count(*) FROM production_batches WHERE status = 'in_progress'`, nil},
+		{Attention{Key: "packaging_incomplete", Label: "Batches produced but not yet packed", Severity: "info", Link: "/production/packaging", Permission: "production.read"},
+			`SELECT count(*) FROM production_batches WHERE status = 'awaiting_quality_check' AND packaging_status <> 'completed'`, nil},
 	}
 	for _, x := range attention {
 		v, err := one(qctx, tx, x.sql, x.args...)

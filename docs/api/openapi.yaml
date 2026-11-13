@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.4.0
+  version: 1.5.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -69,6 +69,10 @@ tags:
     description: Staff accounts, invitations and roles (Sprint 4).
   - name: admin-system
     description: Exports, alerts, settings, integrations and the audit log (Sprint 4).
+  - name: admin-culinary
+    description: Ingredients, units, chefs, recipes, versions, reviews and costing (Sprint 5).
+  - name: admin-production
+    description: Demand snapshots, production plans, requirements, batches, tasks, quality, packaging, waste and reports (Sprint 5).
 paths:
   /api/v1/health:
     get:
@@ -4467,6 +4471,1879 @@ paths:
         "422": { $ref: "#/components/responses/Error" }
         "429": { $ref: "#/components/responses/Error" }
 
+  /api/v1/admin/reports/production:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionReport
+      description: "Planned against completed production, holds, rejected and reworked kits, waste, yield variance and requirements, by production date. Every figure is defined. Needs production_reports.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Report" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/units:
+    get:
+      tags: [admin-culinary]
+      operationId: adminUnits
+      description: "Units of measure with exact factors to their dimension's base unit. Needs ingredients.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Unit" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/ingredients:
+    get:
+      tags: [admin-culinary]
+      operationId: adminIngredients
+      description: Search covers names and aliases. Needs ingredients.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: category
+          in: query
+          required: false
+          schema: { type: string }
+        - name: active
+          in: query
+          required: false
+          schema: { type: string }
+          description: true or false
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Ingredients.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IngredientPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-culinary]
+      operationId: adminCreateIngredient
+      description: "One ingredient per name or alias, whatever the case or spacing. Needs ingredients.manage."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CatalogIngredientInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Ingredient" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/ingredients/{id}:
+    get:
+      tags: [admin-culinary]
+      operationId: adminIngredient
+      description: With conversions and reference costs. Needs ingredients.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Ingredient.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Ingredient" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-culinary]
+      operationId: adminUpdateIngredient
+      description: The base unit is fixed once the ingredient is in a submitted or approved recipe. Needs ingredients.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CatalogIngredientInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Ingredient" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/ingredients/{id}/conversions:
+    post:
+      tags: [admin-culinary]
+      operationId: adminSetConversion
+      description: "Adds or replaces an ingredient-specific conversion across dimensions, with its source. Needs ingredients.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConversionInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Ingredient" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/cost-references:
+    get:
+      tags: [admin-culinary]
+      operationId: adminCostReferences
+      description: Reference costs for estimates only. Needs ingredients.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: kind, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CostRef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-culinary]
+      operationId: adminAddCost
+      description: Every figure needs a source. Never a purchase price. Needs ingredients.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CostInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CostRef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/chefs/team:
+    get:
+      tags: [admin-culinary]
+      operationId: adminChefTeam
+      description: "Chefs with their linked staff account, specialities and recipe counts. Needs recipes.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Chef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/chefs/{id}/team:
+    patch:
+      tags: [admin-culinary]
+      operationId: adminUpdateChef
+      description: Link to a staff account holding the chef role; set specialities and status. Needs chefs.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChefTeamInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Chef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes:
+    get:
+      tags: [admin-culinary]
+      operationId: adminRecipes
+      description: Needs recipes.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: mine
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: chef_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Recipes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipePage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-culinary]
+      operationId: adminCreateRecipe
+      description: Starts version 1 as a draft. A chef creating a recipe owns it. Needs recipes.create.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Recipe" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/queue:
+    get:
+      tags: [admin-culinary]
+      operationId: adminRecipeQueue
+      description: Versions waiting at a review stage. Needs recipes.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: stage
+          in: query
+          required: false
+          schema: { type: string, enum: [culinary, nutrition, final, publish] }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QueueItem" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}:
+    get:
+      tags: [admin-culinary]
+      operationId: adminRecipe
+      description: With every version and the one in use for the open week. Needs recipes.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Recipe.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Recipe" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-culinary]
+      operationId: adminUpdateRecipe
+      description: "Owner, collaborator or recipes.approve. The meal link is fixed once published. Needs recipes.edit."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Recipe" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/versions/{n}:
+    get:
+      tags: [admin-culinary]
+      operationId: adminRecipeVersion
+      description: n = 0 is the latest. Needs recipes.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: n
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Version.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/draft:
+    put:
+      tags: [admin-culinary]
+      operationId: adminSaveRecipeDraft
+      description: Only while draft or changes requested. Needs recipes.edit.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DraftInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/submit:
+    post:
+      tags: [admin-culinary]
+      operationId: adminSubmitRecipe
+      description: Needs ingredients and a preparation step. Needs recipes.submit.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotesInput" }
+      responses:
+        "200":
+          description: Submitted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/review:
+    post:
+      tags: [admin-culinary]
+      operationId: adminCulinaryReview
+      description: Culinary review of a submitted version; not by its author. Needs recipes.review.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviewInput" }
+      responses:
+        "200":
+          description: Reviewed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/request-changes:
+    post:
+      tags: [admin-culinary]
+      operationId: adminRecipeRequestChanges
+      description: Notes required. Needs recipes.review.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviewInput" }
+      responses:
+        "200":
+          description: Returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/approve:
+    post:
+      tags: [admin-culinary]
+      operationId: adminApproveRecipe
+      description: "Final approval: needs valid culinary and nutrition sign-offs and complete data. The version becomes immutable. Needs recipes.approve."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotesInput" }
+      responses:
+        "200":
+          description: Approved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/publish:
+    post:
+      tags: [admin-culinary]
+      operationId: adminPublishRecipe
+      description: "Eligible for production from a delivery week whose selection is open; sets the meal's allergens and verified nutrition. Needs recipes.publish."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                effective_from: { type: string, format: date }
+      responses:
+        "200":
+          description: Published.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/archive:
+    post:
+      tags: [admin-culinary]
+      operationId: adminArchiveRecipe
+      description: Withdraws a published version from future planning. Needs recipes.publish.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, reason]
+              additionalProperties: false
+              properties:
+                version: { type: integer }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Archived.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/revise:
+    post:
+      tags: [admin-culinary]
+      operationId: adminReviseRecipe
+      description: "New draft copied from the latest version, with no approvals. Needs recipes.edit."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                change_summary: { type: string }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/recipes/{id}/costing:
+    get:
+      tags: [admin-culinary]
+      operationId: adminRecipeCosting
+      description: Estimate from reference costs; marked incomplete when any is missing. Needs recipes.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: version
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Costing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Costing" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/nutrition/reviews:
+    get:
+      tags: [admin-culinary]
+      operationId: adminNutritionQueue
+      description: Versions past culinary review awaiting a nutrition sign-off. Needs nutrition.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QueueItem" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/nutrition/reviews/{id}/approve:
+    post:
+      tags: [admin-culinary]
+      operationId: adminNutritionApprove
+      description: id is the recipe. Needs complete nutrition with a source and every ingredient allergen declared. Needs nutrition.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotesInput" }
+      responses:
+        "200":
+          description: Signed off.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/nutrition/reviews/{id}/request-changes:
+    post:
+      tags: [admin-culinary]
+      operationId: adminNutritionRequestChanges
+      description: "Request changes or reject (decision), with notes. Needs nutrition.review."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviewInput" }
+      responses:
+        "200":
+          description: Returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RecipeVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/overview:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionOverview
+      description: "Today in the kitchen, nearby weeks and missing setup. Needs production.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Overview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionOverview" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/calendar:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionCalendar
+      description: Day or week view; proposed schedule slots are labelled as proposed. Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: days
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Calendar.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionCalendar" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/demand:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionDemand
+      description: "Live confirmed demand for a delivery week, compared with its current snapshot. Needs production.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: week, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: Demand.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionDemand" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/snapshots:
+    post:
+      tags: [admin-production]
+      operationId: adminTakeSnapshot
+      description: After the cutoff only. Unchanged demand returns the current snapshot (200) without writing. Needs production.plan.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [week]
+              additionalProperties: false
+              properties:
+                week: { type: string, format: date }
+      responses:
+        "201":
+          description: Snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [snapshot, created]
+                    properties:
+                      snapshot: { $ref: "#/components/schemas/DemandSnapshot" }
+                      created: { type: boolean }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/snapshots/{id}:
+    get:
+      tags: [admin-production]
+      operationId: adminSnapshot
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Snapshot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SnapshotDetail" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionPlans
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-production]
+      operationId: adminCreateProductionPlan
+      description: "One live plan per week: asking again returns it (200). Needs production.plan."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductionPlanInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans/{id}:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionPlan
+      description: "With items, traceable requirements, batches, blocking exceptions and warnings. Needs production.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Plan.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans/{id}/items/{item}:
+    patch:
+      tags: [admin-production]
+      operationId: adminAdjustPlanItem
+      description: Draft plans only; a difference from demand needs a reason. Orders are never changed. Needs production.plan.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: item
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdjustInput" }
+      responses:
+        "200":
+          description: Adjusted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans/{id}/approve:
+    post:
+      tags: [admin-production]
+      operationId: adminApproveProductionPlan
+      description: Refused while any exception blocks; prepares one batch per meal. Needs production.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Approved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans/{id}/release:
+    post:
+      tags: [admin-production]
+      operationId: adminReleaseProductionPlan
+      description: "Releases batches, makes kitchen tasks, moves orders to awaiting production. Needs production.approve."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Released.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/plans/{id}/cancel:
+    post:
+      tags: [admin-production]
+      operationId: adminCancelProductionPlan
+      description: Draft or approved plans. Needs production.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Cancelled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionPlan" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/requirements:
+    get:
+      tags: [admin-production]
+      operationId: adminRequirements
+      description: Ingredient requirements by plan or production-date range. format=csv downloads them (audited). Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string, enum: [json, csv] }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/RequirementRow" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches:
+    get:
+      tags: [admin-production]
+      operationId: adminBatches
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: date
+          in: query
+          required: false
+          schema: { type: string }
+          description: YYYY-MM-DD or today
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: open
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}:
+    get:
+      tags: [admin-production]
+      operationId: adminBatch
+      description: "With yield, packaging, checklist, checks, holds, tasks, waste, history and what completion still needs. Needs production.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Batch.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/start:
+    post:
+      tags: [admin-production]
+      operationId: adminStartBatch
+      description: Needs production.execute.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StartInput" }
+      responses:
+        "200":
+          description: Started.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/output:
+    post:
+      tags: [admin-production]
+      operationId: adminBatchOutput
+      description: Reconciles yield; can be corrected until packed. Needs production.execute.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutputInput" }
+      responses:
+        "200":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/complete:
+    post:
+      tags: [admin-production]
+      operationId: adminCompleteBatch
+      description: "Refused on hold, without passed checks, or until packed kits equal accepted kits. Needs production.execute."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Completed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/cancel:
+    post:
+      tags: [admin-production]
+      operationId: adminCancelBatch
+      description: Needs production.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Cancelled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/packaging:
+    put:
+      tags: [admin-production]
+      operationId: adminBatchPackaging
+      description: Not while on hold. complete needs packed = accepted kits and verified labels. Needs packaging.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PackagingInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/batches/{id}/label:
+    get:
+      tags: [admin-production]
+      operationId: adminBatchLabel
+      description: "From the batch's approved recipe version. Not reviewed for labelling compliance. Needs production.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Label.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/KitLabel" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/tasks:
+    get:
+      tags: [admin-production]
+      operationId: adminTasks
+      description: Open tasks by default. Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: batch_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: date
+          in: query
+          required: false
+          schema: { type: string }
+          description: YYYY-MM-DD or today
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: assigned_to
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: mine
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: all
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Task" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/tasks/{id}:
+    patch:
+      tags: [admin-production]
+      operationId: adminUpdateTask
+      description: "Take a task (me), move it, add a note; blocking needs an exception. Assigning others needs production.plan. Needs production.execute."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskInput" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Task" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/task-templates:
+    get:
+      tags: [admin-production]
+      operationId: adminTaskTemplates
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/TaskTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-production]
+      operationId: adminCreateTaskTemplate
+      description: From an approved operating procedure. Needs production.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskTemplateInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/TaskTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/task-templates/{id}:
+    patch:
+      tags: [admin-production]
+      operationId: adminUpdateTaskTemplate
+      description: Needs production.configure.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskTemplateInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/TaskTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/settings:
+    get:
+      tags: [admin-production]
+      operationId: adminProductionSettings
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-production]
+      operationId: adminSaveProductionSettings
+      description: Needs production.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductionSettingsInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProductionSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/production/waste:
+    get:
+      tags: [admin-production]
+      operationId: adminWaste
+      description: Needs production.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: batch_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Waste" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-production]
+      operationId: adminRecordWaste
+      description: As weighed or counted. Needs waste.record.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WasteInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Waste" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/quality/templates:
+    get:
+      tags: [admin-production]
+      operationId: adminQualityTemplates
+      description: Needs quality.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QualityTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-production]
+      operationId: adminCreateQualityTemplate
+      description: From an approved procedure; no thresholds are invented. Needs production.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QualityTemplateInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QualityTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/quality/templates/{id}:
+    patch:
+      tags: [admin-production]
+      operationId: adminUpdateQualityTemplate
+      description: Needs production.configure.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QualityTemplateInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QualityTemplate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/quality/checks:
+    post:
+      tags: [admin-production]
+      operationId: adminRecordCheck
+      description: A failed critical check puts the batch on hold and alerts quality.release_hold. Needs quality.inspect.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/quality/holds:
+    get:
+      tags: [admin-production]
+      operationId: adminQualityHolds
+      description: Needs quality.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: open, in: query, required: false, schema: { type: boolean } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/QualityHold" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-production]
+      operationId: adminPlaceHold
+      description: Needs quality.inspect.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HoldInput" }
+      responses:
+        "201":
+          description: Held.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/quality/holds/{id}/release:
+    post:
+      tags: [admin-production]
+      operationId: adminResolveHold
+      description: Release (needs a fresh inspection after) or discard (cancels the batch). Needs quality.release_hold.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResolveHoldInput" }
+      responses:
+        "200":
+          description: Resolved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Batch" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -4776,7 +6653,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -6301,7 +8178,7 @@ components:
         key: { type: string }
         label: { type: string }
         value: { type: integer }
-        kind: { type: string, enum: [count, money] }
+        kind: { type: string, enum: [count, money, percent] }
         currency: { type: string }
         definition: { type: string }
     SeriesPoint:
@@ -6369,7 +8246,7 @@ components:
       type: object
       required: [kind, from, to, interval, time_zone, totals, series, breakdowns, definitions]
       properties:
-        kind: { type: string, enum: [customers, subscriptions, orders, finance, marketing] }
+        kind: { type: string, enum: [customers, subscriptions, orders, finance, marketing, production] }
         from: { type: string, format: date }
         to: { type: string, format: date }
         interval: { type: string, enum: [day, week] }
@@ -6880,3 +8757,1038 @@ components:
       properties:
         key: { type: string }
         description: { type: string }
+    # ---------------- Sprint 5: Chef and Production ERP
+    Unit:
+      type: object
+      required: [code, name, dimension, to_base]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        dimension: { type: string, enum: [mass, volume, count, portion] }
+        to_base: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+    UnitConversion:
+      type: object
+      required: [id, from_unit, to_unit, factor, approximate, source, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        from_unit: { type: string }
+        to_unit: { type: string }
+        factor: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        approximate: { type: boolean }
+        source: { type: string }
+        created_at: { type: string, format: date-time }
+    CostRef:
+      type: object
+      required: [id, kind, ingredient_id, label, amount_minor, currency, per_quantity, unit, source, effective_from, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [ingredient, packaging] }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        label: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        per_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        source: { type: string }
+        effective_from: { type: string, format: date }
+        created_at: { type: string, format: date-time }
+    Ingredient:
+      type: object
+      required: [id, name, description, category, base_unit, purchasing_unit, preparation_state, allergens, storage, storage_notes, shelf_life_note, active, aliases, created_at, updated_at, used_in]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        category:
+          type: string
+          enum: [produce, meat, poultry, seafood, dairy, eggs, grains, legumes, herbs_spices, condiments, oils_fats, baking, beverages, packaged, other]
+        base_unit: { type: string }
+        purchasing_unit: { type: [string, "null"] }
+        preparation_state: { type: string, enum: [raw, prepared, cooked, processed, dried, frozen, canned] }
+        allergens:
+          type: array
+          items: { type: string }
+        storage: { type: string, enum: [unspecified, ambient, chilled, frozen] }
+        storage_notes: { type: string }
+        shelf_life_note: { type: [string, "null"] }
+        active: { type: boolean }
+        aliases:
+          type: array
+          items: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        conversions:
+          type: array
+          items: { $ref: "#/components/schemas/UnitConversion" }
+        costs:
+          type: array
+          items: { $ref: "#/components/schemas/CostRef" }
+        used_in: { type: integer }
+    IngredientPage:
+      type: object
+      required: [items, total, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Ingredient" }
+        total: { type: integer }
+        page: { type: integer }
+    CatalogIngredientInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        base_unit: { type: string }
+        purchasing_unit: { type: string }
+        preparation_state: { type: string }
+        allergens:
+          type: array
+          items: { type: string }
+        storage: { type: string }
+        storage_notes: { type: string }
+        shelf_life_note: { type: string }
+        active: { type: boolean }
+        aliases:
+          type: array
+          items: { type: string }
+      description: Fields left out keep their value on PATCH.
+    ConversionInput:
+      type: object
+      required: [from_unit, to_unit, factor, source]
+      additionalProperties: false
+      properties:
+        from_unit: { type: string }
+        to_unit: { type: string }
+        factor: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        approximate: { type: boolean }
+        source: { type: string }
+      description: "1 from_unit = factor to_unit, across dimensions only. Piece conversions must be approximate."
+    CostInput:
+      type: object
+      required: [amount_minor, per_quantity, source, effective_from]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [ingredient, packaging] }
+        ingredient_id: { type: string }
+        label: { type: string }
+        amount_minor: { type: integer }
+        per_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        source: { type: string }
+        effective_from: { type: string, format: date }
+    Chef:
+      type: object
+      required: [id, slug, display_name, role_title, card_status, work_status, specialities, user_id, user_name, email, recipes, in_review, published]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        display_name: { type: string }
+        role_title: { type: [string, "null"] }
+        card_status: { type: string }
+        work_status: { type: string, enum: [active, inactive] }
+        specialities:
+          type: array
+          items: { type: string }
+        user_id: { type: [string, "null"], format: uuid }
+        user_name: { type: [string, "null"] }
+        email: { type: [string, "null"], description: Only with users.read. }
+        recipes: { type: integer }
+        in_review: { type: integer }
+        published: { type: integer }
+    ChefTeamInput:
+      type: object
+      additionalProperties: false
+      properties:
+        user_id: { type: string }
+        specialities:
+          type: array
+          items: { type: string }
+        work_status: { type: string, enum: [active, inactive] }
+    Person:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+    RecipeVersionSummary:
+      type: object
+      required: [id, number, status, effective_from, change_summary, updated_at, published_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: integer }
+        status: { type: string, enum: [draft, submitted, under_review, changes_requested, approved, published, archived] }
+        effective_from: { type: [string, "null"], format: date }
+        change_summary: { type: string }
+        updated_at: { type: string, format: date-time }
+        published_at: { type: [string, "null"], format: date-time }
+    Recipe:
+      type: object
+      required: [id, code, name, description, category, meal_id, meal_name, chef_id, chef_name, created_at, updated_at, latest, in_use, can_edit]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        meal_id: { type: [string, "null"], format: uuid }
+        meal_name: { type: [string, "null"] }
+        chef_id: { type: [string, "null"], format: uuid }
+        chef_name: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        latest: { $ref: "#/components/schemas/RecipeVersionSummary" }
+        in_use:
+          oneOf: [{ $ref: "#/components/schemas/RecipeVersionSummary" }, { type: "null" }]
+        versions:
+          type: array
+          items: { $ref: "#/components/schemas/RecipeVersionSummary" }
+        collaborators:
+          type: array
+          items: { $ref: "#/components/schemas/Person" }
+        can_edit: { type: boolean }
+    RecipePage:
+      type: object
+      required: [items, total, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Recipe" }
+        total: { type: integer }
+        page: { type: integer }
+    RecipeInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        meal_id: { type: string, description: "\"\" unlinks." }
+        chef_id: { type: string }
+        collaborators:
+          type: array
+          items: { type: string, format: uuid }
+    RecipeLine:
+      type: object
+      required: [id, position, ingredient_id, ingredient_name, ingredient_active, base_unit, quantity, unit, preparation, yield_percent, optional, substitution, note, ingredient_allergens]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        ingredient_active: { type: boolean }
+        base_unit: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        preparation: { type: string }
+        yield_percent: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        optional: { type: boolean }
+        substitution: { type: string, enum: [none, equivalent_allowed, approval_required] }
+        note: { type: string }
+        ingredient_allergens:
+          type: array
+          items: { type: string }
+    RecipeNutrition:
+      type: object
+      required: [energy_kcal, protein_g, carbs_g, fat_g, sat_fat_g, fibre_g, sugar_g, sodium_mg, source, method, complete, verified]
+      properties:
+        energy_kcal: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        protein_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        carbs_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        fat_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sat_fat_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        fibre_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sugar_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sodium_mg: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        source:
+          type: [string, "null"]
+          enum: [laboratory_analysis, food_composition_database, supplier_specification, other, null]
+        method: { type: string }
+        complete: { type: boolean }
+        verified: { type: boolean, description: Signed off by a nutritionist on this version. }
+    RecipeReview:
+      type: object
+      required: [id, stage, decision, notes, reviewer_name, created_at, invalidated_at]
+      properties:
+        id: { type: string, format: uuid }
+        stage: { type: string, enum: [culinary, nutrition, final, publish] }
+        decision: { type: string, enum: [approved, changes_requested, rejected, published] }
+        notes: { type: string }
+        reviewer_name: { type: string }
+        created_at: { type: string, format: date-time }
+        invalidated_at: { type: [string, "null"], format: date-time }
+    RecipeVersion:
+      allOf:
+        - $ref: "#/components/schemas/RecipeVersionSummary"
+        - type: object
+          required: [recipe_id, yield_servings, serving_size, serving_size_g, kitchen_prep_minutes, customer_cook_minutes, storage_instructions, packaging_instructions, customer_instructions, dietary_tags, cross_contact_note, author_id, author_name, submitted_at, approved_at, approved_by_name, ingredients, preparation_steps, assembly_steps, allergens_contains, allergens_may_contain, ingredient_allergens, missing_allergens, nutrition, reviews, signoff, problems]
+          properties:
+            recipe_id: { type: string, format: uuid }
+            yield_servings: { type: integer }
+            serving_size: { type: string }
+            serving_size_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+            kitchen_prep_minutes: { type: [integer, "null"] }
+            customer_cook_minutes: { type: [integer, "null"] }
+            storage_instructions: { type: string }
+            packaging_instructions: { type: string }
+            customer_instructions: { type: string }
+            dietary_tags:
+              type: array
+              items: { type: string }
+            cross_contact_note: { type: string }
+            author_id: { type: [string, "null"], format: uuid }
+            author_name: { type: string }
+            submitted_at: { type: [string, "null"], format: date-time }
+            approved_at: { type: [string, "null"], format: date-time }
+            approved_by_name: { type: string }
+            ingredients:
+              type: array
+              items: { $ref: "#/components/schemas/RecipeLine" }
+            preparation_steps:
+              type: array
+              items: { type: string }
+            assembly_steps:
+              type: array
+              items: { type: string }
+            allergens_contains:
+              type: array
+              items: { type: string }
+            allergens_may_contain:
+              type: array
+              items: { type: string }
+            ingredient_allergens:
+              type: array
+              items: { type: string }
+            missing_allergens:
+              type: array
+              items: { type: string }
+            nutrition: { $ref: "#/components/schemas/RecipeNutrition" }
+            reviews:
+              type: array
+              items: { $ref: "#/components/schemas/RecipeReview" }
+            signoff:
+              type: object
+              required: [culinary, nutrition, final]
+              properties:
+                culinary: { type: boolean }
+                nutrition: { type: boolean }
+                final: { type: boolean }
+            problems:
+              type: array
+              items: { type: string }
+    RecipeLineInput:
+      type: object
+      required: [ingredient_id, quantity, unit]
+      additionalProperties: false
+      properties:
+        ingredient_id: { type: string, format: uuid }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        preparation: { type: string }
+        yield_percent: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        optional: { type: boolean }
+        substitution: { type: string }
+        note: { type: string }
+    NutritionInput5:
+      type: object
+      additionalProperties: false
+      properties:
+        energy_kcal: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        protein_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        carbs_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        fat_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sat_fat_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        fibre_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sugar_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        sodium_mg: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        source: { type: [string, "null"] }
+        method: { type: string }
+    DraftInput:
+      type: object
+      additionalProperties: false
+      properties:
+        yield_servings: { type: integer }
+        serving_size: { type: string }
+        serving_size_g: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        kitchen_prep_minutes: { type: integer }
+        customer_cook_minutes: { type: integer }
+        storage_instructions: { type: string }
+        packaging_instructions: { type: string }
+        customer_instructions: { type: string }
+        dietary_tags:
+          type: array
+          items: { type: string }
+        cross_contact_note: { type: string }
+        change_summary: { type: string }
+        ingredients:
+          type: array
+          items: { $ref: "#/components/schemas/RecipeLineInput" }
+        preparation_steps:
+          type: array
+          items: { type: string }
+        assembly_steps:
+          type: array
+          items: { type: string }
+        allergens_contains:
+          type: array
+          items: { type: string }
+        allergens_may_contain:
+          type: array
+          items: { type: string }
+        nutrition: { $ref: "#/components/schemas/NutritionInput5" }
+      description: "Edits the open draft. Fields left out keep their value; a list replaces the whole list. Any edit invalidates the version's earlier reviews."
+    ReviewInput:
+      type: object
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [approved, changes_requested, rejected] }
+        notes: { type: string }
+    NotesInput:
+      type: object
+      additionalProperties: false
+      properties:
+        notes: { type: string }
+    QueueItem:
+      type: object
+      required: [recipe_id, code, name, version, status, chef_name, author_name, submitted_at, updated_at, meal_name]
+      properties:
+        recipe_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        version: { type: integer }
+        status: { type: string, enum: [draft, submitted, under_review, changes_requested, approved, published, archived] }
+        chef_name: { type: string }
+        author_name: { type: string }
+        submitted_at: { type: [string, "null"], format: date-time }
+        updated_at: { type: string, format: date-time }
+        meal_name: { type: [string, "null"] }
+    CostingLine:
+      type: object
+      required: [ingredient_name, quantity, unit, cost_minor, status, source, as_of]
+      properties:
+        ingredient_name: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        cost_minor: { type: [integer, "null"] }
+        status: { type: string, enum: [ok, no_reference, unconvertible] }
+        source: { type: [string, "null"] }
+        as_of: { type: [string, "null"], format: date }
+    Costing:
+      type: object
+      required: [recipe_id, version, yield_servings, currency, lines, ingredients_minor, packaging_minor, per_serving_minor, complete, note]
+      properties:
+        recipe_id: { type: string, format: uuid }
+        version: { type: integer }
+        yield_servings: { type: integer }
+        currency: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/CostingLine" }
+        ingredients_minor: { type: integer }
+        packaging_minor: { type: [integer, "null"] }
+        per_serving_minor: { type: integer }
+        complete: { type: boolean }
+        note: { type: string }
+    DemandMeal:
+      type: object
+      required: [meal_id, meal_name, kits, servings_per_kit, orders, order_numbers, recipe_version_id, recipe_name, recipe_version, dietary_tags, customer_allergies, notes]
+      properties:
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        kits: { type: integer }
+        servings_per_kit: { type: integer }
+        orders: { type: integer }
+        order_numbers:
+          type: array
+          items: { type: string }
+        recipe_version_id: { type: [string, "null"], format: uuid }
+        recipe_name: { type: [string, "null"] }
+        recipe_version: { type: [integer, "null"] }
+        dietary_tags:
+          type: array
+          items: { type: string }
+        customer_allergies:
+          type: object
+          additionalProperties: { type: integer }
+        notes:
+          type: array
+          items: { type: string }
+    DemandSnapshot:
+      type: object
+      required: [id, week, revision, status, kits, orders, cutoff_at, created_at, created_by_name, content_hash]
+      properties:
+        id: { type: string, format: uuid }
+        week: { type: string, format: date }
+        revision: { type: integer }
+        status: { type: string, enum: [current, superseded] }
+        kits: { type: integer }
+        orders: { type: integer }
+        cutoff_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        created_by_name: { type: string }
+        content_hash: { type: string }
+    ProductionDemand:
+      type: object
+      required: [week, cutoff_at, final, kits, orders, meals, snapshot, changed, definition]
+      properties:
+        week: { type: string, format: date }
+        cutoff_at: { type: string, format: date-time }
+        final: { type: boolean }
+        kits: { type: integer }
+        orders: { type: integer }
+        meals:
+          type: array
+          items: { $ref: "#/components/schemas/DemandMeal" }
+        snapshot:
+          oneOf: [{ $ref: "#/components/schemas/DemandSnapshot" }, { type: "null" }]
+        changed: { type: boolean }
+        definition: { type: string }
+    SnapshotDetail:
+      allOf:
+        - $ref: "#/components/schemas/DemandSnapshot"
+        - type: object
+          required: [meals]
+          properties:
+            meals:
+              type: array
+              items: { $ref: "#/components/schemas/DemandMeal" }
+    PlanItem:
+      type: object
+      required: [id, meal_id, meal_name, recipe_version_id, recipe_id, recipe_name, recipe_version, servings_per_kit, demand_kits, planned_kits, adjustment_reason]
+      properties:
+        id: { type: string, format: uuid }
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        recipe_version_id: { type: [string, "null"], format: uuid }
+        recipe_id: { type: [string, "null"], format: uuid }
+        recipe_name: { type: [string, "null"] }
+        recipe_version: { type: [integer, "null"] }
+        servings_per_kit: { type: integer }
+        demand_kits: { type: integer }
+        planned_kits: { type: integer }
+        adjustment_reason: { type: [string, "null"] }
+    RequirementSource:
+      type: object
+      required: [meal_name, recipe_version, batch_code, quantity, unit]
+      properties:
+        meal_name: { type: string }
+        recipe_version: { type: integer }
+        batch_code: { type: [string, "null"] }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+    Requirement:
+      type: object
+      required: [id, ingredient_id, ingredient_name, preparation, quantity, unit, status, approximate, note, sources]
+      properties:
+        id: { type: string, format: uuid }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        preparation: { type: string }
+        quantity: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        unit: { type: string }
+        status: { type: string, enum: [ok, unconvertible, inactive_ingredient] }
+        approximate: { type: boolean }
+        note: { type: string }
+        sources:
+          type: array
+          items: { $ref: "#/components/schemas/RequirementSource" }
+    Capacity:
+      type: object
+      required: [kits_per_day, note]
+      properties:
+        kits_per_day: { type: [integer, "null"] }
+        note: { type: string }
+    ProductionPlan:
+      type: object
+      required: [id, number, week, production_date, status, notes, snapshot_id, snapshot_revision, created_by_name, approved_by_name, approved_at, released_at, cancel_reason, created_at, demand_kits, planned_kits, blocking, warnings, newer_snapshot]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        week: { type: string, format: date }
+        production_date: { type: string, format: date }
+        status: { type: string, enum: [draft, approved, released, cancelled] }
+        notes: { type: string }
+        snapshot_id: { type: string, format: uuid }
+        snapshot_revision: { type: integer }
+        created_by_name: { type: string }
+        approved_by_name: { type: string }
+        approved_at: { type: [string, "null"], format: date-time }
+        released_at: { type: [string, "null"], format: date-time }
+        cancel_reason: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        demand_kits: { type: integer }
+        planned_kits: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PlanItem" }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/Requirement" }
+        batches:
+          type: array
+          items: { $ref: "#/components/schemas/Batch" }
+        blocking:
+          type: array
+          items: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+        capacity: { $ref: "#/components/schemas/Capacity" }
+        newer_snapshot:
+          oneOf: [{ $ref: "#/components/schemas/DemandSnapshot" }, { type: "null" }]
+    ProductionPlanInput:
+      type: object
+      required: [week]
+      additionalProperties: false
+      properties:
+        week: { type: string, format: date }
+        production_date: { type: string, format: date }
+        notes: { type: string }
+    AdjustInput:
+      type: object
+      required: [planned_kits]
+      additionalProperties: false
+      properties:
+        planned_kits: { type: integer }
+        reason: { type: string }
+    ReasonInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+    RequirementRow:
+      type: object
+      required: [plan_id, plan_number, plan_status, production_date, ingredient_id, ingredient_name, preparation, quantity, unit, status, approximate, source_batches, source_meals]
+      properties:
+        plan_id: { type: string, format: uuid }
+        plan_number: { type: string }
+        plan_status: { type: string }
+        production_date: { type: string, format: date }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        preparation: { type: string }
+        quantity: { type: [string, "null"], description: "An exact decimal, as a string; null when not provided." }
+        unit: { type: string }
+        status: { type: string }
+        approximate: { type: boolean }
+        source_batches: { type: string }
+        source_meals: { type: string }
+    Yield:
+      type: object
+      required: [planned_kits, produced_kits, rejected_kits, reworked_kits, accepted_kits, notes, recorded_at]
+      properties:
+        planned_kits: { type: integer }
+        produced_kits: { type: integer }
+        rejected_kits: { type: integer }
+        reworked_kits: { type: integer }
+        accepted_kits: { type: integer }
+        notes: { type: string }
+        recorded_at: { type: string, format: date-time }
+    Packaging:
+      type: object
+      required: [packaging_type, required_kits, packed_kits, labels_verified, assigned_to, assignee_name, exceptions, completed_at, updated_at]
+      properties:
+        packaging_type: { type: string }
+        required_kits: { type: integer }
+        packed_kits: { type: integer }
+        labels_verified: { type: boolean }
+        assigned_to: { type: [string, "null"], format: uuid }
+        assignee_name: { type: string }
+        exceptions: { type: string }
+        completed_at: { type: [string, "null"], format: date-time }
+        updated_at: { type: string, format: date-time }
+    QualityCheck:
+      type: object
+      required: [id, template_id, name, check_type, critical, result, notes, evidence_ref, inspector_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        name: { type: string }
+        check_type: { type: string }
+        critical: { type: boolean }
+        result: { type: string, enum: [pass, fail] }
+        notes: { type: string }
+        evidence_ref: { type: [string, "null"] }
+        inspector_name: { type: string }
+        created_at: { type: string, format: date-time }
+    ChecklistRow:
+      type: object
+      required: [template_id, name, check_type, criteria, critical, result, checked_at]
+      properties:
+        template_id: { type: string, format: uuid }
+        name: { type: string }
+        check_type: { type: string }
+        criteria: { type: string }
+        critical: { type: boolean }
+        result: { type: [string, "null"], enum: [pass, fail, null] }
+        checked_at: { type: [string, "null"], format: date-time }
+    QualityHold:
+      type: object
+      required: [id, batch_id, batch_code, meal_name, production_date, reason, status, created_by_name, created_at, resolved_by_name, resolved_at, resolution_notes]
+      properties:
+        id: { type: string, format: uuid }
+        batch_id: { type: string, format: uuid }
+        batch_code: { type: string }
+        meal_name: { type: string }
+        production_date: { type: string, format: date }
+        reason: { type: string }
+        status: { type: string, enum: [open, released, discarded] }
+        created_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+        resolved_by_name: { type: string }
+        resolved_at: { type: [string, "null"], format: date-time }
+        resolution_notes: { type: [string, "null"] }
+    Task:
+      type: object
+      required: [id, batch_id, batch_code, batch_status, meal_name, planned_kits, title, kind, instructions, priority, status, assigned_to, assignee_name, due_at, started_at, completed_at, notes, exception, production_date]
+      properties:
+        id: { type: string, format: uuid }
+        batch_id: { type: string, format: uuid }
+        batch_code: { type: string }
+        batch_status:
+          type: string
+          enum: [planned, released, in_progress, awaiting_quality_check, quality_hold, completed, cancelled]
+        meal_name: { type: string }
+        planned_kits: { type: integer }
+        title: { type: string }
+        kind: { type: string, enum: [preparation, portioning, sauce, assembly, labelling, packaging, inspection, other] }
+        instructions: { type: string }
+        priority: { type: string, enum: [low, normal, high] }
+        status: { type: string, enum: [todo, in_progress, done, blocked, cancelled] }
+        assigned_to: { type: [string, "null"], format: uuid }
+        assignee_name: { type: string }
+        due_at: { type: [string, "null"], format: date-time }
+        started_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        notes: { type: string }
+        exception: { type: [string, "null"] }
+        production_date: { type: string, format: date }
+    Waste:
+      type: object
+      required: [id, batch_id, batch_code, ingredient_id, ingredient_name, item, quantity, unit, category, reason, recorded_by_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        batch_id: { type: [string, "null"], format: uuid }
+        batch_code: { type: [string, "null"] }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        ingredient_name: { type: [string, "null"] }
+        item: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        category:
+          type: string
+          enum: [preparation_loss, spoilage, quality_rejection, packaging_damage, overproduction, other]
+        reason: { type: string }
+        recorded_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+    BatchEvent:
+      type: object
+      required: [from, to, note, actor_name, created_at]
+      properties:
+        from: { type: [string, "null"] }
+        to: { type: string }
+        note: { type: [string, "null"] }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    Batch:
+      type: object
+      required: [id, code, plan_id, plan_number, week, meal_id, meal_name, recipe_id, recipe_name, recipe_version_id, recipe_version, production_date, planned_kits, actual_kits, assigned_team, status, quality_status, packaging_status, started_at, completed_at, cancel_reason, tasks_open, tasks_done]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        plan_id: { type: string, format: uuid }
+        plan_number: { type: string }
+        week: { type: string, format: date }
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        recipe_id: { type: string, format: uuid }
+        recipe_name: { type: string }
+        recipe_version_id: { type: string, format: uuid }
+        recipe_version: { type: integer }
+        production_date: { type: string, format: date }
+        planned_kits: { type: integer }
+        actual_kits: { type: [integer, "null"] }
+        assigned_team: { type: string }
+        status:
+          type: string
+          enum: [planned, released, in_progress, awaiting_quality_check, quality_hold, completed, cancelled]
+        quality_status: { type: string, enum: [pending, passed, failed, on_hold] }
+        packaging_status: { type: string, enum: [pending, in_progress, completed] }
+        started_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        cancel_reason: { type: [string, "null"] }
+        tasks_open: { type: integer }
+        tasks_done: { type: integer }
+        yield: { $ref: "#/components/schemas/Yield" }
+        packaging:
+          oneOf: [{ $ref: "#/components/schemas/Packaging" }, { type: "null" }]
+        checks:
+          type: array
+          items: { $ref: "#/components/schemas/QualityCheck" }
+        holds:
+          type: array
+          items: { $ref: "#/components/schemas/QualityHold" }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        waste:
+          type: array
+          items: { $ref: "#/components/schemas/Waste" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/BatchEvent" }
+        checklist:
+          type: array
+          items: { $ref: "#/components/schemas/ChecklistRow" }
+        remaining:
+          type: array
+          items: { type: string }
+    StartInput:
+      type: object
+      additionalProperties: false
+      properties:
+        assigned_team: { type: string }
+    OutputInput:
+      type: object
+      required: [produced_kits]
+      additionalProperties: false
+      properties:
+        produced_kits: { type: integer }
+        rejected_kits: { type: integer }
+        reworked_kits: { type: integer }
+        notes: { type: string }
+      description: "accepted = produced - rejected. Reworked kits are part of accepted, counted once."
+    PackagingInput:
+      type: object
+      additionalProperties: false
+      properties:
+        packaging_type: { type: string }
+        packed_kits: { type: integer }
+        labels_verified: { type: boolean }
+        exceptions: { type: string }
+        assigned_to: { type: string, description: "me, \"\" or a staff id (needs production.plan)." }
+        complete: { type: boolean }
+    KitLabel:
+      type: object
+      required: [meal_name, batch_code, recipe_code, recipe_version, ingredients, allergens_contains, allergens_may_contain, storage_instructions, preparation_instructions, production_date, use_by, use_by_note, traceability_id, compliance_note]
+      properties:
+        meal_name: { type: string }
+        batch_code: { type: string }
+        recipe_code: { type: string }
+        recipe_version: { type: integer }
+        ingredients:
+          type: array
+          items: { type: string }
+        allergens_contains:
+          type: array
+          items: { type: string }
+        allergens_may_contain:
+          type: array
+          items: { type: string }
+        storage_instructions: { type: string }
+        preparation_instructions: { type: string }
+        production_date: { type: string, format: date }
+        use_by: { type: [string, "null"] }
+        use_by_note: { type: string }
+        traceability_id: { type: string }
+        compliance_note: { type: string }
+    TaskInput:
+      type: object
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [todo, in_progress, done, blocked] }
+        assigned_to: { type: string }
+        note: { type: string }
+        exception: { type: string }
+    TaskTemplate:
+      type: object
+      required: [id, name, kind, instructions, position, priority, due_offset_minutes, active, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { type: string }
+        instructions: { type: string }
+        position: { type: integer }
+        priority: { type: string }
+        due_offset_minutes: { type: [integer, "null"] }
+        active: { type: boolean }
+        updated_at: { type: string, format: date-time }
+    TaskTemplateInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        kind: { type: string }
+        instructions: { type: string }
+        position: { type: integer }
+        priority: { type: string }
+        due_offset_minutes: { type: integer }
+        active: { type: boolean }
+    QualityTemplate:
+      type: object
+      required: [id, name, check_type, criteria, critical, position, active, procedure_ref, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        check_type: { type: string }
+        criteria: { type: string }
+        critical: { type: boolean }
+        position: { type: integer }
+        active: { type: boolean }
+        procedure_ref: { type: string }
+        updated_at: { type: string, format: date-time }
+    QualityTemplateInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        check_type: { type: string }
+        criteria: { type: string }
+        critical: { type: boolean }
+        position: { type: integer }
+        active: { type: boolean }
+        procedure_ref: { type: string }
+    CheckInput:
+      type: object
+      required: [batch_id, template_id, result]
+      additionalProperties: false
+      properties:
+        batch_id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        result: { type: string, enum: [pass, fail] }
+        notes: { type: string }
+        evidence_ref: { type: string }
+    HoldInput:
+      type: object
+      required: [batch_id, reason]
+      additionalProperties: false
+      properties:
+        batch_id: { type: string, format: uuid }
+        reason: { type: string }
+    ResolveHoldInput:
+      type: object
+      required: [notes]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [release, discard] }
+        notes: { type: string }
+    WasteInput:
+      type: object
+      required: [quantity, unit, category, reason]
+      additionalProperties: false
+      properties:
+        batch_id: { type: string }
+        ingredient_id: { type: string }
+        item: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        category: { type: string }
+        reason: { type: string }
+    ScheduleSlot:
+      type: object
+      required: [id, label, prep_weekday, delivery_weekday, status]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        prep_weekday: { type: integer }
+        delivery_weekday: { type: integer }
+        status: { type: string, enum: [proposed, approved, retired] }
+    ProductionSettings:
+      type: object
+      required: [capacity_kits_per_day, capacity_note, schedule]
+      properties:
+        capacity_kits_per_day: { type: [integer, "null"] }
+        capacity_note: { type: string }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/ScheduleSlot" }
+    ProductionSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        capacity_kits_per_day: { type: integer }
+        capacity_note: { type: string }
+        slot_status:
+          type: object
+          additionalProperties: { type: string }
+    ProductionCount:
+      type: object
+      required: [key, label, value, definition, link]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: integer }
+        definition: { type: string }
+        link: { type: string }
+    WeekStatus:
+      type: object
+      required: [week, cutoff_at, final, orders, kits, plan_id, plan_number, plan_status]
+      properties:
+        week: { type: string, format: date }
+        cutoff_at: { type: string, format: date-time }
+        final: { type: boolean }
+        orders: { type: integer }
+        kits: { type: integer }
+        plan_id: { type: [string, "null"], format: uuid }
+        plan_number: { type: [string, "null"] }
+        plan_status: { type: [string, "null"] }
+    ProductionOverview:
+      type: object
+      required: [date, time_zone, counts, today, overdue, holds, weeks, setup]
+      properties:
+        date: { type: string, format: date }
+        time_zone: { type: string }
+        counts:
+          type: array
+          items: { $ref: "#/components/schemas/ProductionCount" }
+        today:
+          type: array
+          items: { $ref: "#/components/schemas/Batch" }
+        overdue:
+          type: array
+          items: { $ref: "#/components/schemas/Batch" }
+        holds:
+          type: array
+          items: { $ref: "#/components/schemas/QualityHold" }
+        weeks:
+          type: array
+          items: { $ref: "#/components/schemas/WeekStatus" }
+        setup:
+          type: array
+          items: { type: string }
+    CalendarDay:
+      type: object
+      required: [date, weekday, batches, plans, slots, cutoffs, warnings]
+      properties:
+        date: { type: string, format: date }
+        weekday: { type: string }
+        batches:
+          type: array
+          items: { $ref: "#/components/schemas/Batch" }
+        plans:
+          type: array
+          items: { $ref: "#/components/schemas/ProductionPlan" }
+        slots:
+          type: array
+          items: { type: string }
+        cutoffs:
+          type: array
+          items: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
+    ProductionCalendar:
+      type: object
+      required: [from, to, time_zone, days, schedule]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        time_zone: { type: string }
+        days:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarDay" }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/ScheduleSlot" }

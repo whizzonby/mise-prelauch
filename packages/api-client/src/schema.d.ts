@@ -2558,6 +2558,952 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports/production": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Planned against completed production, holds, rejected and reworked kits, waste, yield variance and requirements, by production date. Every figure is defined. Needs production_reports.read. */
+        get: operations["adminProductionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Units of measure with exact factors to their dimension's base unit. Needs ingredients.read. */
+        get: operations["adminUnits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingredients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Search covers names and aliases. Needs ingredients.read. */
+        get: operations["adminIngredients"];
+        put?: never;
+        /** @description One ingredient per name or alias, whatever the case or spacing. Needs ingredients.manage. */
+        post: operations["adminCreateIngredient"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingredients/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With conversions and reference costs. Needs ingredients.read. */
+        get: operations["adminIngredient"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description The base unit is fixed once the ingredient is in a submitted or approved recipe. Needs ingredients.manage. */
+        patch: operations["adminUpdateIngredient"];
+        trace?: never;
+    };
+    "/api/v1/admin/ingredients/{id}/conversions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Adds or replaces an ingredient-specific conversion across dimensions, with its source. Needs ingredients.manage. */
+        post: operations["adminSetConversion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/cost-references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Reference costs for estimates only. Needs ingredients.read. */
+        get: operations["adminCostReferences"];
+        put?: never;
+        /** @description Every figure needs a source. Never a purchase price. Needs ingredients.manage. */
+        post: operations["adminAddCost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/chefs/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Chefs with their linked staff account, specialities and recipe counts. Needs recipes.read. */
+        get: operations["adminChefTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/chefs/{id}/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Link to a staff account holding the chef role; set specialities and status. Needs chefs.manage. */
+        patch: operations["adminUpdateChef"];
+        trace?: never;
+    };
+    "/api/v1/admin/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs recipes.read. */
+        get: operations["adminRecipes"];
+        put?: never;
+        /** @description Starts version 1 as a draft. A chef creating a recipe owns it. Needs recipes.create. */
+        post: operations["adminCreateRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Versions waiting at a review stage. Needs recipes.read. */
+        get: operations["adminRecipeQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With every version and the one in use for the open week. Needs recipes.read. */
+        get: operations["adminRecipe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Owner, collaborator or recipes.approve. The meal link is fixed once published. Needs recipes.edit. */
+        patch: operations["adminUpdateRecipe"];
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/versions/{n}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description n = 0 is the latest. Needs recipes.read. */
+        get: operations["adminRecipeVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Only while draft or changes requested. Needs recipes.edit. */
+        put: operations["adminSaveRecipeDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs ingredients and a preparation step. Needs recipes.submit. */
+        post: operations["adminSubmitRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Culinary review of a submitted version; not by its author. Needs recipes.review. */
+        post: operations["adminCulinaryReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/request-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Notes required. Needs recipes.review. */
+        post: operations["adminRecipeRequestChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Final approval: needs valid culinary and nutrition sign-offs and complete data. The version becomes immutable. Needs recipes.approve. */
+        post: operations["adminApproveRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Eligible for production from a delivery week whose selection is open; sets the meal's allergens and verified nutrition. Needs recipes.publish. */
+        post: operations["adminPublishRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Withdraws a published version from future planning. Needs recipes.publish. */
+        post: operations["adminArchiveRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description New draft copied from the latest version, with no approvals. Needs recipes.edit. */
+        post: operations["adminReviseRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/recipes/{id}/costing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Estimate from reference costs; marked incomplete when any is missing. Needs recipes.read. */
+        get: operations["adminRecipeCosting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/nutrition/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Versions past culinary review awaiting a nutrition sign-off. Needs nutrition.read. */
+        get: operations["adminNutritionQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/nutrition/reviews/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description id is the recipe. Needs complete nutrition with a source and every ingredient allergen declared. Needs nutrition.approve. */
+        post: operations["adminNutritionApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/nutrition/reviews/{id}/request-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Request changes or reject (decision), with notes. Needs nutrition.review. */
+        post: operations["adminNutritionRequestChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Today in the kitchen, nearby weeks and missing setup. Needs production.read. */
+        get: operations["adminProductionOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Day or week view; proposed schedule slots are labelled as proposed. Needs production.read. */
+        get: operations["adminProductionCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Live confirmed demand for a delivery week, compared with its current snapshot. Needs production.read. */
+        get: operations["adminProductionDemand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description After the cutoff only. Unchanged demand returns the current snapshot (200) without writing. Needs production.plan. */
+        post: operations["adminTakeSnapshot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/snapshots/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminProductionPlans"];
+        put?: never;
+        /** @description One live plan per week: asking again returns it (200). Needs production.plan. */
+        post: operations["adminCreateProductionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With items, traceable requirements, batches, blocking exceptions and warnings. Needs production.read. */
+        get: operations["adminProductionPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans/{id}/items/{item}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Draft plans only; a difference from demand needs a reason. Orders are never changed. Needs production.plan. */
+        patch: operations["adminAdjustPlanItem"];
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Refused while any exception blocks; prepares one batch per meal. Needs production.approve. */
+        post: operations["adminApproveProductionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Releases batches, makes kitchen tasks, moves orders to awaiting production. Needs production.approve. */
+        post: operations["adminReleaseProductionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/plans/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Draft or approved plans. Needs production.approve. */
+        post: operations["adminCancelProductionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Ingredient requirements by plan or production-date range. format=csv downloads them (audited). Needs production.read. */
+        get: operations["adminRequirements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminBatches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With yield, packaging, checklist, checks, holds, tasks, waste, history and what completion still needs. Needs production.read. */
+        get: operations["adminBatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs production.execute. */
+        post: operations["adminStartBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/output": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Reconciles yield; can be corrected until packed. Needs production.execute. */
+        post: operations["adminBatchOutput"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Refused on hold, without passed checks, or until packed kits equal accepted kits. Needs production.execute. */
+        post: operations["adminCompleteBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs production.approve. */
+        post: operations["adminCancelBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/packaging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Not while on hold. complete needs packed = accepted kits and verified labels. Needs packaging.manage. */
+        put: operations["adminBatchPackaging"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/batches/{id}/label": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description From the batch's approved recipe version. Not reviewed for labelling compliance. Needs production.read. */
+        get: operations["adminBatchLabel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Open tasks by default. Needs production.read. */
+        get: operations["adminTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Take a task (me), move it, add a note; blocking needs an exception. Assigning others needs production.plan. Needs production.execute. */
+        patch: operations["adminUpdateTask"];
+        trace?: never;
+    };
+    "/api/v1/admin/production/task-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminTaskTemplates"];
+        put?: never;
+        /** @description From an approved operating procedure. Needs production.configure. */
+        post: operations["adminCreateTaskTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/task-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs production.configure. */
+        patch: operations["adminUpdateTaskTemplate"];
+        trace?: never;
+    };
+    "/api/v1/admin/production/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminProductionSettings"];
+        /** @description Needs production.configure. */
+        put: operations["adminSaveProductionSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/production/waste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs production.read. */
+        get: operations["adminWaste"];
+        put?: never;
+        /** @description As weighed or counted. Needs waste.record. */
+        post: operations["adminRecordWaste"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/quality/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs quality.read. */
+        get: operations["adminQualityTemplates"];
+        put?: never;
+        /** @description From an approved procedure; no thresholds are invented. Needs production.configure. */
+        post: operations["adminCreateQualityTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/quality/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs production.configure. */
+        patch: operations["adminUpdateQualityTemplate"];
+        trace?: never;
+    };
+    "/api/v1/admin/quality/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A failed critical check puts the batch on hold and alerts quality.release_hold. Needs quality.inspect. */
+        post: operations["adminRecordCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/quality/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs quality.read. */
+        get: operations["adminQualityHolds"];
+        put?: never;
+        /** @description Needs quality.inspect. */
+        post: operations["adminPlaceHold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/quality/holds/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Release (needs a fresh inspection after) or discard (cancels the batch). Needs quality.release_hold. */
+        post: operations["adminResolveHold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2709,7 +3655,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -4061,7 +5007,7 @@ export interface components {
             label: string;
             value: number;
             /** @enum {string} */
-            kind: "count" | "money";
+            kind: "count" | "money" | "percent";
             currency?: string;
             definition: string;
         };
@@ -4114,7 +5060,7 @@ export interface components {
         };
         Report: {
             /** @enum {string} */
-            kind: "customers" | "subscriptions" | "orders" | "finance" | "marketing";
+            kind: "customers" | "subscriptions" | "orders" | "finance" | "marketing" | "production";
             /** Format: date */
             from: string;
             /** Format: date */
@@ -4574,6 +5520,922 @@ export interface components {
         PermissionInfo: {
             key: string;
             description: string;
+        };
+        Unit: {
+            code: string;
+            name: string;
+            /** @enum {string} */
+            dimension: "mass" | "volume" | "count" | "portion";
+            /** @description An exact decimal, as a string. */
+            to_base: string;
+        };
+        UnitConversion: {
+            /** Format: uuid */
+            id: string;
+            from_unit: string;
+            to_unit: string;
+            /** @description An exact decimal, as a string. */
+            factor: string;
+            approximate: boolean;
+            source: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CostRef: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "ingredient" | "packaging";
+            /** Format: uuid */
+            ingredient_id: string | null;
+            label: string;
+            amount_minor: number;
+            currency: string;
+            /** @description An exact decimal, as a string. */
+            per_quantity: string;
+            unit: string;
+            source: string;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Ingredient: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            /** @enum {string} */
+            category: "produce" | "meat" | "poultry" | "seafood" | "dairy" | "eggs" | "grains" | "legumes" | "herbs_spices" | "condiments" | "oils_fats" | "baking" | "beverages" | "packaged" | "other";
+            base_unit: string;
+            purchasing_unit: string | null;
+            /** @enum {string} */
+            preparation_state: "raw" | "prepared" | "cooked" | "processed" | "dried" | "frozen" | "canned";
+            allergens: string[];
+            /** @enum {string} */
+            storage: "unspecified" | "ambient" | "chilled" | "frozen";
+            storage_notes: string;
+            shelf_life_note: string | null;
+            active: boolean;
+            aliases: string[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            conversions?: components["schemas"]["UnitConversion"][];
+            costs?: components["schemas"]["CostRef"][];
+            used_in: number;
+        };
+        IngredientPage: {
+            items: components["schemas"]["Ingredient"][];
+            total: number;
+            page: number;
+        };
+        /** @description Fields left out keep their value on PATCH. */
+        CatalogIngredientInput: {
+            name?: string;
+            description?: string;
+            category?: string;
+            base_unit?: string;
+            purchasing_unit?: string;
+            preparation_state?: string;
+            allergens?: string[];
+            storage?: string;
+            storage_notes?: string;
+            shelf_life_note?: string;
+            active?: boolean;
+            aliases?: string[];
+        };
+        /** @description 1 from_unit = factor to_unit, across dimensions only. Piece conversions must be approximate. */
+        ConversionInput: {
+            from_unit: string;
+            to_unit: string;
+            /** @description An exact decimal, as a string. */
+            factor: string;
+            approximate?: boolean;
+            source: string;
+        };
+        CostInput: {
+            /** @enum {string} */
+            kind?: "ingredient" | "packaging";
+            ingredient_id?: string;
+            label?: string;
+            amount_minor: number;
+            /** @description An exact decimal, as a string. */
+            per_quantity: string;
+            unit?: string;
+            source: string;
+            /** Format: date */
+            effective_from: string;
+        };
+        Chef: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            display_name: string;
+            role_title: string | null;
+            card_status: string;
+            /** @enum {string} */
+            work_status: "active" | "inactive";
+            specialities: string[];
+            /** Format: uuid */
+            user_id: string | null;
+            user_name: string | null;
+            /** @description Only with users.read. */
+            email: string | null;
+            recipes: number;
+            in_review: number;
+            published: number;
+        };
+        ChefTeamInput: {
+            user_id?: string;
+            specialities?: string[];
+            /** @enum {string} */
+            work_status?: "active" | "inactive";
+        };
+        Person: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        RecipeVersionSummary: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            /** @enum {string} */
+            status: "draft" | "submitted" | "under_review" | "changes_requested" | "approved" | "published" | "archived";
+            /** Format: date */
+            effective_from: string | null;
+            change_summary: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            published_at: string | null;
+        };
+        Recipe: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description: string;
+            category: string;
+            /** Format: uuid */
+            meal_id: string | null;
+            meal_name: string | null;
+            /** Format: uuid */
+            chef_id: string | null;
+            chef_name: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            latest: components["schemas"]["RecipeVersionSummary"];
+            in_use: components["schemas"]["RecipeVersionSummary"] | null;
+            versions?: components["schemas"]["RecipeVersionSummary"][];
+            collaborators?: components["schemas"]["Person"][];
+            can_edit: boolean;
+        };
+        RecipePage: {
+            items: components["schemas"]["Recipe"][];
+            total: number;
+            page: number;
+        };
+        RecipeInput: {
+            name?: string;
+            description?: string;
+            category?: string;
+            /** @description "" unlinks. */
+            meal_id?: string;
+            chef_id?: string;
+            collaborators?: string[];
+        };
+        RecipeLine: {
+            /** Format: uuid */
+            id: string;
+            position: number;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            ingredient_active: boolean;
+            base_unit: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+            preparation: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            yield_percent: string | null;
+            optional: boolean;
+            /** @enum {string} */
+            substitution: "none" | "equivalent_allowed" | "approval_required";
+            note: string;
+            ingredient_allergens: string[];
+        };
+        RecipeNutrition: {
+            /** @description An exact decimal, as a string; null when not provided. */
+            energy_kcal: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            protein_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            carbs_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            fat_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sat_fat_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            fibre_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sugar_g: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sodium_mg: string | null;
+            /** @enum {string|null} */
+            source: "laboratory_analysis" | "food_composition_database" | "supplier_specification" | "other" | null;
+            method: string;
+            complete: boolean;
+            /** @description Signed off by a nutritionist on this version. */
+            verified: boolean;
+        };
+        RecipeReview: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            stage: "culinary" | "nutrition" | "final" | "publish";
+            /** @enum {string} */
+            decision: "approved" | "changes_requested" | "rejected" | "published";
+            notes: string;
+            reviewer_name: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            invalidated_at: string | null;
+        };
+        RecipeVersion: components["schemas"]["RecipeVersionSummary"] & {
+            /** Format: uuid */
+            recipe_id: string;
+            yield_servings: number;
+            serving_size: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            serving_size_g: string | null;
+            kitchen_prep_minutes: number | null;
+            customer_cook_minutes: number | null;
+            storage_instructions: string;
+            packaging_instructions: string;
+            customer_instructions: string;
+            dietary_tags: string[];
+            cross_contact_note: string;
+            /** Format: uuid */
+            author_id: string | null;
+            author_name: string;
+            /** Format: date-time */
+            submitted_at: string | null;
+            /** Format: date-time */
+            approved_at: string | null;
+            approved_by_name: string;
+            ingredients: components["schemas"]["RecipeLine"][];
+            preparation_steps: string[];
+            assembly_steps: string[];
+            allergens_contains: string[];
+            allergens_may_contain: string[];
+            ingredient_allergens: string[];
+            missing_allergens: string[];
+            nutrition: components["schemas"]["RecipeNutrition"];
+            reviews: components["schemas"]["RecipeReview"][];
+            signoff: {
+                culinary: boolean;
+                nutrition: boolean;
+                final: boolean;
+            };
+            problems: string[];
+        };
+        RecipeLineInput: {
+            /** Format: uuid */
+            ingredient_id: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+            preparation?: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            yield_percent?: string | null;
+            optional?: boolean;
+            substitution?: string;
+            note?: string;
+        };
+        NutritionInput5: {
+            /** @description An exact decimal, as a string; null when not provided. */
+            energy_kcal?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            protein_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            carbs_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            fat_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sat_fat_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            fibre_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sugar_g?: string | null;
+            /** @description An exact decimal, as a string; null when not provided. */
+            sodium_mg?: string | null;
+            source?: string | null;
+            method?: string;
+        };
+        /** @description Edits the open draft. Fields left out keep their value; a list replaces the whole list. Any edit invalidates the version's earlier reviews. */
+        DraftInput: {
+            yield_servings?: number;
+            serving_size?: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            serving_size_g?: string | null;
+            kitchen_prep_minutes?: number;
+            customer_cook_minutes?: number;
+            storage_instructions?: string;
+            packaging_instructions?: string;
+            customer_instructions?: string;
+            dietary_tags?: string[];
+            cross_contact_note?: string;
+            change_summary?: string;
+            ingredients?: components["schemas"]["RecipeLineInput"][];
+            preparation_steps?: string[];
+            assembly_steps?: string[];
+            allergens_contains?: string[];
+            allergens_may_contain?: string[];
+            nutrition?: components["schemas"]["NutritionInput5"];
+        };
+        ReviewInput: {
+            /** @enum {string} */
+            decision?: "approved" | "changes_requested" | "rejected";
+            notes?: string;
+        };
+        NotesInput: {
+            notes?: string;
+        };
+        QueueItem: {
+            /** Format: uuid */
+            recipe_id: string;
+            code: string;
+            name: string;
+            version: number;
+            /** @enum {string} */
+            status: "draft" | "submitted" | "under_review" | "changes_requested" | "approved" | "published" | "archived";
+            chef_name: string;
+            author_name: string;
+            /** Format: date-time */
+            submitted_at: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            meal_name: string | null;
+        };
+        CostingLine: {
+            ingredient_name: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+            cost_minor: number | null;
+            /** @enum {string} */
+            status: "ok" | "no_reference" | "unconvertible";
+            source: string | null;
+            /** Format: date */
+            as_of: string | null;
+        };
+        Costing: {
+            /** Format: uuid */
+            recipe_id: string;
+            version: number;
+            yield_servings: number;
+            currency: string;
+            lines: components["schemas"]["CostingLine"][];
+            ingredients_minor: number;
+            packaging_minor: number | null;
+            per_serving_minor: number;
+            complete: boolean;
+            note: string;
+        };
+        DemandMeal: {
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            kits: number;
+            servings_per_kit: number;
+            orders: number;
+            order_numbers: string[];
+            /** Format: uuid */
+            recipe_version_id: string | null;
+            recipe_name: string | null;
+            recipe_version: number | null;
+            dietary_tags: string[];
+            customer_allergies: {
+                [key: string]: number;
+            };
+            notes: string[];
+        };
+        DemandSnapshot: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            week: string;
+            revision: number;
+            /** @enum {string} */
+            status: "current" | "superseded";
+            kits: number;
+            orders: number;
+            /** Format: date-time */
+            cutoff_at: string;
+            /** Format: date-time */
+            created_at: string;
+            created_by_name: string;
+            content_hash: string;
+        };
+        ProductionDemand: {
+            /** Format: date */
+            week: string;
+            /** Format: date-time */
+            cutoff_at: string;
+            final: boolean;
+            kits: number;
+            orders: number;
+            meals: components["schemas"]["DemandMeal"][];
+            snapshot: components["schemas"]["DemandSnapshot"] | null;
+            changed: boolean;
+            definition: string;
+        };
+        SnapshotDetail: components["schemas"]["DemandSnapshot"] & {
+            meals: components["schemas"]["DemandMeal"][];
+        };
+        PlanItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            /** Format: uuid */
+            recipe_version_id: string | null;
+            /** Format: uuid */
+            recipe_id: string | null;
+            recipe_name: string | null;
+            recipe_version: number | null;
+            servings_per_kit: number;
+            demand_kits: number;
+            planned_kits: number;
+            adjustment_reason: string | null;
+        };
+        RequirementSource: {
+            meal_name: string;
+            recipe_version: number;
+            batch_code: string | null;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+        };
+        Requirement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            preparation: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            quantity: string | null;
+            unit: string;
+            /** @enum {string} */
+            status: "ok" | "unconvertible" | "inactive_ingredient";
+            approximate: boolean;
+            note: string;
+            sources: components["schemas"]["RequirementSource"][];
+        };
+        Capacity: {
+            kits_per_day: number | null;
+            note: string;
+        };
+        ProductionPlan: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: date */
+            week: string;
+            /** Format: date */
+            production_date: string;
+            /** @enum {string} */
+            status: "draft" | "approved" | "released" | "cancelled";
+            notes: string;
+            /** Format: uuid */
+            snapshot_id: string;
+            snapshot_revision: number;
+            created_by_name: string;
+            approved_by_name: string;
+            /** Format: date-time */
+            approved_at: string | null;
+            /** Format: date-time */
+            released_at: string | null;
+            cancel_reason: string | null;
+            /** Format: date-time */
+            created_at: string;
+            demand_kits: number;
+            planned_kits: number;
+            items?: components["schemas"]["PlanItem"][];
+            requirements?: components["schemas"]["Requirement"][];
+            batches?: components["schemas"]["Batch"][];
+            blocking: string[];
+            warnings: string[];
+            capacity?: components["schemas"]["Capacity"];
+            newer_snapshot: components["schemas"]["DemandSnapshot"] | null;
+        };
+        ProductionPlanInput: {
+            /** Format: date */
+            week: string;
+            /** Format: date */
+            production_date?: string;
+            notes?: string;
+        };
+        AdjustInput: {
+            planned_kits: number;
+            reason?: string;
+        };
+        ReasonInput: {
+            reason: string;
+        };
+        RequirementRow: {
+            /** Format: uuid */
+            plan_id: string;
+            plan_number: string;
+            plan_status: string;
+            /** Format: date */
+            production_date: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            preparation: string;
+            /** @description An exact decimal, as a string; null when not provided. */
+            quantity: string | null;
+            unit: string;
+            status: string;
+            approximate: boolean;
+            source_batches: string;
+            source_meals: string;
+        };
+        Yield: {
+            planned_kits: number;
+            produced_kits: number;
+            rejected_kits: number;
+            reworked_kits: number;
+            accepted_kits: number;
+            notes: string;
+            /** Format: date-time */
+            recorded_at: string;
+        };
+        Packaging: {
+            packaging_type: string;
+            required_kits: number;
+            packed_kits: number;
+            labels_verified: boolean;
+            /** Format: uuid */
+            assigned_to: string | null;
+            assignee_name: string;
+            exceptions: string;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        QualityCheck: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            template_id: string;
+            name: string;
+            check_type: string;
+            critical: boolean;
+            /** @enum {string} */
+            result: "pass" | "fail";
+            notes: string;
+            evidence_ref: string | null;
+            inspector_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ChecklistRow: {
+            /** Format: uuid */
+            template_id: string;
+            name: string;
+            check_type: string;
+            criteria: string;
+            critical: boolean;
+            /** @enum {string|null} */
+            result: "pass" | "fail" | null;
+            /** Format: date-time */
+            checked_at: string | null;
+        };
+        QualityHold: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            batch_id: string;
+            batch_code: string;
+            meal_name: string;
+            /** Format: date */
+            production_date: string;
+            reason: string;
+            /** @enum {string} */
+            status: "open" | "released" | "discarded";
+            created_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+            resolved_by_name: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            resolution_notes: string | null;
+        };
+        Task: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            batch_id: string;
+            batch_code: string;
+            /** @enum {string} */
+            batch_status: "planned" | "released" | "in_progress" | "awaiting_quality_check" | "quality_hold" | "completed" | "cancelled";
+            meal_name: string;
+            planned_kits: number;
+            title: string;
+            /** @enum {string} */
+            kind: "preparation" | "portioning" | "sauce" | "assembly" | "labelling" | "packaging" | "inspection" | "other";
+            instructions: string;
+            /** @enum {string} */
+            priority: "low" | "normal" | "high";
+            /** @enum {string} */
+            status: "todo" | "in_progress" | "done" | "blocked" | "cancelled";
+            /** Format: uuid */
+            assigned_to: string | null;
+            assignee_name: string;
+            /** Format: date-time */
+            due_at: string | null;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            notes: string;
+            exception: string | null;
+            /** Format: date */
+            production_date: string;
+        };
+        Waste: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            batch_id: string | null;
+            batch_code: string | null;
+            /** Format: uuid */
+            ingredient_id: string | null;
+            ingredient_name: string | null;
+            item: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+            /** @enum {string} */
+            category: "preparation_loss" | "spoilage" | "quality_rejection" | "packaging_damage" | "overproduction" | "other";
+            reason: string;
+            recorded_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        BatchEvent: {
+            from: string | null;
+            to: string;
+            note: string | null;
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Batch: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** Format: uuid */
+            plan_id: string;
+            plan_number: string;
+            /** Format: date */
+            week: string;
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            /** Format: uuid */
+            recipe_id: string;
+            recipe_name: string;
+            /** Format: uuid */
+            recipe_version_id: string;
+            recipe_version: number;
+            /** Format: date */
+            production_date: string;
+            planned_kits: number;
+            actual_kits: number | null;
+            assigned_team: string;
+            /** @enum {string} */
+            status: "planned" | "released" | "in_progress" | "awaiting_quality_check" | "quality_hold" | "completed" | "cancelled";
+            /** @enum {string} */
+            quality_status: "pending" | "passed" | "failed" | "on_hold";
+            /** @enum {string} */
+            packaging_status: "pending" | "in_progress" | "completed";
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            cancel_reason: string | null;
+            tasks_open: number;
+            tasks_done: number;
+            yield?: components["schemas"]["Yield"];
+            packaging?: components["schemas"]["Packaging"] | null;
+            checks?: components["schemas"]["QualityCheck"][];
+            holds?: components["schemas"]["QualityHold"][];
+            tasks?: components["schemas"]["Task"][];
+            waste?: components["schemas"]["Waste"][];
+            history?: components["schemas"]["BatchEvent"][];
+            checklist?: components["schemas"]["ChecklistRow"][];
+            remaining?: string[];
+        };
+        StartInput: {
+            assigned_team?: string;
+        };
+        /** @description accepted = produced - rejected. Reworked kits are part of accepted, counted once. */
+        OutputInput: {
+            produced_kits: number;
+            rejected_kits?: number;
+            reworked_kits?: number;
+            notes?: string;
+        };
+        PackagingInput: {
+            packaging_type?: string;
+            packed_kits?: number;
+            labels_verified?: boolean;
+            exceptions?: string;
+            /** @description me, "" or a staff id (needs production.plan). */
+            assigned_to?: string;
+            complete?: boolean;
+        };
+        KitLabel: {
+            meal_name: string;
+            batch_code: string;
+            recipe_code: string;
+            recipe_version: number;
+            ingredients: string[];
+            allergens_contains: string[];
+            allergens_may_contain: string[];
+            storage_instructions: string;
+            preparation_instructions: string;
+            /** Format: date */
+            production_date: string;
+            use_by: string | null;
+            use_by_note: string;
+            traceability_id: string;
+            compliance_note: string;
+        };
+        TaskInput: {
+            /** @enum {string} */
+            status?: "todo" | "in_progress" | "done" | "blocked";
+            assigned_to?: string;
+            note?: string;
+            exception?: string;
+        };
+        TaskTemplate: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: string;
+            instructions: string;
+            position: number;
+            priority: string;
+            due_offset_minutes: number | null;
+            active: boolean;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        TaskTemplateInput: {
+            name?: string;
+            kind?: string;
+            instructions?: string;
+            position?: number;
+            priority?: string;
+            due_offset_minutes?: number;
+            active?: boolean;
+        };
+        QualityTemplate: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            check_type: string;
+            criteria: string;
+            critical: boolean;
+            position: number;
+            active: boolean;
+            procedure_ref: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        QualityTemplateInput: {
+            name?: string;
+            check_type?: string;
+            criteria?: string;
+            critical?: boolean;
+            position?: number;
+            active?: boolean;
+            procedure_ref?: string;
+        };
+        CheckInput: {
+            /** Format: uuid */
+            batch_id: string;
+            /** Format: uuid */
+            template_id: string;
+            /** @enum {string} */
+            result: "pass" | "fail";
+            notes?: string;
+            evidence_ref?: string;
+        };
+        HoldInput: {
+            /** Format: uuid */
+            batch_id: string;
+            reason: string;
+        };
+        ResolveHoldInput: {
+            /** @enum {string} */
+            decision?: "release" | "discard";
+            notes: string;
+        };
+        WasteInput: {
+            batch_id?: string;
+            ingredient_id?: string;
+            item?: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+            category: string;
+            reason: string;
+        };
+        ScheduleSlot: {
+            /** Format: uuid */
+            id: string;
+            label: string;
+            prep_weekday: number;
+            delivery_weekday: number;
+            /** @enum {string} */
+            status: "proposed" | "approved" | "retired";
+        };
+        ProductionSettings: {
+            capacity_kits_per_day: number | null;
+            capacity_note: string;
+            schedule: components["schemas"]["ScheduleSlot"][];
+        };
+        ProductionSettingsInput: {
+            capacity_kits_per_day?: number;
+            capacity_note?: string;
+            slot_status?: {
+                [key: string]: string;
+            };
+        };
+        ProductionCount: {
+            key: string;
+            label: string;
+            value: number;
+            definition: string;
+            link: string;
+        };
+        WeekStatus: {
+            /** Format: date */
+            week: string;
+            /** Format: date-time */
+            cutoff_at: string;
+            final: boolean;
+            orders: number;
+            kits: number;
+            /** Format: uuid */
+            plan_id: string | null;
+            plan_number: string | null;
+            plan_status: string | null;
+        };
+        ProductionOverview: {
+            /** Format: date */
+            date: string;
+            time_zone: string;
+            counts: components["schemas"]["ProductionCount"][];
+            today: components["schemas"]["Batch"][];
+            overdue: components["schemas"]["Batch"][];
+            holds: components["schemas"]["QualityHold"][];
+            weeks: components["schemas"]["WeekStatus"][];
+            setup: string[];
+        };
+        CalendarDay: {
+            /** Format: date */
+            date: string;
+            weekday: string;
+            batches: components["schemas"]["Batch"][];
+            plans: components["schemas"]["ProductionPlan"][];
+            slots: string[];
+            cutoffs: string[];
+            warnings: string[];
+        };
+        ProductionCalendar: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            time_zone: string;
+            days: components["schemas"]["CalendarDay"][];
+            schedule: components["schemas"]["ScheduleSlot"][];
         };
     };
     responses: {
@@ -9859,6 +11721,2082 @@ export interface operations {
             400: components["responses"]["Error"];
             422: components["responses"]["Error"];
             429: components["responses"]["Error"];
+        };
+    };
+    adminProductionReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Report"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUnits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Unit"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminIngredients: {
+        parameters: {
+            query?: {
+                q?: string;
+                category?: string;
+                /** @description true or false */
+                active?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ingredients. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IngredientPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogIngredientInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Ingredient"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ingredient. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Ingredient"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogIngredientInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Ingredient"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSetConversion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversionInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Ingredient"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCostReferences: {
+        parameters: {
+            query?: {
+                kind?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["CostRef"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAddCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CostInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CostRef"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminChefTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Chef"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdateChef: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChefTeamInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Chef"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipes: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: string;
+                mine?: boolean;
+                chef_id?: string;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recipes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipePage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Recipe"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipeQueue: {
+        parameters: {
+            query?: {
+                stage?: "culinary" | "nutrition" | "final" | "publish";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QueueItem"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recipe. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Recipe"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Recipe"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipeVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                n: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminSaveRecipeDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSubmitRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesInput"];
+            };
+        };
+        responses: {
+            /** @description Submitted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCulinaryReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Reviewed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipeRequestChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminApproveRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesInput"];
+            };
+        };
+        responses: {
+            /** @description Approved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPublishRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    effective_from?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Published. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminArchiveRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    version: number;
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Archived. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReviseRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    change_summary?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecipeCosting: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Costing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Costing"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminNutritionQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QueueItem"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminNutritionApprove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotesInput"];
+            };
+        };
+        responses: {
+            /** @description Signed off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminNutritionRequestChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RecipeVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProductionOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionOverview"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminProductionCalendar: {
+        parameters: {
+            query?: {
+                from?: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Calendar. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionCalendar"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminProductionDemand: {
+        parameters: {
+            query?: {
+                week?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demand. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionDemand"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminTakeSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: date */
+                    week: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Snapshot. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            snapshot: components["schemas"]["DemandSnapshot"];
+                            created: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Snapshot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SnapshotDetail"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminProductionPlans: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ProductionPlan"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateProductionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductionPlanInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProductionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminAdjustPlanItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                item: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustInput"];
+            };
+        };
+        responses: {
+            /** @description Adjusted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminApproveProductionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReleaseProductionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Released. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelProductionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Cancelled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionPlan"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRequirements: {
+        parameters: {
+            query?: {
+                plan_id?: string;
+                from?: string;
+                to?: string;
+                format?: "json" | "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["RequirementRow"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminBatches: {
+        parameters: {
+            query?: {
+                plan_id?: string;
+                status?: string;
+                /** @description YYYY-MM-DD or today */
+                date?: string;
+                from?: string;
+                to?: string;
+                open?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Batch"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Batch. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminStartBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartInput"];
+            };
+        };
+        responses: {
+            /** @description Started. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminBatchOutput: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutputInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCompleteBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Completed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Cancelled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminBatchPackaging: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackagingInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminBatchLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Label. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["KitLabel"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminTasks: {
+        parameters: {
+            query?: {
+                batch_id?: string;
+                /** @description YYYY-MM-DD or today */
+                date?: string;
+                status?: string;
+                assigned_to?: string;
+                mine?: boolean;
+                all?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Task"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdateTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Task"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminTaskTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["TaskTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateTaskTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskTemplateInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["TaskTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateTaskTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskTemplateInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["TaskTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProductionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveProductionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductionSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProductionSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminWaste: {
+        parameters: {
+            query?: {
+                batch_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Waste"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRecordWaste: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WasteInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Waste"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminQualityTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QualityTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateQualityTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityTemplateInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QualityTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateQualityTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualityTemplateInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QualityTemplate"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminQualityHolds: {
+        parameters: {
+            query?: {
+                open?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["QualityHold"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminPlaceHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldInput"];
+            };
+        };
+        responses: {
+            /** @description Held. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminResolveHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveHoldInput"];
+            };
+        };
+        responses: {
+            /** @description Resolved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Batch"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
         };
     };
 }

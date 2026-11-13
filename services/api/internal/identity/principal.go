@@ -43,6 +43,31 @@ const (
 	PermReportsRead         Permission = "reports.read"
 	PermAuditRead           Permission = "audit.read"
 	PermSettingsManage      Permission = "settings.manage"
+	// Sprint 5: the Chef and Production ERP.
+	PermIngredientsRead       Permission = "ingredients.read"
+	PermIngredientsManage     Permission = "ingredients.manage"
+	PermRecipesRead           Permission = "recipes.read"
+	PermRecipesCreate         Permission = "recipes.create"
+	PermRecipesEdit           Permission = "recipes.edit"
+	PermRecipesSubmit         Permission = "recipes.submit"
+	PermRecipesReview         Permission = "recipes.review"
+	PermRecipesApprove        Permission = "recipes.approve"
+	PermRecipesPublish        Permission = "recipes.publish"
+	PermNutritionRead         Permission = "nutrition.read"
+	PermNutritionReview       Permission = "nutrition.review"
+	PermNutritionApprove      Permission = "nutrition.approve"
+	PermChefsManage           Permission = "chefs.manage"
+	PermProductionRead        Permission = "production.read"
+	PermProductionPlan        Permission = "production.plan"
+	PermProductionApprove     Permission = "production.approve"
+	PermProductionExecute     Permission = "production.execute"
+	PermProductionConfigure   Permission = "production.configure"
+	PermQualityRead           Permission = "quality.read"
+	PermQualityInspect        Permission = "quality.inspect"
+	PermQualityReleaseHold    Permission = "quality.release_hold"
+	PermPackagingManage       Permission = "packaging.manage"
+	PermWasteRecord           Permission = "waste.record"
+	PermProductionReportsRead Permission = "production_reports.read"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -54,6 +79,11 @@ var AllPermissions = []Permission{
 	PermOrdersRead, PermPaymentsRead, PermPaymentsRefund, PermPromotionsManage,
 	PermCustomersRead, PermCustomersSensitive, PermCustomersExport, PermCRMLeadsManage, PermCasesRead,
 	PermCasesManage, PermCampaignsManage, PermSubscriptionsManage, PermReportsRead, PermAuditRead, PermSettingsManage,
+	PermIngredientsRead, PermIngredientsManage, PermRecipesRead, PermRecipesCreate, PermRecipesEdit, PermRecipesSubmit,
+	PermRecipesReview, PermRecipesApprove, PermRecipesPublish, PermNutritionRead, PermNutritionReview, PermNutritionApprove,
+	PermChefsManage, PermProductionRead, PermProductionPlan, PermProductionApprove, PermProductionExecute,
+	PermProductionConfigure, PermQualityRead, PermQualityInspect, PermQualityReleaseHold, PermPackagingManage,
+	PermWasteRecord, PermProductionReportsRead,
 }
 
 // RoleCustomer is the role every registered customer holds.
@@ -121,7 +151,7 @@ func (p *Principal) Name() string {
 
 // staffRolePrecedence orders roles for the single "role" label the admin
 // console shows; permissions always come from every role held.
-var staffRolePrecedence = []string{"super_admin", "admin", "operations", "finance", "marketing", "support", "nutritionist", "chef", "kitchen_staff", "farmer"}
+var staffRolePrecedence = []string{"super_admin", "admin", "operations", "finance", "marketing", "support", "culinary_director", "production_manager", "quality_inspector", "nutritionist", "chef", "kitchen_staff", "farmer"}
 
 // PrimaryRole is the most senior staff role held, for display only.
 func (p *Principal) PrimaryRole() string {

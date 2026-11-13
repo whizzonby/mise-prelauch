@@ -18,6 +18,7 @@ import (
 	"mise.tt/api/internal/catalog"
 	"mise.tt/api/internal/commerce"
 	"mise.tt/api/internal/crm"
+	"mise.tt/api/internal/culinary"
 	"mise.tt/api/internal/customers"
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
@@ -35,6 +36,7 @@ import (
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/platform/token"
+	"mise.tt/api/internal/production"
 	"mise.tt/api/internal/referrals"
 	"mise.tt/api/internal/reporting"
 	"mise.tt/api/internal/subscriptions"
@@ -222,6 +224,17 @@ func NewBackoffice(cfg config.Config, pool *pgxpool.Pool, ids *identity.Service,
 	return b
 }
 
+// NewKitchen builds the Sprint 5 culinary and production services. They
+// share the commerce clock (tests move it) and the business calendar.
+func NewKitchen(cfg config.Config, pool *pgxpool.Pool, com *Commerce, alerts production.Alerts) (*culinary.Service, *production.Service) {
+	now := func() time.Time { return com.Service.Now() }
+	cul := culinary.NewService(pool)
+	cul.Catalog, cul.Weeks, cul.Now = NewCatalogService(cfg, pool), com.Menus.Policy, now
+	prod := production.NewService(pool)
+	prod.Culinary, prod.Orders, prod.Alerts, prod.Weeks, prod.Location, prod.Now = cul, com.Orders, alerts, com.Menus.Policy, menus.Location(), now
+	return cul, prod
+}
+
 // RegisterCommerceJobs wires the commerce and payment job kinds.
 func RegisterCommerceJobs(r *jobs.Runner, c *Commerce) {
 	r.Register(payments.JobProcessWebhook, c.Payments.ProcessWebhook)
@@ -348,7 +361,11 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	if com.Testpay != nil {
 		com.Testpay.Routes(mux, limits.Token.ByIP)
 	}
-	(&backoffice.Handler{S: NewBackoffice(cfg, pool, ids, com)}).Routes(mux)
+	bo := NewBackoffice(cfg, pool, ids, com)
+	(&backoffice.Handler{S: bo}).Routes(mux)
+	cul, prod := NewKitchen(cfg, pool, com, bo)
+	(&culinary.Handler{S: cul, Identity: ids}).Routes(mux)
+	(&production.Handler{S: prod, Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

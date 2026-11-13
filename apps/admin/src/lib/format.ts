@@ -105,7 +105,29 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "confirmed":
     case "finalized":
     case "processed":
+    case "approved":
+    case "released":
+    case "completed":
+    case "passed":
+    case "pass":
+    case "done":
+    case "ok":
       return "success";
+    case "submitted":
+    case "under_review":
+    case "in_progress":
+    case "awaiting_quality_check":
+    case "current":
+      return "accent";
+    case "quality_hold":
+    case "on_hold":
+    case "blocked":
+    case "fail":
+    case "changes_requested":
+    case "unconvertible":
+    case "inactive_ingredient":
+    case "open":
+      return "error";
     case "past_due":
     case "failed":
     case "needs_resolution":
@@ -120,8 +142,27 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "pause_scheduled":
     case "cancel_scheduled":
     case "partially_refunded":
+    case "planned":
+    case "todo":
       return "warning";
     default:
       return "neutral";
   }
 }
+
+/**
+ * An exact decimal quantity from the API ("1875", "0.5") with its unit, made
+ * readable: grams over 1,000 also show kilograms. Never rounded silently
+ * beyond 3 decimals (the API already rounds once).
+ */
+export function quantity(value: string | null | undefined, unit: string): string {
+  if (value == null) return "Not calculable";
+  const n = Number(value);
+  const fmt = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 3 });
+  const main = `${fmt.format(n)} ${unit}`;
+  if (unit === "g" && n >= 1000) return `${main} (${fmt.format(n / 1000)} kg)`;
+  if (unit === "ml" && n >= 1000) return `${main} (${fmt.format(n / 1000)} l)`;
+  return main;
+}
+
+export const WEEKDAYS = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];

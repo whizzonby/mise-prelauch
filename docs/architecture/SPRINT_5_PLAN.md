@@ -94,8 +94,9 @@ planned ──release──► released ──start──► in_progress ──r
                                                            quality_hold ──release hold (quality.release_hold)
 planned|released|quality_hold ──cancel (production.approve, reason)──► cancelled
 ```
-Complete needs: output recorded and reconciled, every active quality check passed since the
-last hold, packaging completed with packed = accepted kits, no open hold.
+Complete needs: every task done (added 13 Nov), output recorded and reconciled, every active
+quality check passed since the last hold, packaging completed with packed = accepted kits, no
+open hold.
 
 **Task:** `todo → in_progress → done`, any open state `→ blocked` (with a note) `→ todo`.
 **Hold:** `open → released` or `open → discarded` (batch cancelled).

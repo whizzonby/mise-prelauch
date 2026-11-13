@@ -197,6 +197,17 @@ func remaining(b *Batch) []string {
 	case "released":
 		out = append(out, "Start the batch.")
 	}
+	// Tasks are the batch's work (preparation, portioning, assembly, packing):
+	// a batch is not complete while any is unfinished.
+	for _, t := range b.Tasks {
+		switch t.Status {
+		case "done", "cancelled":
+		case "blocked":
+			out = append(out, "Task blocked: "+t.Title+". Resolve it first.")
+		default:
+			out = append(out, "Task not done: "+t.Title+".")
+		}
+	}
 	if b.Yield == nil {
 		out = append(out, "Record the kits produced.")
 	}

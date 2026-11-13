@@ -60,6 +60,19 @@ func (h *harness) publishRecipe(t culinaryTeam, mealID, name string, lines []map
 	return id
 }
 
+// finishTasks marks every open task of a batch done.
+func (h *harness) finishTasks(as reqOpt, batch string) {
+	h.t.Helper()
+	res := h.do("GET", "/api/v1/admin/production/tasks?batch_id="+batch, nil, as)
+	h.wantStatus(res, http.StatusOK)
+	for _, x := range list(h.t, res.Data["items"]) {
+		task := obj(h.t, x)
+		if task["status"] != "done" {
+			h.wantStatus(h.do("PATCH", "/api/v1/admin/production/tasks/"+task["id"].(string), map[string]any{"assigned_to": "me", "status": "done"}, as), http.StatusOK)
+		}
+	}
+}
+
 // ---------------------------------------------------------------- culinary
 
 func TestIngredientsUnitsAndConversions(t *testing.T) {
@@ -459,6 +472,13 @@ func TestProductionFromPaidOrdersToReadyKits(t *testing.T) {
 	h.wantError(h.do("PUT", "/api/v1/admin/production/batches/"+curryBatch+"/packaging", map[string]any{"packed_kits": 3, "labels_verified": true, "complete": true}, team.kitchen), http.StatusUnprocessableEntity, "packaging_incomplete")
 	h.wantError(h.do("PUT", "/api/v1/admin/production/batches/"+curryBatch+"/packaging", map[string]any{"packed_kits": 2, "complete": true}, team.kitchen), http.StatusUnprocessableEntity, "packaging_incomplete")
 	h.wantStatus(h.do("PUT", "/api/v1/admin/production/batches/"+curryBatch+"/packaging", map[string]any{"packaging_type": "Insulated bag", "packed_kits": 2, "labels_verified": true, "complete": true}, team.kitchen), http.StatusOK)
+	// An unfinished task still holds the batch back.
+	res = h.do("POST", "/api/v1/admin/production/batches/"+curryBatch+"/complete", nil, team.kitchen)
+	h.wantError(res, http.StatusUnprocessableEntity, "batch_incomplete")
+	if !strings.Contains(string(res.Raw), "Task not done: Assemble kits") {
+		t.Errorf("incomplete = %s", res.Raw)
+	}
+	h.finishTasks(team.kitchen, curryBatch)
 	res = h.do("POST", "/api/v1/admin/production/batches/"+curryBatch+"/complete", nil, team.kitchen)
 	h.wantStatus(res, http.StatusOK)
 	if res.Data["status"] != "completed" || res.Data["quality_status"] != "passed" || res.Data["actual_kits"] != float64(2) {
@@ -479,6 +499,7 @@ func TestProductionFromPaidOrdersToReadyKits(t *testing.T) {
 		h.wantStatus(h.do("POST", "/api/v1/admin/quality/checks", map[string]any{"batch_id": fishBatch, "template_id": c, "result": "pass"}, team.inspector), http.StatusCreated)
 	}
 	h.wantStatus(h.do("PUT", "/api/v1/admin/production/batches/"+fishBatch+"/packaging", map[string]any{"packed_kits": 2, "labels_verified": true, "complete": true}, team.kitchen), http.StatusOK)
+	h.finishTasks(team.kitchen, fishBatch)
 	h.wantStatus(h.do("POST", "/api/v1/admin/production/batches/"+fishBatch+"/complete", nil, team.kitchen), http.StatusOK)
 	// The first customer's whole order is ready; the second still waits for the pelau.
 	var s1, s2 string

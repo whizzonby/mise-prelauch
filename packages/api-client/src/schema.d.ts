@@ -3253,7 +3253,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Refused on hold, without passed checks, or until packed kits equal accepted kits. Needs production.execute. */
+        /** @description Refused on hold, with a task unfinished, without passed checks, or until packed kits equal accepted kits. Needs production.execute. */
         post: operations["adminCompleteBatch"];
         delete?: never;
         options?: never;

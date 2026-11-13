@@ -159,11 +159,15 @@ ingredient.
   `cancelled` (plan §4). The batch page is laid out for a tablet: the next action first.
 - Tasks wait until their batch starts. Staff take tasks themselves; only managers assign
   others. Blocking a task needs a note and alerts the manager.
+- A batch cannot complete while any of its tasks is unfinished (or blocked): tasks are its
+  work, and the brief says a batch is never complete merely because a quantity exists. The
+  batch page lists each open task under "Still to do".
 - Output: kits made, rejected and reworked (reworked kits count once, inside accepted).
 - Orders follow production: `awaiting_production` → `in_production` → `ready_for_fulfillment`
   when every batch an order needs is complete.
 
-Browser test: kitchen staff start a released batch, take and finish a task, and record output.
+Browser test: kitchen staff start a released batch, take and finish every task (an open one
+is listed as still to do), and record output.
 
 ## 12. Quality control and packaging
 
@@ -262,14 +266,13 @@ without a plan each time. Each browser run uses up one released batch.
   ingredients): grid columns grew to fit wide tables. All Sprint 5 grids now let their children
   shrink; the phone test covers eight kitchen screens.
 - "1 open tasks" on batch cards.
+- A batch could complete with tasks unfinished, leaving them open for good. Completion now
+  needs every task done (`TestProductionFromPaidOrdersToReadyKits` checks the refusal). Four
+  batches completed before this change on the development database still show open tasks.
 - The retention query read the database clock instead of the service clock (Stage 8 D1–D3).
 
 ## 17. Known limitations
 
-- **Unfinished tasks stay open when a batch completes.** Completion requires output, checks and
-  packing, not tasks, so leftover tasks remain "to do" and appear under "All open" for good.
-  Whether unfinished tasks should block completion or close with it is a kitchen-process
-  decision (§18).
 - **Demo meals carry demo claims locally.** The seed's recipes set allergens and "verified"
   nutrition (figures marked "Demo figures, not measured") on two named demo meals, Curried
   channa and Stewed oxtail; on this development database also on Fried ripe plantain and
@@ -300,7 +303,6 @@ Each ships empty; what depends on it is blocked or labelled.
 | Ingredient prices and packaging costs | Costs show as incomplete estimates |
 | Production schedule | Proposed Mon/Wed preparation, Tue/Thu delivery, marked "proposed" |
 | Kitchen capacity | "No capacity recorded"; plans are not checked against it |
-| Do unfinished tasks block batch completion? | They stay open after completion (§17) |
 
 ## 19. Sprint 6 readiness
 

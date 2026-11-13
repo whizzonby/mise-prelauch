@@ -179,13 +179,24 @@ test("the kitchen takes a released batch through tasks, output, a quality hold, 
   await cook.getByRole("form", { name: "Start batch" }).getByLabel("Team (optional)").fill("Line A");
   await submit(cook, "Start batch", "Start batch", "Batch started.");
 
-  // A task: take it, then finish it.
+  // Tasks: take each one, then finish it. A batch with an unfinished task
+  // cannot complete.
   await cook.reload();
-  const firstTask = cook.getByRole("form", { name: /^Start / }).first();
-  const taskName = ((await firstTask.getAttribute("aria-label")) ?? "").replace(/^Start /, "");
-  await submit(cook, `Start ${taskName}`, "Take and start", "Task updated.");
-  await cook.reload();
-  await submit(cook, `Finish ${taskName}`, "Done", "Task done.");
+  const startForms = cook.getByRole("form", { name: /^Start / });
+  const tasks = await startForms.count();
+  expect(tasks, "the batch has tasks from the configured templates").toBeGreaterThan(0);
+  for (let i = 0; i < tasks; i++) {
+    const taskName = ((await startForms.first().getAttribute("aria-label")) ?? "").replace(/^Start /, "");
+    await submit(cook, `Start ${taskName}`, "Take and start", "Task updated.");
+    await cook.reload();
+    if (i === 0) {
+      // Still on the list of what completion needs while it is open.
+      await expect(cook.getByText(`Task not done: ${taskName}.`)).toBeVisible();
+    }
+    await submit(cook, `Finish ${taskName}`, "Done", "Task done.");
+    await cook.reload();
+  }
+  await expect(cook.getByText(/^Task not done:/)).toHaveCount(0);
 
   // Output: everything planned was made.
   await cook.reload();

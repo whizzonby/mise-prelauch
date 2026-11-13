@@ -1,7 +1,7 @@
 # Sprint 2 report: customer web platform
 
 Written 11 November 2026. The work is on branch `sprint-2/customer-platform`, built on
-Sprint 1 (`22cc7fe`), and is **not yet committed**. The plan and decisions are in
+Sprint 1 (`fc03e57`), and is **not yet committed**. The plan and decisions are in
 `docs/architecture/SPRINT_2_PLAN.md`.
 
 ## 1. What customers can do now

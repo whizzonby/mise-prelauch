@@ -1,7 +1,7 @@
 # Sprint 4 report: administration and CRM
 
 Written 12 November 2026. The work is on branch `sprint-4/admin-crm`, built on Sprint 3
-(`2c6ca42`).
+(`4671c94`).
 - The plan, the decisions and the metric definitions are in
   `docs/architecture/SPRINT_4_PLAN.md`.
 - No new ADR was needed: the frontend stack stays as ADR-006 describes, and the backend

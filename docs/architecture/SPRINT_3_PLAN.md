@@ -1,6 +1,6 @@
 # Sprint 3 plan: subscriptions, ordering and payments
 
-Written 11 November 2026, on branch `sprint-3/subscription-commerce` from Sprint 2 (`b34c80c`).
+Written 11 November 2026, on branch `sprint-3/subscription-commerce` from Sprint 2 (`834d541`).
 
 ## Step 1: audit of Sprint 1 and Sprint 2
 

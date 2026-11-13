@@ -1,6 +1,6 @@
 # Sprint 4 plan: administration and CRM
 
-Written 11 November 2026, on branch `sprint-4/admin-crm` from Sprint 3 (`2c6ca42`).
+Written 11 November 2026, on branch `sprint-4/admin-crm` from Sprint 3 (`4671c94`).
 
 ## Step 1: audit of Sprints 1 to 3
 

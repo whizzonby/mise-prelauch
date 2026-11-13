@@ -1,7 +1,7 @@
 # Sprint 3 report: subscriptions, ordering and payments
 
 Written 11 November 2026. The work is on branch `sprint-3/subscription-commerce`, built
-on Sprint 2 (`b34c80c`), and is **not yet committed**.
+on Sprint 2 (`834d541`), and is **not yet committed**.
 - The plan is in `docs/architecture/SPRINT_3_PLAN.md`.
 - The decision record is ADR-007.
 - The schema is in `docs/database/SPRINT_3_SCHEMA.md`.

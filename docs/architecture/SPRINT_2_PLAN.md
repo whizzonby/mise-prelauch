@@ -1,6 +1,6 @@
 # Sprint 2 plan: customer web platform
 
-Written 11 November 2026, on branch `sprint-2/customer-platform` from Sprint 1 (`22cc7fe`).
+Written 11 November 2026, on branch `sprint-2/customer-platform` from Sprint 1 (`fc03e57`).
 
 ## Step 1: Sprint 1 verification
 

@@ -115,25 +115,25 @@ func (s *Service) Retention(ctx context.Context) ([]RetentionSignal, error) {
 		UNION ALL
 		SELECT w.id, w.name, w.email, 'recently_cancelled', coalesce(s.cancel_reason, 'No reason given'), s.cancelled_at
 		FROM subscriptions s JOIN who w ON w.id = s.customer_id
-		WHERE s.status = 'cancelled' AND s.cancelled_at > now() - interval '30 days'
+		WHERE s.status = 'cancelled' AND s.cancelled_at > $1::timestamptz - interval '30 days'
 		  AND NOT EXISTS (SELECT 1 FROM subscriptions x WHERE x.customer_id = s.customer_id AND x.status NOT IN ('cancelled', 'expired'))
 		UNION ALL
 		SELECT w.id, w.name, w.email, 'missed_selections', count(*)::text || ' weeks without confirmed meals', max(sc.finalized_at)
 		FROM subscription_cycles sc JOIN who w ON w.id = sc.customer_id
-		WHERE sc.state = 'needs_resolution' AND sc.state_reason = 'no_confirmed_selection' AND sc.week_start > current_date - 42
+		WHERE sc.state = 'needs_resolution' AND sc.state_reason = 'no_confirmed_selection' AND sc.week_start > ($1::timestamptz AT TIME ZONE '`+TimeZone+`')::date - 42
 		GROUP BY w.id, w.name, w.email HAVING count(*) >= 2
 		UNION ALL
 		SELECT w.id, w.name, w.email, 'inactive', 'Last sign-in ' || coalesce(to_char(w.last_login_at, 'YYYY-MM-DD'), 'never'),
 		       coalesce(w.last_login_at, w.created_at)
 		FROM subscriptions s JOIN who w ON w.id = s.customer_id
 		WHERE s.status IN ('active', 'pause_scheduled', 'past_due', 'cancel_scheduled')
-		  AND coalesce(w.last_login_at, w.created_at) < now() - interval '30 days'
+		  AND coalesce(w.last_login_at, w.created_at) < $1::timestamptz - interval '30 days'
 		UNION ALL
 		SELECT w.id, w.name, w.email, 'stale_case', 'Case #' || sc.number || ': ' || sc.subject, sc.updated_at
 		FROM support_cases sc JOIN who w ON w.id = sc.customer_id
-		WHERE sc.status IN ('open', 'in_progress', 'waiting_for_customer') AND sc.updated_at < now() - interval '3 days'
+		WHERE sc.status IN ('open', 'in_progress', 'waiting_for_customer') AND sc.updated_at < $1::timestamptz - interval '3 days'
 		ORDER BY 6 DESC
-		LIMIT 500`)
+		LIMIT 500`, s.Now())
 	if err != nil {
 		return nil, err
 	}

@@ -237,6 +237,12 @@ denials, and phone-width checks. Full earlier suites rerun.
   written; typecheck, lint and Go suite green 13 Nov after the power loss; screens not yet
   exercised in a browser, which Stage 8 covers)
 - [ ] Stage 8: Sprint 4 debt tests, e2e, UI review, screenshots, report
+  - [x] D1–D3: `server/sprint4_debt_test.go` (staff cancel, sign out everywhere, retention).
+    Fix found on the way: the retention query read the database clock (`now()`,
+    `current_date`); it now takes the service clock like the dashboard.
+  - [ ] Playwright: chef draft → publish, plan → completed batch, quality hold, RBAC, phone width
+  - [ ] UI review and screenshots
+  - [ ] Full earlier suites rerun (Vitest, Playwright), `docs/SPRINT_5_REPORT.md`
 
 Notes while building:
 - The permission is `production_reports.read`, not `production.reports.read`: the

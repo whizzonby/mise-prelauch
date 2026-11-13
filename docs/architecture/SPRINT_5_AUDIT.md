@@ -8,7 +8,7 @@ Written 13 November 2026, on branch `sprint-5/chef-production` (from `sprint-4/a
 | Claim in the Sprint 4 report | Checked in | Result |
 |---|---|---|
 | Migration `00008_admin_crm.sql`, additive and reversible | `services/api/migrations/00008_admin_crm.sql` | Present. Has a `-- +goose Down` that drops only Sprint 4 tables and permissions |
-| 43 new admin paths | `internal/backoffice/http.go`, `internal/identity/staff_http.go` | Present; the route contract test (`TestOpenAPICoversEveryRoute`) compares registered patterns with `docs/api/openapi.yaml` |
+| 43 new admin paths | `internal/backoffice/http.go`, `internal/identity/staff_http.go` | Present; the route contract test (`TestRoutesMatchOpenAPI`) compares registered patterns with `docs/api/openapi.yaml` |
 | Customer 360, CRM, support | `internal/backoffice`, `internal/crm`, `internal/support` | Present |
 | Staff permissions in the database | `roles`, `permissions`, `role_permissions`, `user_roles` (00004) | Present. Handlers check permissions, never role names (`identity.RequireAdmin(perm, ...)`) |
 | Append-only audit log | `audit_log_append_only` trigger (00008), `internal/audit` | Present. `audit.Record` takes the caller's transaction |

@@ -4504,7 +4504,7 @@ paths:
     get:
       tags: [admin-culinary]
       operationId: adminUnits
-      description: "Units of measure with exact factors to their dimension's base unit. Needs ingredients.read."
+      description: "Units of measure with exact factors to their dimension's base unit. Any staff session (kitchen staff record waste in these units)."
       security: [{ adminSession: [] }]
       responses:
         "200":

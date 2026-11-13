@@ -44,7 +44,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
           </Link>
         }
       />
-      <div className="grid gap-6">
+      <div className="grid gap-6 [&>*]:min-w-0">
         <Notice tone="error" title="Blocking approval" items={p.blocking} />
         <Notice tone="warning" title="For your judgement" items={p.warnings} />
         <Panel

@@ -49,7 +49,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
           </>
         }
       />
-      <div className="grid gap-6">
+      <div className="grid gap-6 [&>*]:min-w-0">
         <section className="grid gap-4 border border-border bg-surface p-5 sm:grid-cols-4">
           <Figure label="Planned kits" value={b.planned_kits} />
           <Figure label="Accepted kits" value={b.yield?.accepted_kits ?? "—"} />
@@ -62,7 +62,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
 
         {exec ? <NextAction b={b} /> : null}
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
           <Panel title="Kitchen tasks" note={b.tasks?.length ? undefined : "No tasks: none were configured when the plan was released."}>
             <ul className="grid gap-3">
               {(b.tasks ?? []).map((t) => (
@@ -73,7 +73,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
           <QualityPanel b={b} inspect={can(admin, "quality.inspect")} release={can(admin, "quality.release_hold")} />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
           <Panel title="Packing" note="Packed kits must equal accepted kits; rejected kits are never packed for customers. Verify each label against the approved recipe.">
             {b.packaging ? (
               <p className="type-body-sm mb-3">
@@ -130,7 +130,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
           </Panel>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
           <Panel title="Waste" note="Record what was weighed or counted, as it happens.">
             {b.waste?.length ? (
               <ul className="type-body-sm mb-4 grid gap-1">
@@ -189,7 +189,7 @@ function NextAction({ b }: { b: Batch }) {
   if (b.status === "in_progress" || b.status === "awaiting_quality_check" || b.status === "quality_hold") {
     const y = b.yield;
     return (
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
         <Panel title={y ? "Correct the output" : "Record the output"} note="Reworked kits failed and were fixed: they count once, inside the accepted kits. Rejected kits are discarded.">
           <KForm action={batchAction} submit={y ? "Update output" : "Record output"} pending="Saving…" label="Record output" size="lg">
             {hidden("output")}

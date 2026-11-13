@@ -324,6 +324,37 @@ func (s *Service) cutoffs(ctx context.Context, now time.Time, r *TickReport) err
 	return nil
 }
 
+// SettleCycles runs the cutoff step for the given cycles only, as of now.
+// The scheduler settles every cycle; the local production demo seed uses
+// this so that a moved clock touches nothing but its own demo customers.
+func (s *Service) SettleCycles(ctx context.Context, ids []string, now time.Time) (*TickReport, error) {
+	r := &TickReport{}
+	for _, id := range ids {
+		err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
+			state, created, err := s.finalize(ctx, tx, id, now)
+			if err != nil {
+				return err
+			}
+			switch state {
+			case "finalized":
+				r.Finalized++
+				if created {
+					r.OrdersCreated++
+				}
+			case "needs_resolution":
+				r.NeedsResolution++
+			case "unpaid":
+				r.Unpaid++
+			}
+			return nil
+		})
+		if err != nil {
+			return r, err
+		}
+	}
+	return r, nil
+}
+
 // finalize settles one week at its cutoff. It returns the new state and
 // whether an order was created. Idempotent: a week already settled is left.
 func (s *Service) finalize(ctx context.Context, tx pgx.Tx, cycleID string, now time.Time) (string, bool, error) {

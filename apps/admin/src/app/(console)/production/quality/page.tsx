@@ -30,7 +30,7 @@ export default async function QualityPage() {
         title="Quality control"
         description="Checks follow the checklist configured from Mise's approved procedures; no thresholds are invented here and nothing here is a regulatory certification. Only staff with hold-release permission can lift a hold."
       />
-      <div className="grid gap-6">
+      <div className="grid gap-6 [&>*]:min-w-0">
         {!templates.items.some((t) => t.active) ? (
           <p className="type-body-sm border-l-4 border-accent bg-surface p-4">
             No quality checklist is configured yet. {can(admin, "production.configure") ? <Link href="/production/settings" className="underline underline-offset-4">Add checks from the approved procedure.</Link> : "Ask a production manager to add one."}

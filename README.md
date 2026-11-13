@@ -135,6 +135,14 @@ mobile navigation; reduced motion; keyboard use; automated accessibility scans; 
 The customer-platform tests also need the demo meal catalogue (`pnpm misectl catalog seed-demo`),
 and the subscription tests the demo plans and menus (`pnpm misectl commerce seed-demo`).
 
+The chef and production tests need released production batches. With the real clock no week
+has both final orders and a published recipe (a recipe published today applies from the next
+open week, whose orders are not final until its cutoff), so `pnpm misectl production seed-demo`
+makes one through the real API with a moved clock: demo customers, demo recipes, a demo
+checklist if none is configured, and a released plan for the next week without one. It refuses
+to run outside `MISE_ENV=local`, needs the worker running, and can be run again; each test run
+uses up one released batch.
+
 Two local-only settings in `.env.example` exist for these tests: `RATE_LIMITS_DISABLED=true`
 (the API refuses to start with it outside `MISE_ENV=local`) and `TRUSTED_PROXY_HOPS=1`.
 

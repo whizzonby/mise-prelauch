@@ -236,13 +236,24 @@ denials, and phone-width checks. Full earlier suites rerun.
 - [x] Stage 7: reports and dashboard (`reporting`), OpenAPI, API client, admin UI (all pages
   written; typecheck, lint and Go suite green 13 Nov after the power loss; screens not yet
   exercised in a browser, which Stage 8 covers)
-- [ ] Stage 8: Sprint 4 debt tests, e2e, UI review, screenshots, report
+- [x] Stage 8: Sprint 4 debt tests, e2e, UI review, screenshots, report (13 Nov; uncommitted)
   - [x] D1–D3: `server/sprint4_debt_test.go` (staff cancel, sign out everywhere, retention).
     Fix found on the way: the retention query read the database clock (`now()`,
     `current_date`); it now takes the service clock like the dashboard.
-  - [ ] Playwright: chef draft → publish, plan → completed batch, quality hold, RBAC, phone width
-  - [ ] UI review and screenshots
-  - [ ] Full earlier suites rerun (Vitest, Playwright), `docs/SPRINT_5_REPORT.md`
+  - [x] Playwright: `e2e/tests/chef-production.spec.ts` (4 tests, passing 13 Nov): chef draft →
+    publish, released batch → completed (tasks, output, quality hold, packing, waste), RBAC,
+    phone width. Needs released demo batches: new `misectl production seed-demo` (local only;
+    real API in process with a moved clock, see `server/demo_production.go`), because with
+    the real clock no week has both final orders and a published recipe.
+    Fixes found on the way: `GET units` needed `ingredients.read`, so the batch page crashed
+    for kitchen staff and inspectors (now any staff session); production overview, plans,
+    plan detail, recipes, recipe detail and ingredients overflowed at 390 px (grid children
+    now `min-w-0`). The seed's recipes set real claims on their meals, so it always uses two
+    named demo meals (channa, oxtail) and the Sprint 2 meal-detail test now opens Jerk
+    chicken, which no recipe controls.
+  - Suites 13 Nov after these changes: Go all packages pass; Vitest 43; Playwright 47/47.
+  - [x] UI review and screenshots (`docs/screenshots/sprint-5`, via `e2e/tools/admin-shots.mjs <dir> sprint-5`)
+  - [x] Full earlier suites rerun (Vitest, Playwright), `docs/SPRINT_5_REPORT.md`
 
 Notes while building:
 - The permission is `production_reports.read`, not `production.reports.read`: the

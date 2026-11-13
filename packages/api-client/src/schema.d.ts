@@ -2582,7 +2582,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Units of measure with exact factors to their dimension's base unit. Needs ingredients.read. */
+        /** @description Units of measure with exact factors to their dimension's base unit. Any staff session (kitchen staff record waste in these units). */
         get: operations["adminUnits"];
         put?: never;
         post?: never;

@@ -44,7 +44,7 @@ export default async function WastePage({ searchParams }: { searchParams: Promis
           </>
         }
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-[1fr_24rem]">
         <div>
           <FilterBar>
             <Labelled label="From">

@@ -215,3 +215,19 @@ func (s *Service) MissingPermissions(ctx context.Context) ([]Permission, error) 
 	}
 	return missing, nil
 }
+
+// MarkEmailVerifiedByOperator confirms an account's email address without
+// the emailed link. Only the local production demo seed uses it, for its own
+// demo customers; it is audited like the other operator actions.
+func (s *Service) MarkEmailVerifiedByOperator(ctx context.Context, rawEmail string) error {
+	return db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
+		u, err := s.userByEmail(ctx, store.New(tx), rawEmail)
+		if err != nil {
+			return err
+		}
+		if err := s.markVerified(ctx, tx, u.ID, "account.email_verified"); err != nil {
+			return err
+		}
+		return operatorAudit(ctx, tx, "account.email_verified_by_operator", u.ID, nil)
+	})
+}

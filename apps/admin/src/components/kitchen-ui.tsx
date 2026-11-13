@@ -91,7 +91,7 @@ export function BatchCard({
         {formatDay(batch.production_date)} · recipe v{batch.recipe_version}
       </p>
       <p className="type-caption mt-1 text-muted">
-        {batch.tasks_open} open tasks · quality {humanize(batch.quality_status).toLowerCase()} · packing {humanize(batch.packaging_status).toLowerCase()}
+        {batch.tasks_open} open {batch.tasks_open === 1 ? "task" : "tasks"} · quality {humanize(batch.quality_status).toLowerCase()} · packing {humanize(batch.packaging_status).toLowerCase()}
       </p>
     </Link>
   );

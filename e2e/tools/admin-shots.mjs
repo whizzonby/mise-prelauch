@@ -1,16 +1,43 @@
 // Dev helper: signs in to the admin once and screenshots the main console pages at
-// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir>
+// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir> [sprint-4|sprint-5]
 import { chromium } from "@playwright/test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 if (existsSync("../.env")) process.loadEnvFile("../.env");
 const base = "http://localhost:3101";
-const outDir = process.argv[2] ?? "../docs/screenshots/sprint-4";
+const set = process.argv[3] ?? "sprint-4";
+const outDir = process.argv[2] ?? `../docs/screenshots/${set}`;
 mkdirSync(outDir, { recursive: true });
 
 // [name, list path, optional selector for a detail link to follow]
-const pages = [
+const kitchen = [
+  ["production-overview", "/production"],
+  ["production-calendar", "/production/calendar"],
+  ["production-plans", "/production/plans"],
+  ["production-plan", "/production/plans", 'main a[href^="/production/plans/"]'],
+  ["requirements", "/production/requirements"],
+  ["batches", "/production/batches"],
+  ["batch-completed", "/production/batches?status=completed", 'main a[href^="/production/batches/"]'],
+  ["batch-released", "/production/batches?status=released", 'main a[href^="/production/batches/"]'],
+  ["kitchen-tasks", "/production/tasks"],
+  ["quality", "/production/quality"],
+  ["packaging", "/production/packaging"],
+  ["waste", "/production/waste"],
+  ["kitchen-settings", "/production/settings"],
+  ["recipes", "/recipes"],
+  ["recipe-review", "/recipes", 'main a[href^="/recipes/"]', "?step=review"],
+  ["recipe-ingredients", "/recipes", 'main a[href^="/recipes/"]', "?step=ingredients"],
+  ["recipe-nutrition", "/recipes", 'main a[href^="/recipes/"]', "?step=safety"],
+  ["recipe-costing", "/recipes", 'main a[href^="/recipes/"]', "?step=costing"],
+  ["ingredients", "/ingredients"],
+  ["ingredient", "/ingredients", 'main a[href^="/ingredients/"]'],
+  ["chefs", "/chefs"],
+  ["nutrition-reviews", "/nutrition"],
+  ["recipe-approvals", "/recipe-approvals"],
+  ["production-report", "/reports/production"],
+];
+const sprint4 = [
   ["overview", "/"],
   ["customers", "/customers"],
   ["customer-360", "/customers", 'main a[href^="/customers/"]'],
@@ -30,6 +57,7 @@ const pages = [
   ["settings", "/settings"],
   ["alerts", "/alerts"],
 ];
+const pages = set === "sprint-5" ? kitchen : sprint4;
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -40,7 +68,7 @@ await page.getByLabel("Password").fill(process.env.E2E_ADMIN_PASSWORD);
 await page.getByRole("button", { name: "Sign in" }).click();
 await page.waitForURL(`${base}/`);
 
-for (const [name, path, follow] of pages) {
+for (const [name, path, follow, query = ""] of pages) {
   await page.goto(base + path, { waitUntil: "networkidle" });
   if (follow) {
     const link = page.locator(follow).first();
@@ -48,7 +76,7 @@ for (const [name, path, follow] of pages) {
       console.log(`skip ${name}: no row to open on ${path}`);
       continue;
     }
-    await page.goto(base + (await link.getAttribute("href")), { waitUntil: "networkidle" });
+    await page.goto(base + (await link.getAttribute("href")) + query, { waitUntil: "networkidle" });
   }
   const url = page.url();
   for (const [suffix, width, height] of [["desktop", 1440, 900], ["phone", 390, 844]]) {

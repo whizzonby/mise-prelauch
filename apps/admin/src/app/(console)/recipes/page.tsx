@@ -36,7 +36,7 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
         title={tab === "mine" ? "My recipes" : "Recipes"}
         description="Each recipe has versions. Drafts are edited step by step, then reviewed by the culinary team and a nutritionist. Approved versions never change; a change is a new revision."
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div>
           <Tabs
             base={`/recipes${sp.q || sp.status ? `?${new URLSearchParams({ ...(sp.q ? { q: sp.q } : {}), ...(sp.status ? { status: sp.status } : {}) })}` : ""}`}

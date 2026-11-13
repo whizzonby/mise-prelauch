@@ -29,7 +29,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader title="Production plans" description="Demand is snapshotted after the selection cutoff, so a plan never moves under the kitchen. If orders change later, a new snapshot revision is raised as an exception; the plan is not changed silently." />
-      <div className="grid gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
         <Panel title={`Demand for the week of ${formatDay(demand.week)}`} note={demand.definition}>
           <FilterBar>
             <Labelled label="Delivery week (Monday)">

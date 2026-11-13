@@ -95,6 +95,10 @@ func TestIngredientsUnitsAndConversions(t *testing.T) {
 	if len(list(t, res.Data["items"])) != 6 {
 		t.Errorf("units = %v", res.Data["items"])
 	}
+	// Kitchen staff record waste in these units, without the ingredient catalogue.
+	cook := bearer(h.adminLogin("units-cook@mise.test", "kitchen_staff"))
+	h.wantStatus(h.do("GET", "/api/v1/admin/units", nil, cook), http.StatusOK)
+	h.wantStatus(h.do("GET", "/api/v1/admin/ingredients", nil, cook), http.StatusForbidden)
 	// No price is invented: costing says the estimate is incomplete.
 	res = h.do("POST", "/api/v1/admin/recipes", map[string]any{"name": "Costing check"}, team.chef)
 	h.wantStatus(res, http.StatusCreated)

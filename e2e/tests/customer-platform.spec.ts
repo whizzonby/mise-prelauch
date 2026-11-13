@@ -105,13 +105,15 @@ test("the dashboard suggests meals, and meals can be filtered, opened and saved"
   await page.getByRole("link", { name: "Clear all filters" }).click();
   await expect(page).toHaveURL(/\/meals$/);
   await expect(page.getByRole("search", { name: "Filter meals" }).getByLabel("Vegan")).not.toBeChecked();
-  await page.getByLabel("Search", { exact: true }).fill("pumpkin");
+  await page.getByLabel("Search", { exact: true }).fill("jerk");
   await page.getByLabel("Search", { exact: true }).press("Enter");
-  await expect(page).toHaveURL(/q=pumpkin/);
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Pumpkin soup"]);
+  await expect(page).toHaveURL(/q=jerk/);
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Jerk chicken, rice and peas"]);
 
-  await page.getByRole("link", { name: "Pumpkin soup" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pumpkin soup");
+  // A demo meal no recipe controls: its claims stay unconfirmed. (The
+  // production demo seed publishes recipes, and so claims, for other meals.)
+  await page.getByRole("link", { name: "Jerk chicken, rice and peas" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Jerk chicken, rice and peas");
   await expect(page.getByText("Demo content", { exact: true })).toBeVisible();
   await expect(page.getByText("Allergen information for this meal has not been confirmed yet")).toBeVisible();
   await expect(page.getByText("Nutrition figures are published once the Mise nutritionist has checked")).toBeVisible();
@@ -122,9 +124,9 @@ test("the dashboard suggests meals, and meals can be filtered, opened and saved"
   await expect(page.getByRole("button", { name: "Saved" })).toHaveAttribute("aria-busy", "false");
 
   await page.goto(`${urls.web}/favorites`);
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Pumpkin soup"]);
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Jerk chicken, rice and peas"]);
   await page.reload();
-  await page.getByRole("button", { name: "Remove Pumpkin soup from saved meals" }).click();
+  await page.getByRole("button", { name: "Remove Jerk chicken, rice and peas from saved meals" }).click();
   // The list refreshes without it, and stays that way after a reload.
   await expect(page.getByRole("heading", { name: "Your saved meals will appear here." })).toBeVisible();
   await page.reload();

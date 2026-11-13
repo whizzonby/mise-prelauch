@@ -24,7 +24,7 @@ export default async function ApprovalsPage() {
         title="Recipe approvals"
         description="Chef submits → culinary review → nutrition and allergen sign-off → final approval → publication. Nobody reviews or approves a version they wrote."
       />
-      <div className="grid gap-6">
+      <div className="grid gap-6 [&>*]:min-w-0">
         <Panel title={`Culinary review (${culinary.items.length})`}>
           <RecipeQueue items={culinary.items} empty="Nothing submitted." />
         </Panel>

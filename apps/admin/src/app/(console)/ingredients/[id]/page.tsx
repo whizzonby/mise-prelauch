@@ -38,7 +38,7 @@ export default async function IngredientPage({ params }: { params: Promise<{ id:
           </>
         }
       />
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
         <Panel title="Details" note={manage ? "Changes apply to drafts and future plans. Approved recipe versions keep what they were approved with." : undefined}>
           {manage ? (
             <KForm action={saveIngredient} submit="Save ingredient" pending="Saving…" label="Edit ingredient">

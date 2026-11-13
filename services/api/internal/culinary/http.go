@@ -20,7 +20,9 @@ type Handler struct {
 // service.
 func (h *Handler) Routes(mux httpx.Router) {
 	adm := h.Identity.RequireAdmin
-	mux.Handle("GET /api/v1/admin/units", adm(identity.PermIngredientsRead, h.units))
+	// Units are reference data every console user needs (kitchen staff record
+	// waste in them), so any staff session may read them.
+	mux.Handle("GET /api/v1/admin/units", adm(identity.PermAdminAccess, h.units))
 	mux.Handle("GET /api/v1/admin/ingredients", adm(identity.PermIngredientsRead, h.ingredients))
 	mux.Handle("POST /api/v1/admin/ingredients", adm(identity.PermIngredientsManage, h.createIngredient))
 	mux.Handle("GET /api/v1/admin/ingredients/{id}", adm(identity.PermIngredientsRead, h.ingredient))

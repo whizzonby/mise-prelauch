@@ -83,7 +83,7 @@ export default async function RecipePage({ params, searchParams }: { params: Pro
         }
       />
       <Steps steps={STEP_LIST.map((s) => ({ ...s, done: done[s.key] }))} current={step} base={n ? `${stepBase}?v=${n}` : stepBase} />
-      <div className="mt-6 grid gap-6">
+      <div className="mt-6 grid gap-6 [&>*]:min-w-0">
         {!editable && step !== "review" && step !== "versions" && step !== "costing" && latest ? (
           <p className="type-body-sm border-l-2 border-border-strong pl-3 text-muted">
             {recipe.can_edit
@@ -145,7 +145,7 @@ async function Details({
   ]);
   const published = (recipe.versions ?? []).some((x) => x.status === "published" || x.status === "archived");
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
+    <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
       <Panel title="Recipe" note="The recipe's name and links. The customer-facing description and photographs stay on the catalogue meal.">
         {recipe.can_edit ? (
           <KForm action={updateRecipe} submit="Save details" pending="Saving…" label="Recipe details">
@@ -336,7 +336,7 @@ function Method({ v, recipeId, editable }: { v: RecipeVersion; recipeId: string;
       </Panel>
     );
     return (
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
         {list("Kitchen preparation", v.preparation_steps)}
         {list("Kit assembly", v.assembly_steps)}
         <Panel title="Customer, storage and packing">
@@ -391,7 +391,7 @@ async function Safety({ v, recipeId, editable }: { v: RecipeVersion; recipeId: s
   const reference = await api.catalog.reference();
   const label = (k: string) => reference.meal_allergens.find((a) => a.key === k)?.label ?? humanize(k);
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
+    <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
       <Panel
         title="Allergens"
         note="Declared allergens become the meal's customer-facing declaration when this version is published. An unticked allergen is never a “free from” claim."
@@ -597,7 +597,7 @@ function Review({ v, recipeId, latest, canEdit, perms }: { v: RecipeVersion; rec
     }
   }
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_26rem]">
+    <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-[1fr_26rem]">
       <div className="grid content-start gap-6">
         <Notice tone="warning" title="Before approval" items={v.problems} />
         <Panel title="Sign-offs on this version">

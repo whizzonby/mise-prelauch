@@ -28,7 +28,7 @@ export default async function ProductionOverviewPage() {
           ) : undefined
         }
       />
-      <div className="grid gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
         <Notice tone="warning" title="Setup the business still needs to provide" items={o.setup} />
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
           {o.counts.map((c) => (

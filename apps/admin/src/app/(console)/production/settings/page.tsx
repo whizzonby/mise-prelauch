@@ -24,7 +24,7 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="Kitchen settings" description="Enter only what an approved operating procedure says. Changes apply to plans released and checks recorded from now on." />
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
         <Panel title="Quality checklist" note="Every active check must be recorded for each batch. A failed critical check holds the batch.">
           {checks.items.length ? (
             <ul className="mb-5 grid gap-4">

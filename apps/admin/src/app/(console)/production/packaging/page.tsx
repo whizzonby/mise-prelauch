@@ -24,7 +24,7 @@ export default async function PackagingPage() {
         title="Packaging"
         description="Open a batch to record kits packed and confirm labels against the approved recipe. Packed kits must equal accepted kits. Packaging stock is not tracked here; Sprint 6 inventory will."
       />
-      <div className="grid gap-6">
+      <div className="grid gap-6 [&>*]:min-w-0">
         <Panel title={`To pack (${toPack.length})`} note="Output recorded, not yet packed.">
           {toPack.length ? (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

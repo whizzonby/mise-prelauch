@@ -28,7 +28,7 @@ export default async function IngredientsPage({ searchParams }: { searchParams: 
         title="Ingredients"
         description="The one ingredient catalogue recipes, production and (from Sprint 6) procurement share. Search finds aliases too, so look before adding: a near-duplicate name is refused."
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div>
           <FilterBar>
             <Labelled label="Name or alias">

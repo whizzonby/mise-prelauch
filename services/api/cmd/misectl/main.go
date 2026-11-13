@@ -6,6 +6,7 @@
 //	misectl catalog seed-demo                  (needs CATALOG_DEMO_ENABLED)
 //	misectl commerce seed-demo                 (demo plans and menus; needs CATALOG_DEMO_ENABLED)
 //	misectl commerce tick [-at 2026-11-20T04:00:00Z]   (one scheduler run; -at only when local)
+//	misectl production seed-demo               (a released demo production plan; local only, needs the worker)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -46,7 +47,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -152,6 +153,17 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Printf("%+v\n", *rep)
+		return nil
+
+	case "production seed-demo":
+		// Demo customers, recipes and a released plan for the next week
+		// without one, made through the real API with a moved clock. See
+		// server.SeedDemoProduction for why the clock moves.
+		out, err := server.SeedDemoProduction(ctx, cfg, pool)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("demo production ready: plan %s for the week of %s, %d orders, meals %v, batches %v\n", out.Plan, out.Week, out.Orders, out.Meals, out.Batches)
 		return nil
 
 	case "doctor ":

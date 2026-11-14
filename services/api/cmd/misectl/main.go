@@ -7,6 +7,7 @@
 //	misectl commerce seed-demo                 (demo plans and menus; needs CATALOG_DEMO_ENABLED)
 //	misectl commerce tick [-at 2026-11-20T04:00:00Z]   (one scheduler run; -at only when local)
 //	misectl production seed-demo               (a released demo production plan; local only, needs the worker)
+//	misectl events replay -consumer procurement -from 0   (re-deliver domain events after an id; consumers are idempotent)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -32,6 +33,7 @@ import (
 
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
+	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
 
@@ -47,7 +49,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -164,6 +166,22 @@ func run(args []string) error {
 			return err
 		}
 		fmt.Printf("demo production ready: plan %s for the week of %s, %d orders, meals %v, batches %v\n", out.Plan, out.Week, out.Orders, out.Meals, out.Batches)
+		return nil
+
+	case "events replay":
+		fs := flag.NewFlagSet("events replay", flag.ContinueOnError)
+		consumer := fs.String("consumer", "", "the consumer to move back (procurement)")
+		from := fs.Int64("from", -1, "deliver again every event after this id")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		if *consumer != "procurement" {
+			return errors.New("-consumer procurement is the only consumer")
+		}
+		if err := procurement.Replay(ctx, pool, *from); err != nil {
+			return err
+		}
+		fmt.Printf("%s will receive events after %d again on the worker's next dispatch\n", *consumer, *from)
 		return nil
 
 	case "doctor ":

@@ -24,6 +24,7 @@ import (
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
 	"mise.tt/api/internal/platform/ratelimit"
+	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
 
@@ -82,6 +83,8 @@ type harness struct {
 	com     *server.Commerce
 	bo      *backoffice.Service
 	clock   *testClock
+	// The Sprint 6 services, for tests that drive the event consumer.
+	sc *server.SupplyChain
 }
 
 // testClock is the time the commerce services read. Tests move it forward
@@ -124,8 +127,21 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		t.Fatalf("migrate: %v", err)
 	}
 	// Roles and permissions are reference data seeded by migrations; they stay.
-	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts, domain_events RESTART IDENTITY CASCADE`); err != nil {
+	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts, domain_events,
+		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
+	}
+	// Supply-chain policies start unset, and event consumers start at the beginning.
+	for _, sql := range []string{
+		// TRUNCATE users CASCADE also empties procurement_settings (updated_by).
+		`INSERT INTO procurement_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
+		`UPDATE procurement_settings SET approval_limit_minor = NULL, receiving_tolerance_percent = NULL, currencies = '{TTD}',
+			allow_unapproved_suppliers = false, unapproved_policy_ref = ''`,
+		`UPDATE event_consumer_offsets SET last_event_id = 0`,
+	} {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("reset supply settings: %v", err)
+		}
 	}
 
 	cfg := config.Config{
@@ -179,11 +195,18 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	bo := server.NewBackoffice(cfg, pool, ids, com)
 	runner.Register(backoffice.JobExport, bo.HandleExport)
 
+	// The supply-chain event consumer, as the worker wires it, with no
+	// settling delay so tests can dispatch events they just wrote.
+	_, prod := server.NewKitchen(cfg, pool, com, bo)
+	sc := server.NewSupplyChain(cfg, pool, com, bo, prod)
+	sc.Procurement.SettleDelay = 0
+	runner.Register(procurement.JobPlanReleased, sc.Procurement.HandlePlanReleased)
+
 	handler, routes, err := server.BuildWith(cfg, pool, limits, ids, com)
 	if err != nil {
 		t.Fatalf("build server: %v", err)
 	}
-	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo, sc: sc}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.

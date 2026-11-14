@@ -143,6 +143,16 @@ checklist if none is configured, and a released plan for the next week without o
 to run outside `MISE_ENV=local`, needs the worker running, and can be run again; each test run
 uses up one released batch.
 
+The supply-chain tests (Sprint 6) also need an open procurement run with a batch not yet
+started, so run `seed-demo` twice before a full run (once for the kitchen tests, once for
+purchasing). They create their own suppliers, products and storage locations, and the
+qualification criterion and receiving check they need, named as E2E procedures. On a machine
+short of memory, run the whole suite with `--workers=2`.
+
+Released production plans reach procurement through the event queue: the worker hands
+`production.plan_released` events to a job after a 30-second settling delay. To deliver events
+again (consumers are idempotent): `pnpm misectl events replay -consumer procurement -from <id>`.
+
 Two local-only settings in `.env.example` exist for these tests: `RATE_LIMITS_DISABLED=true`
 (the API refuses to start with it outside `MISE_ENV=local`) and `TRUSTED_PROXY_HOPS=1`.
 

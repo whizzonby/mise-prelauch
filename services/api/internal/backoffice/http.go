@@ -28,6 +28,10 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("GET /api/v1/admin/reports/{kind}", adm(P("reports.read"), h.report))
 	// Sprint 5: production reporting has its own permission.
 	mux.Handle("GET /api/v1/admin/reports/production", adm(P("production_reports.read"), h.productionReport))
+	// Sprint 6: supply-chain reports, one permission.
+	mux.Handle("GET /api/v1/admin/reports/procurement", adm(P("supplier_reports.read"), h.supplyReport("procurement")))
+	mux.Handle("GET /api/v1/admin/reports/inventory", adm(P("supplier_reports.read"), h.supplyReport("inventory")))
+	mux.Handle("GET /api/v1/admin/reports/suppliers", adm(P("supplier_reports.read"), h.supplyReport("suppliers")))
 	// Customers.
 	mux.Handle("GET /api/v1/admin/customers", adm(P("customers.read"), h.customers))
 	mux.Handle("GET /api/v1/admin/customers/{id}", adm(P("customers.read"), h.customer))
@@ -133,6 +137,14 @@ func (h *Handler) report(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	rep, err := h.S.Reporting.Report(r.Context(), r.PathValue("kind"), q.Get("from"), q.Get("to"))
 	respond(w, r, http.StatusOK, rep, err)
+}
+
+func (h *Handler) supplyReport(kind string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		rep, err := h.S.Reporting.Report(r.Context(), kind, q.Get("from"), q.Get("to"))
+		respond(w, r, http.StatusOK, rep, err)
+	}
 }
 
 func (h *Handler) productionReport(w http.ResponseWriter, r *http.Request) {

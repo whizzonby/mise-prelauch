@@ -91,7 +91,7 @@ func TestStaffSignOutEverywhere(t *testing.T) {
 func TestRetentionSignals(t *testing.T) {
 	s := newShop(t)
 	h := s.h
-	s.active("past-due@example.com", testpay.CardDecline)   // renewal will decline
+	s.active("past-due@example.com", testpay.CardDecline)     // renewal will decline
 	s.active("misses-weeks@example.com", testpay.CardApprove) // never chooses meals
 	s.active("quiet@example.com", testpay.CardApprove)
 	s.customer("stale-case@example.com")

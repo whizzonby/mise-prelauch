@@ -3504,6 +3504,1281 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The supplier directory. Needs suppliers.read. */
+        get: operations["adminSuppliers"];
+        put?: never;
+        /** @description Only name and type are required; a new supplier is a draft. Needs suppliers.manage. */
+        post: operations["adminCreateSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With farm, documents, approval history, reviews, communication log and the criteria that apply. Needs suppliers.read. */
+        get: operations["adminSupplier"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Changing an approved supplier's type sends it back for review. Needs suppliers.manage. */
+        patch: operations["adminUpdateSupplier"];
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Draft or rejected → pending review; needs a phone or email. Needs suppliers.manage. */
+        post: operations["adminSubmitSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Approval needs every required criterion for the type met, by someone other than the submitter. Needs suppliers.approve. */
+        post: operations["adminReviewSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Approved → suspended, with a reason; alerts purchasing. Needs suppliers.approve. */
+        post: operations["adminSuspendSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Suspended → pending review; inactive → draft. Needs suppliers.approve. */
+        post: operations["adminReactivateSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description History is kept. Needs suppliers.approve. */
+        post: operations["adminDeactivateSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/farm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Farmers, cooperatives and producers; recorded on the farmer's behalf. Needs suppliers.manage. */
+        put: operations["adminSaveFarm"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Details only; no files are stored. Needs suppliers.manage. */
+        post: operations["adminAddSupplierDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-documents/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Records who checked the document against its source. Needs suppliers.approve. */
+        post: operations["adminVerifySupplierDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/communications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Records a contact that already happened; nothing is sent. Needs suppliers.manage. */
+        post: operations["adminLogSupplierCommunication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Qualification criteria from the approved procedure. Needs suppliers.read. */
+        get: operations["adminSupplierCriteria"];
+        put?: never;
+        /** @description Needs procurement.configure. */
+        post: operations["adminCreateSupplierCriterion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-criteria/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs procurement.configure. */
+        patch: operations["adminUpdateSupplierCriterion"];
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description purchasable=true: confirmed, active products of qualified suppliers. Needs supplier_products.read. */
+        get: operations["adminSupplierProducts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The pack must convert to the ingredient's base unit; the mapping starts as proposed. Needs supplier_products.manage. */
+        post: operations["adminCreateSupplierProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With the full price history. Needs supplier_products.read. */
+        get: operations["adminSupplierProduct"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs supplier_products.manage. */
+        patch: operations["adminUpdateSupplierProduct"];
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-products/{id}/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Confirm the product is the ingredient, or reject it with a reason. Needs supplier_products.manage. */
+        post: operations["adminReviewProductMapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-products/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Adds to the history and records a supplier cost reference. Needs supplier_products.manage. */
+        post: operations["adminAddSupplierPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description current (default true): the latest record per supplier and ingredient whose window has not ended. Needs supplier_products.read. */
+        get: operations["adminSupplierAvailability"];
+        put?: never;
+        /** @description Needs supplier_products.manage. */
+        post: operations["adminRecordAvailability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs procurement.read. */
+        get: operations["adminProcurementRuns"];
+        put?: never;
+        /** @description From a released plan. One live run per plan: asking again returns it (200). Needs procurement.plan. */
+        post: operations["adminCreateProcurementRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Requirements as consumed, the explained net calculation per ingredient, supplier options and decisions. Needs procurement.read. */
+        get: operations["adminProcurementRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs/{id}/lines/{line}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Open runs only. No purchase or deferred needs a reason. Needs procurement.plan. */
+        post: operations["adminProcurementDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Every shortage and incomplete line needs a decision. Needs procurement.approve. */
+        post: operations["adminApproveProcurementRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Approved decisions change only with a reason. Needs procurement.approve. */
+        post: operations["adminReopenProcurementRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/runs/{id}/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description One draft per supplier for the buy decisions not yet on an order. Needs purchase_orders.create. */
+        post: operations["adminPurchaseOrdersFromRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/pending-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Released plans with no procurement run yet. Needs procurement.read. */
+        get: operations["adminPlansWithoutRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The event consumer's position and failed deliveries. Needs procurement.read. */
+        get: operations["adminProcurementDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs procurement.read. */
+        get: operations["adminProcurementSettings"];
+        /** @description As the business decided them; nothing is assumed. Needs procurement.configure. */
+        put: operations["adminSaveProcurementSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/rfqs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs procurement.read. */
+        get: operations["adminRFQs"];
+        put?: never;
+        /** @description Needs procurement.plan. */
+        post: operations["adminCreateRFQ"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/rfqs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With invitations and quotations. Needs procurement.read. */
+        get: operations["adminRFQ"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/rfqs/{id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs procurement.plan. */
+        post: operations["adminRecordRFQInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/rfqs/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs procurement.plan. */
+        post: operations["adminCloseRFQ"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/rfqs/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs procurement.plan. */
+        post: operations["adminCancelRFQ"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/procurement/quotations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs procurement.read. */
+        get: operations["adminQuotations"];
+        put?: never;
+        /** @description As received; never edited. Each line also becomes a supplier price. Needs procurement.plan. */
+        post: operations["adminRecordQuotation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Prices only with purchase_orders.read. Needs receiving.read. */
+        get: operations["adminPurchaseOrders"];
+        put?: never;
+        /** @description A draft. Needs purchase_orders.create. */
+        post: operations["adminCreatePurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With lines, history and approved revisions. Prices only with purchase_orders.read. Needs receiving.read. */
+        get: operations["adminPurchaseOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Drafts freely; approved orders only with a reason, as a new revision. Needs purchase_orders.create. */
+        patch: operations["adminUpdatePurchaseOrder"];
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs purchase_orders.create. */
+        post: operations["adminSubmitPurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Not by its buyer. Above the configured limit also needs approve_above_limit (a second person unless one holds both). Needs purchase_orders.approve or purchase_orders.approve_above_limit. */
+        post: operations["adminApprovePurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Back to draft, with a reason. Needs purchase_orders.approve. */
+        post: operations["adminRejectPurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Records how staff sent it; logs the contact. Needs purchase_orders.issue. */
+        post: operations["adminIssuePurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Only with nothing received. Needs purchase_orders.create. */
+        post: operations["adminCancelPurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/purchase-orders/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Received or partly received orders; nothing more is expected. Needs purchase_orders.create. */
+        post: operations["adminClosePurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Per ingredient, every figure defined. Incoming is never counted as stock. Needs inventory.read. */
+        get: operations["adminStock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs inventory.read. */
+        get: operations["adminLots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With its ledger, reservations and the batches it went into. Needs inventory.read. */
+        get: operations["adminLot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Release from quarantine or hold, hold, or reject. Reserved stock must be released first. Needs receiving.inspect. */
+        post: operations["adminLotStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}/expiry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description For lots with no date recorded. Needs receiving.inspect. */
+        post: operations["adminLotExpiry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs inventory.adjust. */
+        post: operations["adminLotTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}/waste": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Stock spoiled or damaged in storage. Production waste is the kitchen's record and is not posted here. Needs inventory.adjust. */
+        post: operations["adminLotStoreWaste"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/lots/{id}/supplier-return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Rejected or quarantined stock only. Needs inventory.adjust. */
+        post: operations["adminLotSupplierReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Records previous and new balance with the reason; never edits history. Needs inventory.adjust. */
+        post: operations["adminAdjustStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The append-only ledger. Needs inventory.read. */
+        get: operations["adminMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs inventory.read. */
+        get: operations["adminReservations"];
+        put?: never;
+        /** @description For approved or released plans, in the category's allocation order. What cannot be covered is reported as short. Needs inventory.reserve. */
+        post: operations["adminReserveStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/reservations/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs inventory.reserve. */
+        post: operations["adminReleaseReservation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description To a released or started batch: the plan's reservations first. All or nothing for the quantity asked. Needs inventory.issue. */
+        post: operations["adminIssueStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Up to what the batch was issued from the lot. Needs inventory.issue. */
+        post: operations["adminReturnStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/batches/{id}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Planned, issued, returned, consumed, variance, and the kitchen's waste inside consumption. Needs inventory.read. */
+        get: operations["adminBatchReconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs inventory.read. */
+        get: operations["adminStockCounts"];
+        put?: never;
+        /** @description One open count per location. Needs inventory.count. */
+        post: operations["adminStartCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs inventory.read. */
+        get: operations["adminStockCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Keeps the ledger balance and last movement at the moment each lot is counted. Needs inventory.count. */
+        put: operations["adminRecordCounts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Every lot in the location counted. Needs inventory.count. */
+        post: operations["adminSubmitCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Not by its submitter. Each variance becomes an adjustment applied to the current balance. Needs inventory.adjust. */
+        post: operations["adminPostCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/counts/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs inventory.count. */
+        post: operations["adminCancelCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs admin.access. */
+        get: operations["adminStorageLocations"];
+        put?: never;
+        /** @description As the business's facilities are; none are assumed. Needs inventory.configure. */
+        post: operations["adminCreateStorageLocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/locations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Closing needs the location empty. Needs inventory.configure. */
+        patch: operations["adminUpdateStorageLocation"];
+        trace?: never;
+    };
+    "/api/v1/admin/inventory/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every category; one without a policy uses FIFO, marked as the default. Needs inventory.read. */
+        get: operations["adminInventoryPolicies"];
+        /** @description From an approved operating policy. Needs inventory.configure. */
+        put: operations["adminSaveInventoryPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/receiving": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs receiving.read. */
+        get: operations["adminReceipts"];
+        put?: never;
+        /** @description Records a delivery and its inspection (also needs receiving.inspect). The same idempotency key returns the recorded receipt (200). Needs receiving.manage. */
+        post: operations["adminReceive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/receiving/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs receiving.read. */
+        get: operations["adminReceipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/receiving/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs receiving.read. */
+        get: operations["adminReceivingChecklist"];
+        put?: never;
+        /** @description From the approved receiving procedure. Needs inventory.configure. */
+        post: operations["adminCreateChecklistItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/receiving/checklist/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs inventory.configure. */
+        patch: operations["adminUpdateChecklistItem"];
+        trace?: never;
+    };
+    "/api/v1/admin/traceability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Batch-level: lots → batches → the orders in each batch's plan that contained its meal. Needs traceability.read. */
+        get: operations["adminTraceability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/procurement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Runs, shortages, orders approved and issued, deliveries, open and overdue orders, RFQs and quotations; value in TTD only. Every figure is defined. Needs supplier_reports.read. */
+        get: operations["adminProcurementReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Lots received, rejected, issued, returned, adjusted, wasted in store, counts, expired and unreviewed lots; on hand and issued by ingredient. Every figure is defined. Needs supplier_reports.read. */
+        get: operations["adminInventoryReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Factual figures per supplier: orders placed and delivered, on time, partial deliveries, rejected packs, lead time, purchase value, price changes. No ratings. Every figure is defined. Needs supplier_reports.read. */
+        get: operations["adminSuppliersReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3655,7 +4930,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -6436,6 +7711,1273 @@ export interface components {
             time_zone: string;
             days: components["schemas"]["CalendarDay"][];
             schedule: components["schemas"]["ScheduleSlot"][];
+        };
+        SupplierFarm: {
+            farm_name: string;
+            farm_location: string;
+            crops: string[];
+            growing_seasons: string;
+            harvest_windows: string;
+            estimated_capacity: string;
+            collection_arrangements: string;
+            information_source: string;
+            recorded_by_name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        SupplierDocument: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "certification" | "licence" | "inspection_report" | "agreement" | "other";
+            title: string;
+            reference: string;
+            issued_by: string;
+            /** Format: date */
+            expires_on: string | null;
+            verified_by_name: string | null;
+            /** Format: date-time */
+            verified_at: string | null;
+            expired: boolean;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SupplierStatusEvent: {
+            from: string | null;
+            to: string;
+            note: string | null;
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CriterionResult: {
+            /** Format: uuid */
+            criterion_id: string;
+            name: string;
+            met: boolean;
+            note: string;
+        };
+        SupplierReview: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            decision: "approved" | "rejected" | "changes_requested";
+            results: components["schemas"]["CriterionResult"][];
+            notes: string;
+            /** Format: date */
+            expires_on: string | null;
+            reviewer_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SupplierCommunication: {
+            id: number;
+            /** @enum {string} */
+            channel: "phone" | "whatsapp" | "email" | "in_person" | "document" | "other";
+            /** @enum {string} */
+            direction: "outbound" | "inbound";
+            summary: string;
+            resource_type: string | null;
+            resource_id: string | null;
+            recorded_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SupplierCriterion: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            supplier_types: string[];
+            required: boolean;
+            procedure_ref: string;
+            position: number;
+            active: boolean;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        Supplier: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            trading_name: string;
+            /** @enum {string} */
+            type: "farmer" | "cooperative" | "producer" | "distributor" | "packaging" | "other";
+            /** @enum {string} */
+            status: "draft" | "pending_review" | "approved" | "suspended" | "rejected" | "inactive";
+            contact_name: string;
+            phone: string;
+            email: string;
+            /** @enum {string} */
+            preferred_channel: "phone" | "whatsapp" | "email" | "in_person" | "other";
+            region: string;
+            location: string;
+            operating_regions: string[];
+            /** @description Empty means not agreed. */
+            payment_terms: string;
+            delivery_arrangements: string;
+            notes: string;
+            /** Format: date */
+            review_expires_on: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** @description Approved and the approval has not lapsed: only these get live purchase orders. */
+            qualified: boolean;
+            products: number;
+            has_farm: boolean;
+            farm?: components["schemas"]["SupplierFarm"] | null;
+            documents?: components["schemas"]["SupplierDocument"][];
+            history?: components["schemas"]["SupplierStatusEvent"][];
+            reviews?: components["schemas"]["SupplierReview"][];
+            communications?: components["schemas"]["SupplierCommunication"][];
+            criteria?: components["schemas"]["SupplierCriterion"][];
+            missing?: string[];
+        };
+        SupplierPage: {
+            items: components["schemas"]["Supplier"][];
+            total: number;
+            page: number;
+            page_size: number;
+        };
+        /** @description Name and type are required to create; fields left out keep their value. */
+        SupplierInput: {
+            name?: string;
+            trading_name?: string;
+            /** @enum {string} */
+            type?: "farmer" | "cooperative" | "producer" | "distributor" | "packaging" | "other";
+            contact_name?: string;
+            phone?: string;
+            email?: string;
+            preferred_channel?: string;
+            region?: string;
+            location?: string;
+            operating_regions?: string[];
+            payment_terms?: string;
+            delivery_arrangements?: string;
+            notes?: string;
+        };
+        SupplierActionInput: {
+            reason?: string;
+            note?: string;
+        };
+        SupplierReviewInput: {
+            /** @enum {string} */
+            decision: "approved" | "rejected" | "changes_requested";
+            results?: components["schemas"]["CriterionResult"][];
+            notes?: string;
+            /** Format: date */
+            expires_on?: string;
+        };
+        FarmInput: {
+            farm_name?: string;
+            farm_location?: string;
+            crops?: string[];
+            growing_seasons?: string;
+            harvest_windows?: string;
+            estimated_capacity?: string;
+            collection_arrangements?: string;
+            information_source?: string;
+        };
+        SupplierDocumentInput: {
+            kind: string;
+            title: string;
+            reference?: string;
+            issued_by?: string;
+            /** Format: date */
+            expires_on?: string;
+        };
+        CommunicationInput: {
+            /** @enum {string} */
+            channel: "phone" | "whatsapp" | "email" | "in_person" | "document" | "other";
+            /** @enum {string} */
+            direction: "outbound" | "inbound";
+            summary: string;
+            resource_type?: string;
+            resource_id?: string;
+        };
+        CriterionInput: {
+            name?: string;
+            description?: string;
+            supplier_types?: string[];
+            required?: boolean;
+            procedure_ref?: string;
+            position?: number;
+            active?: boolean;
+        };
+        SupplierPrice: {
+            /** Format: uuid */
+            id: string;
+            amount_minor: number;
+            currency: string;
+            /** Format: date */
+            valid_from: string;
+            /** Format: date */
+            valid_until: string | null;
+            /** @enum {string} */
+            origin: "price_list" | "quotation" | "verbal" | "other";
+            quotation_id: string | null;
+            note: string;
+            recorded_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SupplierProduct: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            supplier_status: string;
+            supplier_qualified: boolean;
+            /** @enum {string} */
+            kind: "ingredient" | "packaging";
+            /** Format: uuid */
+            ingredient_id: string | null;
+            ingredient_name: string | null;
+            base_unit: string | null;
+            sku: string;
+            name: string;
+            description: string;
+            grade: string;
+            specification: string;
+            /** @description An exact decimal, as a string. */
+            pack_quantity: string;
+            pack_unit: string;
+            pack_description: string;
+            /** @description An exact decimal, as a string. */
+            min_order_packs: string;
+            lead_time_days: number | null;
+            /** @enum {string} */
+            availability: "unknown" | "available" | "limited" | "seasonal" | "unavailable";
+            delivery_constraints: string;
+            /** @enum {string} */
+            mapping_status: "proposed" | "confirmed" | "rejected";
+            mapping_note: string;
+            mapping_reviewer_name: string | null;
+            /** Format: date-time */
+            mapping_reviewed_at: string | null;
+            active: boolean;
+            /** @description One pack in the ingredient's base unit. */
+            pack_base: string | null;
+            pack_approximate: boolean;
+            price: components["schemas"]["SupplierPrice"] | null;
+            prices?: components["schemas"]["SupplierPrice"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Changing the ingredient or the pack sends the mapping back for review. */
+        SupplierProductInput: {
+            /** @enum {string} */
+            kind?: "ingredient" | "packaging";
+            ingredient_id?: string;
+            sku?: string;
+            name?: string;
+            description?: string;
+            grade?: string;
+            specification?: string;
+            /** @description An exact decimal, as a string. */
+            pack_quantity?: string;
+            pack_unit?: string;
+            pack_description?: string;
+            /** @description An exact decimal, as a string. */
+            min_order_packs?: string;
+            lead_time_days?: number;
+            availability?: string;
+            delivery_constraints?: string;
+            active?: boolean;
+        };
+        MappingInput: {
+            /** @enum {string} */
+            decision: "confirmed" | "rejected";
+            note?: string;
+        };
+        SupplierAvailability: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            /** @enum {string} */
+            status: "available_now" | "expected_harvest" | "limited" | "unavailable" | "seasonal";
+            /** @description An exact decimal, as a string; null when unknown. */
+            estimated_quantity: string | null;
+            unit: string | null;
+            /** Format: date */
+            available_from: string | null;
+            /** Format: date */
+            available_until: string | null;
+            /** @enum {string} */
+            confidence: "confirmed_by_supplier" | "supplier_estimate" | "staff_estimate";
+            source: string;
+            /** Format: date-time */
+            confirmed_at: string;
+            recorded_by_name: string;
+        };
+        /** @description What the supplier said. Never stock, never a promise. */
+        AvailabilityInput: {
+            /** Format: uuid */
+            supplier_id: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            status: string;
+            /** @description An exact decimal, as a string. */
+            estimated_quantity?: string;
+            unit?: string;
+            /** Format: date */
+            available_from?: string;
+            /** Format: date */
+            available_until?: string;
+            confidence: string;
+            source?: string;
+        };
+        ProcurementSettings: {
+            approval_limit_minor: number | null;
+            /** @description An exact decimal, as a string; null when unknown. */
+            receiving_tolerance_percent: string | null;
+            currencies: string[];
+            allow_unapproved_suppliers: boolean;
+            unapproved_policy_ref: string;
+            /** Format: date-time */
+            updated_at: string;
+            notes: string[];
+        };
+        ProcurementSettingsInput: {
+            approval_limit_minor?: number;
+            clear_approval_limit?: boolean;
+            /** @description An exact decimal, as a string. */
+            receiving_tolerance_percent?: string;
+            clear_tolerance?: boolean;
+            currencies?: string[];
+            allow_unapproved_suppliers?: boolean;
+            unapproved_policy_ref?: string;
+        };
+        RunRequirement: {
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            preparation: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            quantity: string | null;
+            unit: string;
+            status: string;
+            approximate: boolean;
+            batch_ids: string[];
+        };
+        SupplyOption: {
+            /** Format: uuid */
+            product_id: string;
+            product_name: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            /** @description An exact decimal, as a string. */
+            pack_quantity: string;
+            pack_unit: string;
+            /** @description An exact decimal, as a string. */
+            pack_base: string;
+            /** @description An exact decimal, as a string. */
+            min_order_packs: string;
+            /** @description An exact decimal, as a string. */
+            packs: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            /** @description An exact decimal, as a string. */
+            surplus: string;
+            price_minor: number | null;
+            currency: string | null;
+            cost_minor: number | null;
+            lead_time_days: number | null;
+            /** Format: date */
+            earliest_delivery: string | null;
+            lead_time_risk: boolean;
+            availability: string;
+            notes: string[];
+        };
+        LinePurchaseOrder: {
+            /** Format: uuid */
+            po_id: string;
+            number: string;
+            /** @enum {string} */
+            status: "draft" | "pending_approval" | "approved" | "issued" | "partially_received" | "received" | "closed" | "cancelled";
+            /** @description An exact decimal, as a string. */
+            packs: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            quantity: string | null;
+            /** Format: date */
+            expected_delivery: string | null;
+        };
+        ProcurementLine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            unit: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            gross: string | null;
+            /** @description An exact decimal, as a string. */
+            buffer: string;
+            /** @description An exact decimal, as a string. */
+            reserved: string;
+            /** @description Already issued to the plan's batches, net of returns: it counts toward the requirement. */
+            issued: string;
+            /** @description Usable stock nobody has reserved: shown, not counted until reserved. */
+            available: string;
+            /** @description Still to receive on PO lines bought for this line, expected by the required-by date. */
+            inbound: string;
+            /** @description An exact decimal, as a string. */
+            inbound_late: string;
+            /** @description gross + buffer − reserved − inbound, never below zero; null when incomplete. */
+            shortage: string | null;
+            incomplete: boolean;
+            explain: string[];
+            options: components["schemas"]["SupplyOption"][];
+            suggested_product_id: string | null;
+            /** @enum {string} */
+            decision: "pending" | "buy" | "no_purchase" | "deferred";
+            product_id: string | null;
+            /** @description An exact decimal, as a string; null when unknown. */
+            packs: string | null;
+            decision_note: string;
+            decided_by_name: string | null;
+            /** Format: date-time */
+            decided_at: string | null;
+            purchase_orders: components["schemas"]["LinePurchaseOrder"][];
+        };
+        ProcurementRun: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            plan_id: string;
+            plan_number: string;
+            snapshot_revision: number;
+            /** Format: date */
+            week: string;
+            /** Format: date */
+            required_by: string;
+            source_event_id: number | null;
+            /** @enum {string} */
+            status: "open" | "approved" | "closed" | "cancelled";
+            review_reason: string | null;
+            approved_by_name: string | null;
+            /** Format: date-time */
+            approved_at: string | null;
+            created_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+            lines: number;
+            shortages: number;
+            pending: number;
+            requirements?: components["schemas"]["RunRequirement"][];
+            plan_lines?: components["schemas"]["ProcurementLine"][];
+            warnings: string[];
+            newer_revision: number | null;
+        };
+        FailedDelivery: {
+            job_id: number;
+            payload: string;
+            error: string;
+            attempts: number;
+            /** Format: date-time */
+            failed_at: string;
+        };
+        EventDeliveries: {
+            last_event_id: number;
+            /** Format: date-time */
+            updated_at: string;
+            waiting: number;
+            failed: components["schemas"]["FailedDelivery"][];
+        };
+        DecisionInput: {
+            /** @enum {string} */
+            decision: "pending" | "buy" | "no_purchase" | "deferred";
+            product_id?: string;
+            /** @description An exact decimal, as a string. */
+            packs?: string;
+            note?: string;
+        };
+        ProcurementReasonInput: {
+            reason: string;
+        };
+        POLine: {
+            /** Format: uuid */
+            id: string;
+            position: number;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            ingredient_id: string | null;
+            description: string;
+            /** @description An exact decimal, as a string. */
+            packs: string;
+            /** @description An exact decimal, as a string. */
+            pack_quantity: string;
+            pack_unit: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            quantity_base: string | null;
+            base_unit: string | null;
+            /** @description Only with purchase_orders.read. */
+            unit_price_minor: number | null;
+            line_total_minor: number | null;
+            /** Format: uuid */
+            procurement_line_id: string | null;
+            /** @description An exact decimal, as a string. */
+            received_packs: string;
+            /** @description An exact decimal, as a string. */
+            accepted_packs: string;
+            /** @description An exact decimal, as a string. */
+            open_packs: string;
+        };
+        POEvent: {
+            from: string | null;
+            to: string;
+            note: string | null;
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PORevision: {
+            revision: number;
+            total_minor: number;
+            reason: string | null;
+            approved_by_name: string;
+            /** Format: date-time */
+            approved_at: string;
+            /** @description The order as approved. */
+            snapshot: Record<string, never>;
+        };
+        PurchaseOrder: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            supplier_qualified: boolean;
+            /** Format: uuid */
+            run_id: string | null;
+            run_number: string | null;
+            /** @enum {string} */
+            status: "draft" | "pending_approval" | "approved" | "issued" | "partially_received" | "received" | "closed" | "cancelled";
+            revision: number;
+            currency: string;
+            /** Format: date */
+            expected_delivery: string | null;
+            /** Format: uuid */
+            location_id: string | null;
+            location_name: string | null;
+            delivery_fee_minor: number;
+            tax_minor: number;
+            notes: string;
+            supplier_exception: string | null;
+            /** Format: uuid */
+            buyer_id: string | null;
+            buyer_name: string;
+            approved_by_name: string | null;
+            /** Format: date-time */
+            approved_at: string | null;
+            limit_approved_by_name: string | null;
+            issued_by_name: string | null;
+            /** Format: date-time */
+            issued_at: string | null;
+            issued_via: string | null;
+            cancel_reason: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            subtotal_minor: number;
+            total_minor: number;
+            above_limit: boolean;
+            lines?: components["schemas"]["POLine"][];
+            history?: components["schemas"]["POEvent"][];
+            revisions?: components["schemas"]["PORevision"][];
+            blocking: string[];
+        };
+        /** @description Without a price, the supplier price in force is used. */
+        POLineInput: {
+            /** Format: uuid */
+            product_id: string;
+            /** @description An exact decimal, as a string. */
+            packs: string;
+            unit_price_minor?: number;
+            quotation_line_id?: string;
+            procurement_line_id?: string;
+        };
+        /** @description On an approved order a change needs a reason and starts a new revision needing approval. */
+        POInput: {
+            /** Format: uuid */
+            supplier_id?: string;
+            run_id?: string;
+            currency?: string;
+            expected_delivery?: string;
+            location_id?: string;
+            delivery_fee_minor?: number;
+            notes?: string;
+            supplier_exception?: string;
+            lines?: components["schemas"]["POLineInput"][];
+            reason?: string;
+        };
+        /** @description How staff sent the order. Mise sends nothing itself. */
+        IssueInput: {
+            /** @enum {string} */
+            channel: "phone" | "whatsapp" | "email" | "in_person" | "document" | "other";
+            note?: string;
+        };
+        RFQLine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            ingredient_id: string | null;
+            ingredient_name: string | null;
+            description: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            unit: string;
+        };
+        RFQInvite: {
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            channel: string | null;
+            /** Format: date-time */
+            invited_at: string | null;
+            responded: boolean;
+        };
+        QuotationLine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            product_id: string;
+            product_name: string;
+            /** Format: uuid */
+            ingredient_id: string | null;
+            /** @description An exact decimal, as a string. */
+            packs: string;
+            /** @description An exact decimal, as a string. */
+            pack_quantity: string;
+            pack_unit: string;
+            unit_price_minor: number;
+        };
+        Quotation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rfq_id: string | null;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            reference: string;
+            currency: string;
+            lead_time_days: number | null;
+            delivery_terms: string;
+            /** Format: date */
+            valid_until: string | null;
+            received_via: string;
+            /** Format: date-time */
+            received_at: string;
+            recorded_by_name: string;
+            lines: components["schemas"]["QuotationLine"][];
+        };
+        RFQ: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** @enum {string} */
+            status: "draft" | "open" | "closed" | "cancelled";
+            /** Format: uuid */
+            run_id: string | null;
+            /** Format: date */
+            required_by: string | null;
+            /** Format: date-time */
+            deadline: string | null;
+            notes: string;
+            buyer_name: string;
+            /** Format: date-time */
+            created_at: string;
+            lines: components["schemas"]["RFQLine"][];
+            suppliers: components["schemas"]["RFQInvite"][];
+            quotations: components["schemas"]["Quotation"][];
+        };
+        RFQInput: {
+            run_id?: string;
+            /** Format: date */
+            required_by?: string;
+            deadline?: string;
+            notes?: string;
+            lines: {
+                ingredient_id?: string;
+                description?: string;
+                /** @description An exact decimal, as a string. */
+                quantity: string;
+                unit: string;
+            }[];
+            supplier_ids: string[];
+        };
+        QuotationInput: {
+            rfq_id?: string;
+            /** Format: uuid */
+            supplier_id: string;
+            reference?: string;
+            currency: string;
+            lead_time_days?: number;
+            delivery_terms?: string;
+            /** Format: date */
+            valid_until?: string;
+            /** @enum {string} */
+            received_via: "phone" | "whatsapp" | "email" | "in_person" | "document" | "other";
+            lines: {
+                /** Format: uuid */
+                product_id: string;
+                /** @description An exact decimal, as a string. */
+                packs: string;
+                unit_price_minor: number;
+            }[];
+        };
+        ProductionPlanRef: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: date */
+            week: string;
+            /** Format: date */
+            production_date: string;
+        };
+        /** @description Records that staff asked the supplier, and how. Nothing is sent. */
+        RFQInviteInput: {
+            /** Format: uuid */
+            supplier_id: string;
+            /** @enum {string} */
+            channel: "phone" | "whatsapp" | "email" | "in_person" | "document" | "other";
+            note?: string;
+        };
+        StockSummary: {
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            category: string;
+            unit: string;
+            /** @enum {string} */
+            method: "fifo" | "fefo";
+            /** @description An exact decimal, as a string. */
+            on_hand: string;
+            /** @description An exact decimal, as a string. */
+            usable: string;
+            /** @description An exact decimal, as a string. */
+            reserved: string;
+            /** @description An exact decimal, as a string. */
+            available: string;
+            /** @description An exact decimal, as a string. */
+            quarantined: string;
+            /** @description An exact decimal, as a string. */
+            rejected: string;
+            /** @description An exact decimal, as a string. */
+            expired: string;
+            /** @description An exact decimal, as a string. */
+            expiry_review: string;
+            /** @description An exact decimal, as a string. */
+            incoming: string;
+            lots: number;
+        };
+        StockView: {
+            items: components["schemas"]["StockSummary"][];
+            /** @description What each figure means. */
+            definitions: {
+                [key: string]: string;
+            };
+        };
+        InventoryMovement: {
+            id: number;
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            /** @enum {string} */
+            type: "receipt" | "reserve" | "release" | "issue" | "return" | "transfer" | "adjustment" | "waste" | "supplier_return" | "status";
+            /** @description An exact decimal, as a string. */
+            on_hand_delta: string;
+            /** @description An exact decimal, as a string. */
+            reserved_delta: string;
+            /** @description An exact decimal, as a string. */
+            on_hand_after: string;
+            /** @description An exact decimal, as a string. */
+            reserved_after: string;
+            unit: string;
+            reason: string;
+            from_location: string | null;
+            to_location: string | null;
+            from_status: string | null;
+            to_status: string | null;
+            batch_id: string | null;
+            batch_code: string | null;
+            plan_id: string | null;
+            actor_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        InventoryReservation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            plan_id: string;
+            plan_number: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            /** @description An exact decimal, as a string. */
+            open_quantity: string;
+            unit: string;
+            /** @enum {string} */
+            status: "active" | "issued" | "released";
+            release_reason: string | null;
+            created_by_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        BatchLotUse: {
+            /** Format: uuid */
+            batch_id: string;
+            batch_code: string;
+            meal_name: string;
+            batch_status: string;
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            /** @description An exact decimal, as a string. */
+            issued: string;
+            /** @description An exact decimal, as a string. */
+            returned: string;
+            /** @description An exact decimal, as a string. */
+            consumed: string;
+            unit: string;
+            /** Format: date-time */
+            first_issued_at: string;
+        };
+        InventoryLot: {
+            /** Format: uuid */
+            id: string;
+            /** @description Internal identifier; the supplier's lot reference is separate. */
+            code: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            /** Format: uuid */
+            po_id: string;
+            po_number: string;
+            /** Format: uuid */
+            receipt_id: string;
+            receipt_number: string;
+            supplier_lot_ref: string;
+            /** Format: date-time */
+            received_at: string;
+            unit: string;
+            /** @description An exact decimal, as a string. */
+            received_quantity: string;
+            /** @description An exact decimal, as a string. */
+            on_hand: string;
+            /** @description An exact decimal, as a string. */
+            reserved: string;
+            /** @enum {string} */
+            status: "available" | "quarantined" | "on_hold" | "rejected";
+            /** Format: date */
+            expiry_date: string | null;
+            /** @enum {string} */
+            expiry_status: "recorded" | "not_recorded" | "none_applies";
+            expiry_note: string;
+            /** Format: uuid */
+            location_id: string;
+            location_name: string;
+            unit_cost_minor: number | null;
+            currency: string | null;
+            expired: boolean;
+            usable: boolean;
+            blocked: string;
+            movements?: components["schemas"]["InventoryMovement"][];
+            reservations?: components["schemas"]["InventoryReservation"][];
+            batches?: components["schemas"]["BatchLotUse"][];
+        };
+        LotStatusInput: {
+            /** @enum {string} */
+            status: "available" | "on_hold" | "rejected";
+            reason: string;
+        };
+        /** @description The date printed on the product or the supplier's documents, or a person's confirmation that none applies. Never a guess. */
+        LotExpiryInput: {
+            /** Format: date */
+            expiry_date?: string;
+            none_applies?: boolean;
+            note?: string;
+        };
+        LotTransferInput: {
+            /** Format: uuid */
+            location_id: string;
+            reason?: string;
+        };
+        LotQuantityInput: {
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            reason: string;
+        };
+        AdjustmentInput: {
+            /** Format: uuid */
+            lot_id: string;
+            /** @enum {string} */
+            category: "count_discrepancy" | "damage" | "spoilage" | "measurement_correction" | "other";
+            /** @description An exact decimal, as a string. */
+            new_on_hand: string;
+            reason: string;
+            evidence?: string;
+        };
+        ReserveInput: {
+            /** Format: uuid */
+            plan_id: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+        };
+        ReserveResult: {
+            reservations: components["schemas"]["InventoryReservation"][];
+            /** @description An exact decimal, as a string. */
+            reserved: string;
+            /** @description An exact decimal, as a string. */
+            short: string;
+            /** @enum {string} */
+            method: "fifo" | "fefo";
+        };
+        InventoryReasonInput: {
+            reason: string;
+        };
+        BatchRef: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** Format: uuid */
+            plan_id: string;
+            plan_number: string;
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            recipe_version: number;
+            recipe_name: string;
+            /** Format: date */
+            week: string;
+            /** Format: date */
+            production_date: string;
+            status: string;
+        };
+        IssuedLot: {
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            /** @description An exact decimal, as a string. */
+            from_reserved: string;
+            unit: string;
+        };
+        IssueStockInput: {
+            /** Format: uuid */
+            batch_id: string;
+            /** Format: uuid */
+            ingredient_id: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            lot_id?: string;
+        };
+        IssueResult: {
+            batch: components["schemas"]["BatchRef"];
+            issued: components["schemas"]["IssuedLot"][];
+        };
+        ReturnStockInput: {
+            /** Format: uuid */
+            batch_id: string;
+            /** Format: uuid */
+            lot_id: string;
+            /** @description An exact decimal, as a string. */
+            quantity: string;
+            reason?: string;
+        };
+        ReconcileLine: {
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            unit: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            planned: string | null;
+            /** @description An exact decimal, as a string. */
+            issued: string;
+            /** @description An exact decimal, as a string. */
+            returned: string;
+            /** @description An exact decimal, as a string. */
+            consumed: string;
+            /** @description An exact decimal, as a string; null when unknown. */
+            variance: string | null;
+            /** @description An exact decimal, as a string. */
+            recorded_waste: string;
+            notes: string[];
+        };
+        Reconciliation: {
+            batch: components["schemas"]["BatchRef"];
+            lines: components["schemas"]["ReconcileLine"][];
+            lots: components["schemas"]["BatchLotUse"][];
+            definitions: {
+                [key: string]: string;
+            };
+        };
+        LotRef: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            status: string;
+        };
+        CountLine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            ingredient_name: string;
+            unit: string;
+            /** @description An exact decimal, as a string. */
+            expected: string;
+            /** @description An exact decimal, as a string. */
+            counted: string;
+            /** @description An exact decimal, as a string. */
+            variance: string;
+            moved_since: boolean;
+            counted_by_name: string;
+            /** Format: date-time */
+            counted_at: string;
+        };
+        StockCount: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            location_id: string;
+            location_name: string;
+            /** @enum {string} */
+            status: "open" | "submitted" | "posted" | "cancelled";
+            notes: string;
+            started_by_name: string;
+            submitted_by_name: string | null;
+            posted_by_name: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            submitted_at: string | null;
+            /** Format: date-time */
+            posted_at: string | null;
+            lines: components["schemas"]["CountLine"][];
+            to_count: components["schemas"]["LotRef"][];
+        };
+        StartCountInput: {
+            /** Format: uuid */
+            location_id: string;
+            notes?: string;
+        };
+        CountLinesInput: {
+            lines: {
+                /** Format: uuid */
+                lot_id: string;
+                /** @description An exact decimal, as a string. */
+                counted: string;
+            }[];
+        };
+        StorageLocation: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** @enum {string} */
+            type: "receiving" | "dry" | "chilled" | "frozen" | "preparation" | "quarantine" | "other";
+            capacity_note: string;
+            temperature_note: string;
+            active: boolean;
+            lots: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        LocationInput: {
+            code?: string;
+            name?: string;
+            type?: string;
+            capacity_note?: string;
+            temperature_note?: string;
+            active?: boolean;
+        };
+        InventoryPolicy: {
+            category: string;
+            /** @enum {string} */
+            method: "fifo" | "fefo";
+            note: string;
+            default: boolean;
+            /** Format: date-time */
+            updated_at: string | null;
+        };
+        InventoryPolicyInput: {
+            category: string;
+            /** @enum {string} */
+            method: "fifo" | "fefo";
+            note: string;
+        };
+        ReceivingChecklistItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            criteria: string;
+            categories: string[];
+            procedure_ref: string;
+            position: number;
+            active: boolean;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ReceivingChecklistInput: {
+            name?: string;
+            criteria?: string;
+            categories?: string[];
+            procedure_ref?: string;
+            position?: number;
+            active?: boolean;
+        };
+        InspectionResult: {
+            /** Format: uuid */
+            item_id: string;
+            name: string;
+            /** @enum {string} */
+            result: "pass" | "fail" | "not_applicable";
+            note: string;
+        };
+        ReceiptLine: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            po_line_id: string;
+            description: string;
+            /** Format: uuid */
+            ingredient_id: string | null;
+            /** @description An exact decimal, as a string. */
+            delivered_packs: string;
+            /** @description An exact decimal, as a string. */
+            accepted_packs: string;
+            /** @description An exact decimal, as a string. */
+            quarantined_packs: string;
+            /** @description An exact decimal, as a string. */
+            rejected_packs: string;
+            supplier_lot_ref: string;
+            /** Format: date */
+            expiry_date: string | null;
+            location_name: string | null;
+            inspection: components["schemas"]["InspectionResult"][];
+            /** @description An exact decimal, as a string; null when unknown. */
+            temperature_c: string | null;
+            discrepancy: string;
+            discrepancy_note: string;
+            lots: components["schemas"]["LotRef"][];
+        };
+        GoodsReceipt: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            po_id: string;
+            po_number: string;
+            /** Format: uuid */
+            supplier_id: string;
+            supplier_name: string;
+            delivery_ref: string;
+            notes: string;
+            received_by_name: string;
+            /** Format: date-time */
+            received_at: string;
+            lines: components["schemas"]["ReceiptLine"][];
+            /** @description This submission was already recorded (same idempotency key). */
+            replayed: boolean;
+        };
+        /** @description delivered = accepted + quarantined + rejected, in packs. Accepting needs the receiving checklist, every item recorded, none failed. */
+        ReceiptInput: {
+            /** Format: uuid */
+            po_id: string;
+            idempotency_key: string;
+            delivery_ref?: string;
+            notes?: string;
+            lines: {
+                /** Format: uuid */
+                po_line_id: string;
+                /** @description An exact decimal, as a string. */
+                delivered_packs: string;
+                /** @description An exact decimal, as a string. */
+                accepted_packs?: string;
+                /** @description An exact decimal, as a string. */
+                quarantined_packs?: string;
+                /** @description An exact decimal, as a string. */
+                rejected_packs?: string;
+                supplier_lot_ref?: string;
+                expiry_date?: string;
+                location_id?: string;
+                quarantine_location_id?: string;
+                inspection?: {
+                    /** Format: uuid */
+                    item_id: string;
+                    result: string;
+                    note: string;
+                }[];
+                /** @description An exact decimal, as a string; null when unknown. */
+                temperature_c?: string | null;
+                discrepancy?: string;
+                discrepancy_note?: string;
+            }[];
+        };
+        TraceBatch: {
+            use: components["schemas"]["BatchLotUse"];
+            batch: components["schemas"]["BatchRef"];
+            order_numbers: string[];
+        };
+        TraceLot: {
+            lot: components["schemas"]["InventoryLot"];
+            batches: components["schemas"]["TraceBatch"][];
+        };
+        Trace: {
+            /** @enum {string} */
+            scope: "lot" | "batch" | "supplier" | "purchase_order";
+            lots: components["schemas"]["TraceLot"][];
+            notice: string;
+        };
+        /** @description Per pack. Earlier prices are kept. */
+        SupplierPriceInput: {
+            amount_minor: number;
+            currency: string;
+            /** Format: date */
+            valid_from: string;
+            /** Format: date */
+            valid_until?: string;
+            /** @enum {string} */
+            origin?: "price_list" | "quotation" | "verbal" | "other";
+            note?: string;
         };
     };
     responses: {
@@ -13796,6 +16338,2865 @@ export interface operations {
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSuppliers: {
+        parameters: {
+            query?: {
+                q?: string;
+                type?: string;
+                status?: string;
+                farmers?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suppliers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierPage"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supplier. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSubmitSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierActionInput"];
+            };
+        };
+        responses: {
+            /** @description Submitted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReviewSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Reviewed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSuspendSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierActionInput"];
+            };
+        };
+        responses: {
+            /** @description Suspended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReactivateSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierActionInput"];
+            };
+        };
+        responses: {
+            /** @description Reactivated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeactivateSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierActionInput"];
+            };
+        };
+        responses: {
+            /** @description Deactivated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSaveFarm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FarmInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAddSupplierDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierDocumentInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminVerifySupplierDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verified. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLogSupplierCommunication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunicationInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Supplier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSupplierCriteria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierCriterion"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateSupplierCriterion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriterionInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierCriterion"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateSupplierCriterion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriterionInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierCriterion"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSupplierProducts: {
+        parameters: {
+            query?: {
+                supplier_id?: string;
+                ingredient_id?: string;
+                mapping?: string;
+                q?: string;
+                purchasable?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierProduct"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateSupplierProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierProductInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierProduct"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSupplierProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Product. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierProduct"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateSupplierProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierProductInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierProduct"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReviewProductMapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MappingInput"];
+            };
+        };
+        responses: {
+            /** @description Reviewed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierProduct"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAddSupplierPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierPriceInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SupplierProduct"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSupplierAvailability: {
+        parameters: {
+            query?: {
+                supplier_id?: string;
+                ingredient_id?: string;
+                current?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierAvailability"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRecordAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SupplierAvailability"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProcurementRuns: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ProcurementRun"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateProcurementRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    plan_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProcurementRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminProcurementDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                line: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminApproveProcurementRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReopenProcurementRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcurementReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Reopened. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPurchaseOrdersFromRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Drafted. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["PurchaseOrder"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPlansWithoutRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ProductionPlanRef"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminProcurementDeliveries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deliveries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EventDeliveries"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminProcurementSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveProcurementSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcurementSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ProcurementSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRFQs: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["RFQ"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateRFQ: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RFQInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RFQ"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRFQ: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description RFQ. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RFQ"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminRecordRFQInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RFQInviteInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RFQ"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCloseRFQ: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Closed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RFQ"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelRFQ: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RFQ"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminQuotations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Quotation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRecordQuotation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuotationInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Quotation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPurchaseOrders: {
+        parameters: {
+            query?: {
+                status?: string;
+                supplier_id?: string;
+                run_id?: string;
+                q?: string;
+                receivable?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["PurchaseOrder"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreatePurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["POInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdatePurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["POInput"];
+            };
+        };
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSubmitPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminApprovePurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRejectPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcurementReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminIssuePurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueInput"];
+            };
+        };
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcurementReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminClosePurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcurementReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PurchaseOrder"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminStock: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stock. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockView"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminLots: {
+        parameters: {
+            query?: {
+                ingredient_id?: string;
+                status?: string;
+                location_id?: string;
+                supplier_id?: string;
+                q?: string;
+                held?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InventoryLot"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminLot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminLotStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotStatusInput"];
+            };
+        };
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLotExpiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotExpiryInput"];
+            };
+        };
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLotTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotTransferInput"];
+            };
+        };
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLotStoreWaste: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotQuantityInput"];
+            };
+        };
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLotSupplierReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotQuantityInput"];
+            };
+        };
+        responses: {
+            /** @description Lot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAdjustStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustmentInput"];
+            };
+        };
+        responses: {
+            /** @description Adjusted. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryLot"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminMovements: {
+        parameters: {
+            query?: {
+                lot_id?: string;
+                ingredient_id?: string;
+                type?: string;
+                batch_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InventoryMovement"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReservations: {
+        parameters: {
+            query?: {
+                plan_id?: string;
+                ingredient_id?: string;
+                lot_id?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InventoryReservation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReserveStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReserveInput"];
+            };
+        };
+        responses: {
+            /** @description Reserved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReserveResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReleaseReservation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Released. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InventoryReservation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminIssueStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueStockInput"];
+            };
+        };
+        responses: {
+            /** @description Issued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IssueResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReturnStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnStockInput"];
+            };
+        };
+        responses: {
+            /** @description Returned. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BatchLotUse"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminBatchReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciliation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Reconciliation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminStockCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StockCount"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminStartCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartCountInput"];
+            };
+        };
+        responses: {
+            /** @description Started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminStockCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminRecordCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CountLinesInput"];
+            };
+        };
+        responses: {
+            /** @description Count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSubmitCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminPostCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StockCount"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminStorageLocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StorageLocation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateStorageLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StorageLocation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateStorageLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["StorageLocation"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminInventoryPolicies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InventoryPolicy"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveInventoryPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryPolicyInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["InventoryPolicy"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReceipts: {
+        parameters: {
+            query?: {
+                po_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["GoodsReceipt"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReceive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiptInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GoodsReceipt"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GoodsReceipt"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminReceivingChecklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReceivingChecklistItem"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceivingChecklistInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReceivingChecklistItem"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceivingChecklistInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReceivingChecklistItem"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminTraceability: {
+        parameters: {
+            query?: {
+                lot?: string;
+                batch?: string;
+                supplier?: string;
+                purchase_order?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Trace"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminProcurementReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Report"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminInventoryReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Report"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSuppliersReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Report"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
     };

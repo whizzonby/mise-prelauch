@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.5.0
+  version: 1.6.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -73,6 +73,12 @@ tags:
     description: Ingredients, units, chefs, recipes, versions, reviews and costing (Sprint 5).
   - name: admin-production
     description: Demand snapshots, production plans, requirements, batches, tasks, quality, packaging, waste and reports (Sprint 5).
+  - name: admin-suppliers
+    description: Suppliers, farmers, qualification, products, prices and availability (Sprint 6).
+  - name: admin-procurement
+    description: Procurement planning, quotations and purchase orders (Sprint 6).
+  - name: admin-inventory
+    description: Receiving, lots, the stock ledger, reservations, issues, counts and traceability (Sprint 6).
 paths:
   /api/v1/health:
     get:
@@ -6344,6 +6350,2544 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
 
+  /api/v1/admin/suppliers:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSuppliers
+      description: The supplier directory. Needs suppliers.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: farmers
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: page_size
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Suppliers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierPage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-suppliers]
+      operationId: adminCreateSupplier
+      description: Only name and type are required; a new supplier is a draft. Needs suppliers.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSupplier
+      description: "With farm, documents, approval history, reviews, communication log and the criteria that apply. Needs suppliers.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Supplier.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-suppliers]
+      operationId: adminUpdateSupplier
+      description: "Changing an approved supplier's type sends it back for review. Needs suppliers.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/submit:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminSubmitSupplier
+      description: Draft or rejected → pending review; needs a phone or email. Needs suppliers.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierActionInput" }
+      responses:
+        "200":
+          description: Submitted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/review:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminReviewSupplier
+      description: "Approval needs every required criterion for the type met, by someone other than the submitter. Needs suppliers.approve."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierReviewInput" }
+      responses:
+        "200":
+          description: Reviewed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/suspend:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminSuspendSupplier
+      description: "Approved \u2192 suspended, with a reason; alerts purchasing. Needs suppliers.approve."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierActionInput" }
+      responses:
+        "200":
+          description: Suspended.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/reactivate:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminReactivateSupplier
+      description: Suspended → pending review; inactive → draft. Needs suppliers.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierActionInput" }
+      responses:
+        "200":
+          description: Reactivated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/deactivate:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminDeactivateSupplier
+      description: History is kept. Needs suppliers.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierActionInput" }
+      responses:
+        "200":
+          description: Deactivated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/farm:
+    put:
+      tags: [admin-suppliers]
+      operationId: adminSaveFarm
+      description: "Farmers, cooperatives and producers; recorded on the farmer's behalf. Needs suppliers.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FarmInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/documents:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminAddSupplierDocument
+      description: Details only; no files are stored. Needs suppliers.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierDocumentInput" }
+      responses:
+        "201":
+          description: Added.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-documents/{id}/verify:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminVerifySupplierDocument
+      description: Records who checked the document against its source. Needs suppliers.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Verified.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/communications:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminLogSupplierCommunication
+      description: Records a contact that already happened; nothing is sent. Needs suppliers.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommunicationInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Supplier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-criteria:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSupplierCriteria
+      description: Qualification criteria from the approved procedure. Needs suppliers.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierCriterion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-suppliers]
+      operationId: adminCreateSupplierCriterion
+      description: Needs procurement.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CriterionInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierCriterion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-criteria/{id}:
+    patch:
+      tags: [admin-suppliers]
+      operationId: adminUpdateSupplierCriterion
+      description: Needs procurement.configure.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CriterionInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierCriterion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-products:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSupplierProducts
+      description: "purchasable=true: confirmed, active products of qualified suppliers. Needs supplier_products.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: ingredient_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: mapping
+          in: query
+          required: false
+          schema: { type: string }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: purchasable
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/suppliers/{id}/products:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminCreateSupplierProduct
+      description: "The pack must convert to the ingredient's base unit; the mapping starts as proposed. Needs supplier_products.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierProductInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-products/{id}:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSupplierProduct
+      description: With the full price history. Needs supplier_products.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Product.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-suppliers]
+      operationId: adminUpdateSupplierProduct
+      description: Needs supplier_products.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierProductInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-products/{id}/mapping:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminReviewProductMapping
+      description: "Confirm the product is the ingredient, or reject it with a reason. Needs supplier_products.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MappingInput" }
+      responses:
+        "200":
+          description: Reviewed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-products/{id}/prices:
+    post:
+      tags: [admin-suppliers]
+      operationId: adminAddSupplierPrice
+      description: Adds to the history and records a supplier cost reference. Needs supplier_products.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierPriceInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SupplierProduct" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/supplier-availability:
+    get:
+      tags: [admin-suppliers]
+      operationId: adminSupplierAvailability
+      description: "current (default true): the latest record per supplier and ingredient whose window has not ended. Needs supplier_products.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: ingredient_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: current
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierAvailability" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-suppliers]
+      operationId: adminRecordAvailability
+      description: Needs supplier_products.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AvailabilityInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/SupplierAvailability" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/procurement/runs:
+    get:
+      tags: [admin-procurement]
+      operationId: adminProcurementRuns
+      description: Needs procurement.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-procurement]
+      operationId: adminCreateProcurementRun
+      description: "From a released plan. One live run per plan: asking again returns it (200). Needs procurement.plan."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_id]
+              additionalProperties: false
+              properties:
+                plan_id: { type: string, format: uuid }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/runs/{id}:
+    get:
+      tags: [admin-procurement]
+      operationId: adminProcurementRun
+      description: "Requirements as consumed, the explained net calculation per ingredient, supplier options and decisions. Needs procurement.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/runs/{id}/lines/{line}/decision:
+    post:
+      tags: [admin-procurement]
+      operationId: adminProcurementDecision
+      description: Open runs only. No purchase or deferred needs a reason. Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: line
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DecisionInput" }
+      responses:
+        "200":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/runs/{id}/approve:
+    post:
+      tags: [admin-procurement]
+      operationId: adminApproveProcurementRun
+      description: Every shortage and incomplete line needs a decision. Needs procurement.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Approved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/runs/{id}/reopen:
+    post:
+      tags: [admin-procurement]
+      operationId: adminReopenProcurementRun
+      description: Approved decisions change only with a reason. Needs procurement.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcurementReasonInput" }
+      responses:
+        "200":
+          description: Reopened.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/runs/{id}/purchase-orders:
+    post:
+      tags: [admin-procurement]
+      operationId: adminPurchaseOrdersFromRun
+      description: One draft per supplier for the buy decisions not yet on an order. Needs purchase_orders.create.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "201":
+          description: Drafted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/pending-plans:
+    get:
+      tags: [admin-procurement]
+      operationId: adminPlansWithoutRun
+      description: Released plans with no procurement run yet. Needs procurement.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ProductionPlanRef" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/deliveries:
+    get:
+      tags: [admin-procurement]
+      operationId: adminProcurementDeliveries
+      description: "The event consumer's position and failed deliveries. Needs procurement.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Deliveries.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/EventDeliveries" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/settings:
+    get:
+      tags: [admin-procurement]
+      operationId: adminProcurementSettings
+      description: Needs procurement.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-procurement]
+      operationId: adminSaveProcurementSettings
+      description: As the business decided them; nothing is assumed. Needs procurement.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcurementSettingsInput" }
+      responses:
+        "200":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ProcurementSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/rfqs:
+    get:
+      tags: [admin-procurement]
+      operationId: adminRFQs
+      description: Needs procurement.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-procurement]
+      operationId: adminCreateRFQ
+      description: Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RFQInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/rfqs/{id}:
+    get:
+      tags: [admin-procurement]
+      operationId: adminRFQ
+      description: With invitations and quotations. Needs procurement.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: RFQ.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/rfqs/{id}/invitations:
+    post:
+      tags: [admin-procurement]
+      operationId: adminRecordRFQInvitation
+      description: Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RFQInviteInput" }
+      responses:
+        "200":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/rfqs/{id}/close:
+    post:
+      tags: [admin-procurement]
+      operationId: adminCloseRFQ
+      description: Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Closed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/rfqs/{id}/cancel:
+    post:
+      tags: [admin-procurement]
+      operationId: adminCancelRFQ
+      description: Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Cancelled.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/RFQ" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/procurement/quotations:
+    get:
+      tags: [admin-procurement]
+      operationId: adminQuotations
+      description: Needs procurement.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Quotation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-procurement]
+      operationId: adminRecordQuotation
+      description: As received; never edited. Each line also becomes a supplier price. Needs procurement.plan.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QuotationInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Quotation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders:
+    get:
+      tags: [admin-procurement]
+      operationId: adminPurchaseOrders
+      description: Prices only with purchase_orders.read. Needs receiving.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: run_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: receivable
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-procurement]
+      operationId: adminCreatePurchaseOrder
+      description: A draft. Needs purchase_orders.create.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/POInput" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}:
+    get:
+      tags: [admin-procurement]
+      operationId: adminPurchaseOrder
+      description: "With lines, history and approved revisions. Prices only with purchase_orders.read. Needs receiving.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-procurement]
+      operationId: adminUpdatePurchaseOrder
+      description: "Drafts freely; approved orders only with a reason, as a new revision. Needs purchase_orders.create."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/POInput" }
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/submit:
+    post:
+      tags: [admin-procurement]
+      operationId: adminSubmitPurchaseOrder
+      description: Needs purchase_orders.create.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/approve:
+    post:
+      tags: [admin-procurement]
+      operationId: adminApprovePurchaseOrder
+      description: Not by its buyer. Above the configured limit also needs approve_above_limit (a second person unless one holds both). Needs purchase_orders.approve or purchase_orders.approve_above_limit.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/reject:
+    post:
+      tags: [admin-procurement]
+      operationId: adminRejectPurchaseOrder
+      description: "Back to draft, with a reason. Needs purchase_orders.approve."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcurementReasonInput" }
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/issue:
+    post:
+      tags: [admin-procurement]
+      operationId: adminIssuePurchaseOrder
+      description: Records how staff sent it; logs the contact. Needs purchase_orders.issue.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IssueInput" }
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/cancel:
+    post:
+      tags: [admin-procurement]
+      operationId: adminCancelPurchaseOrder
+      description: Only with nothing received. Needs purchase_orders.create.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcurementReasonInput" }
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/purchase-orders/{id}/close:
+    post:
+      tags: [admin-procurement]
+      operationId: adminClosePurchaseOrder
+      description: Received or partly received orders; nothing more is expected. Needs purchase_orders.create.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProcurementReasonInput" }
+      responses:
+        "200":
+          description: Order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PurchaseOrder" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/inventory:
+    get:
+      tags: [admin-inventory]
+      operationId: adminStock
+      description: "Per ingredient, every figure defined. Incoming is never counted as stock. Needs inventory.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: q, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: Stock.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockView" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots:
+    get:
+      tags: [admin-inventory]
+      operationId: adminLots
+      description: Needs inventory.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: ingredient_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: location_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: held
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}:
+    get:
+      tags: [admin-inventory]
+      operationId: adminLot
+      description: "With its ledger, reservations and the batches it went into. Needs inventory.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}/status:
+    post:
+      tags: [admin-inventory]
+      operationId: adminLotStatus
+      description: "Release from quarantine or hold, hold, or reject. Reserved stock must be released first. Needs receiving.inspect."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LotStatusInput" }
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}/expiry:
+    post:
+      tags: [admin-inventory]
+      operationId: adminLotExpiry
+      description: For lots with no date recorded. Needs receiving.inspect.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LotExpiryInput" }
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}/transfer:
+    post:
+      tags: [admin-inventory]
+      operationId: adminLotTransfer
+      description: Needs inventory.adjust.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LotTransferInput" }
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}/waste:
+    post:
+      tags: [admin-inventory]
+      operationId: adminLotStoreWaste
+      description: "Stock spoiled or damaged in storage. Production waste is the kitchen's record and is not posted here. Needs inventory.adjust."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LotQuantityInput" }
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/lots/{id}/supplier-return:
+    post:
+      tags: [admin-inventory]
+      operationId: adminLotSupplierReturn
+      description: Rejected or quarantined stock only. Needs inventory.adjust.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LotQuantityInput" }
+      responses:
+        "200":
+          description: Lot.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/adjustments:
+    post:
+      tags: [admin-inventory]
+      operationId: adminAdjustStock
+      description: Records previous and new balance with the reason; never edits history. Needs inventory.adjust.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdjustmentInput" }
+      responses:
+        "201":
+          description: Adjusted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryLot" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/movements:
+    get:
+      tags: [admin-inventory]
+      operationId: adminMovements
+      description: The append-only ledger. Needs inventory.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: lot_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: ingredient_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string }
+        - name: batch_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InventoryMovement" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/reservations:
+    get:
+      tags: [admin-inventory]
+      operationId: adminReservations
+      description: Needs inventory.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: ingredient_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: lot_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InventoryReservation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-inventory]
+      operationId: adminReserveStock
+      description: "For approved or released plans, in the category's allocation order. What cannot be covered is reported as short. Needs inventory.reserve."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReserveInput" }
+      responses:
+        "201":
+          description: Reserved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ReserveResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/reservations/{id}/release:
+    post:
+      tags: [admin-inventory]
+      operationId: adminReleaseReservation
+      description: Needs inventory.reserve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryReasonInput" }
+      responses:
+        "200":
+          description: Released.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/InventoryReservation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/issues:
+    post:
+      tags: [admin-inventory]
+      operationId: adminIssueStock
+      description: "To a released or started batch: the plan's reservations first. All or nothing for the quantity asked. Needs inventory.issue."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IssueStockInput" }
+      responses:
+        "201":
+          description: Issued.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IssueResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/returns:
+    post:
+      tags: [admin-inventory]
+      operationId: adminReturnStock
+      description: Up to what the batch was issued from the lot. Needs inventory.issue.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReturnStockInput" }
+      responses:
+        "201":
+          description: Returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/BatchLotUse" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/batches/{id}/reconciliation:
+    get:
+      tags: [admin-inventory]
+      operationId: adminBatchReconciliation
+      description: "Planned, issued, returned, consumed, variance, and the kitchen's waste inside consumption. Needs inventory.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Reconciliation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Reconciliation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts:
+    get:
+      tags: [admin-inventory]
+      operationId: adminStockCounts
+      description: Needs inventory.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-inventory]
+      operationId: adminStartCount
+      description: One open count per location. Needs inventory.count.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StartCountInput" }
+      responses:
+        "201":
+          description: Started.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts/{id}:
+    get:
+      tags: [admin-inventory]
+      operationId: adminStockCount
+      description: Needs inventory.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts/{id}/lines:
+    put:
+      tags: [admin-inventory]
+      operationId: adminRecordCounts
+      description: Keeps the ledger balance and last movement at the moment each lot is counted. Needs inventory.count.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CountLinesInput" }
+      responses:
+        "200":
+          description: Count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts/{id}/submit:
+    post:
+      tags: [admin-inventory]
+      operationId: adminSubmitCount
+      description: Every lot in the location counted. Needs inventory.count.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts/{id}/post:
+    post:
+      tags: [admin-inventory]
+      operationId: adminPostCount
+      description: Not by its submitter. Each variance becomes an adjustment applied to the current balance. Needs inventory.adjust.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/counts/{id}/cancel:
+    post:
+      tags: [admin-inventory]
+      operationId: adminCancelCount
+      description: Needs inventory.count.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Count.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/StockCount" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/locations:
+    get:
+      tags: [admin-inventory]
+      operationId: adminStorageLocations
+      description: Needs admin.access.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StorageLocation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-inventory]
+      operationId: adminCreateStorageLocation
+      description: "As the business's facilities are; none are assumed. Needs inventory.configure."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StorageLocation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/locations/{id}:
+    patch:
+      tags: [admin-inventory]
+      operationId: adminUpdateStorageLocation
+      description: Closing needs the location empty. Needs inventory.configure.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/StorageLocation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/inventory/policies:
+    get:
+      tags: [admin-inventory]
+      operationId: adminInventoryPolicies
+      description: "Every category; one without a policy uses FIFO, marked as the default. Needs inventory.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InventoryPolicy" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-inventory]
+      operationId: adminSaveInventoryPolicy
+      description: From an approved operating policy. Needs inventory.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InventoryPolicyInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/InventoryPolicy" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/receiving:
+    get:
+      tags: [admin-inventory]
+      operationId: adminReceipts
+      description: Needs receiving.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: po_id, in: query, required: false, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/GoodsReceipt" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-inventory]
+      operationId: adminReceive
+      description: Records a delivery and its inspection (also needs receiving.inspect). The same idempotency key returns the recorded receipt (200). Needs receiving.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReceiptInput" }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/GoodsReceipt" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/receiving/{id}:
+    get:
+      tags: [admin-inventory]
+      operationId: adminReceipt
+      description: Needs receiving.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Receipt.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/GoodsReceipt" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/receiving/checklist:
+    get:
+      tags: [admin-inventory]
+      operationId: adminReceivingChecklist
+      description: Needs receiving.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReceivingChecklistItem" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-inventory]
+      operationId: adminCreateChecklistItem
+      description: From the approved receiving procedure. Needs inventory.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReceivingChecklistInput" }
+      responses:
+        "201":
+          description: Saved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReceivingChecklistItem" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/receiving/checklist/{id}:
+    patch:
+      tags: [admin-inventory]
+      operationId: adminUpdateChecklistItem
+      description: Needs inventory.configure.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReceivingChecklistInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReceivingChecklistItem" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/traceability:
+    get:
+      tags: [admin-inventory]
+      operationId: adminTraceability
+      description: "Batch-level: lots \u2192 batches \u2192 the orders in each batch's plan that contained its meal. Needs traceability.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: lot
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: batch
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: supplier
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: purchase_order
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Trace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Trace" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/v1/admin/reports/procurement:
+    get:
+      tags: [admin-procurement]
+      operationId: adminProcurementReport
+      description: "Runs, shortages, orders approved and issued, deliveries, open and overdue orders, RFQs and quotations; value in TTD only. Every figure is defined. Needs supplier_reports.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Report" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/inventory:
+    get:
+      tags: [admin-inventory]
+      operationId: adminInventoryReport
+      description: "Lots received, rejected, issued, returned, adjusted, wasted in store, counts, expired and unreviewed lots; on hand and issued by ingredient. Every figure is defined. Needs supplier_reports.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Report" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/suppliers:
+    get:
+      tags: [admin-procurement]
+      operationId: adminSuppliersReport
+      description: "Factual figures per supplier: orders placed and delivered, on time, partial deliveries, rejected packs, lead time, purchase value, price changes. No ratings. Every figure is defined. Needs supplier_reports.read."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Report" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -6653,7 +9197,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -9792,3 +12336,1321 @@ components:
         schedule:
           type: array
           items: { $ref: "#/components/schemas/ScheduleSlot" }
+    # ---------------- Sprint 6: supply chain
+    SupplierFarm:
+      type: object
+      required: [farm_name, farm_location, crops, growing_seasons, harvest_windows, estimated_capacity, collection_arrangements, information_source, recorded_by_name, updated_at]
+      properties:
+        farm_name: { type: string }
+        farm_location: { type: string }
+        crops:
+          type: array
+          items: { type: string }
+        growing_seasons: { type: string }
+        harvest_windows: { type: string }
+        estimated_capacity: { type: string }
+        collection_arrangements: { type: string }
+        information_source: { type: string }
+        recorded_by_name: { type: string }
+        updated_at: { type: string, format: date-time }
+    SupplierDocument:
+      type: object
+      required: [id, kind, title, reference, issued_by, expires_on, verified_by_name, verified_at, expired, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [certification, licence, inspection_report, agreement, other] }
+        title: { type: string }
+        reference: { type: string }
+        issued_by: { type: string }
+        expires_on: { type: [string, "null"], format: date }
+        verified_by_name: { type: [string, "null"] }
+        verified_at: { type: [string, "null"], format: date-time }
+        expired: { type: boolean }
+        created_at: { type: string, format: date-time }
+    SupplierStatusEvent:
+      type: object
+      required: [from, to, note, actor_name, created_at]
+      properties:
+        from: { type: [string, "null"] }
+        to: { type: string }
+        note: { type: [string, "null"] }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    CriterionResult:
+      type: object
+      required: [criterion_id, name, met, note]
+      properties:
+        criterion_id: { type: string, format: uuid }
+        name: { type: string }
+        met: { type: boolean }
+        note: { type: string }
+    SupplierReview:
+      type: object
+      required: [id, decision, results, notes, expires_on, reviewer_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        decision: { type: string, enum: [approved, rejected, changes_requested] }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/CriterionResult" }
+        notes: { type: string }
+        expires_on: { type: [string, "null"], format: date }
+        reviewer_name: { type: string }
+        created_at: { type: string, format: date-time }
+    SupplierCommunication:
+      type: object
+      required: [id, channel, direction, summary, resource_type, resource_id, recorded_by_name, created_at]
+      properties:
+        id: { type: integer }
+        channel: { type: string, enum: [phone, whatsapp, email, in_person, document, other] }
+        direction: { type: string, enum: [outbound, inbound] }
+        summary: { type: string }
+        resource_type: { type: [string, "null"] }
+        resource_id: { type: [string, "null"] }
+        recorded_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+    SupplierCriterion:
+      type: object
+      required: [id, name, description, supplier_types, required, procedure_ref, position, active, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        supplier_types:
+          type: array
+          items: { type: string }
+        required: { type: boolean }
+        procedure_ref: { type: string }
+        position: { type: integer }
+        active: { type: boolean }
+        updated_at: { type: string, format: date-time }
+    Supplier:
+      type: object
+      required: [id, code, name, trading_name, type, status, contact_name, phone, email, preferred_channel, region, location, operating_regions, payment_terms, delivery_arrangements, notes, review_expires_on, created_at, updated_at, qualified, products, has_farm]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        trading_name: { type: string }
+        type: { type: string, enum: [farmer, cooperative, producer, distributor, packaging, other] }
+        status: { type: string, enum: [draft, pending_review, approved, suspended, rejected, inactive] }
+        contact_name: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        preferred_channel: { type: string, enum: [phone, whatsapp, email, in_person, other] }
+        region: { type: string }
+        location: { type: string }
+        operating_regions:
+          type: array
+          items: { type: string }
+        payment_terms: { type: string, description: Empty means not agreed. }
+        delivery_arrangements: { type: string }
+        notes: { type: string }
+        review_expires_on: { type: [string, "null"], format: date }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        qualified:
+          type: boolean
+          description: "Approved and the approval has not lapsed: only these get live purchase orders."
+        products: { type: integer }
+        has_farm: { type: boolean }
+        farm:
+          oneOf: [{ $ref: "#/components/schemas/SupplierFarm" }, { type: "null" }]
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierDocument" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierStatusEvent" }
+        reviews:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierReview" }
+        communications:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierCommunication" }
+        criteria:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierCriterion" }
+        missing:
+          type: array
+          items: { type: string }
+    SupplierPage:
+      type: object
+      required: [items, total, page, page_size]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Supplier" }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+    SupplierInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        trading_name: { type: string }
+        type: { type: string, enum: [farmer, cooperative, producer, distributor, packaging, other] }
+        contact_name: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        preferred_channel: { type: string }
+        region: { type: string }
+        location: { type: string }
+        operating_regions:
+          type: array
+          items: { type: string }
+        payment_terms: { type: string }
+        delivery_arrangements: { type: string }
+        notes: { type: string }
+      description: Name and type are required to create; fields left out keep their value.
+    SupplierActionInput:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+        note: { type: string }
+    SupplierReviewInput:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [approved, rejected, changes_requested] }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/CriterionResult" }
+        notes: { type: string }
+        expires_on: { type: string, format: date }
+    FarmInput:
+      type: object
+      additionalProperties: false
+      properties:
+        farm_name: { type: string }
+        farm_location: { type: string }
+        crops:
+          type: array
+          items: { type: string }
+        growing_seasons: { type: string }
+        harvest_windows: { type: string }
+        estimated_capacity: { type: string }
+        collection_arrangements: { type: string }
+        information_source: { type: string }
+    SupplierDocumentInput:
+      type: object
+      required: [kind, title]
+      additionalProperties: false
+      properties:
+        kind: { type: string }
+        title: { type: string }
+        reference: { type: string }
+        issued_by: { type: string }
+        expires_on: { type: string, format: date }
+    CommunicationInput:
+      type: object
+      required: [channel, direction, summary]
+      additionalProperties: false
+      properties:
+        channel: { type: string, enum: [phone, whatsapp, email, in_person, document, other] }
+        direction: { type: string, enum: [outbound, inbound] }
+        summary: { type: string }
+        resource_type: { type: string }
+        resource_id: { type: string }
+    CriterionInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        description: { type: string }
+        supplier_types:
+          type: array
+          items: { type: string }
+        required: { type: boolean }
+        procedure_ref: { type: string }
+        position: { type: integer }
+        active: { type: boolean }
+    SupplierPrice:
+      type: object
+      required: [id, amount_minor, currency, valid_from, valid_until, origin, quotation_id, note, recorded_by_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        valid_from: { type: string, format: date }
+        valid_until: { type: [string, "null"], format: date }
+        origin: { type: string, enum: [price_list, quotation, verbal, other] }
+        quotation_id: { type: [string, "null"] }
+        note: { type: string }
+        recorded_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+    SupplierProduct:
+      type: object
+      required: [id, supplier_id, supplier_name, supplier_status, supplier_qualified, kind, ingredient_id, ingredient_name, base_unit, sku, name, description, grade, specification, pack_quantity, pack_unit, pack_description, min_order_packs, lead_time_days, availability, delivery_constraints, mapping_status, mapping_note, mapping_reviewer_name, mapping_reviewed_at, active, pack_base, pack_approximate, price, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        supplier_status: { type: string }
+        supplier_qualified: { type: boolean }
+        kind: { type: string, enum: [ingredient, packaging] }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        ingredient_name: { type: [string, "null"] }
+        base_unit: { type: [string, "null"] }
+        sku: { type: string }
+        name: { type: string }
+        description: { type: string }
+        grade: { type: string }
+        specification: { type: string }
+        pack_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_unit: { type: string }
+        pack_description: { type: string }
+        min_order_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        lead_time_days: { type: [integer, "null"] }
+        availability: { type: string, enum: [unknown, available, limited, seasonal, unavailable] }
+        delivery_constraints: { type: string }
+        mapping_status: { type: string, enum: [proposed, confirmed, rejected] }
+        mapping_note: { type: string }
+        mapping_reviewer_name: { type: [string, "null"] }
+        mapping_reviewed_at: { type: [string, "null"], format: date-time }
+        active: { type: boolean }
+        pack_base: { type: [string, "null"], description: "One pack in the ingredient's base unit." }
+        pack_approximate: { type: boolean }
+        price:
+          oneOf: [{ $ref: "#/components/schemas/SupplierPrice" }, { type: "null" }]
+        prices:
+          type: array
+          items: { $ref: "#/components/schemas/SupplierPrice" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    SupplierProductInput:
+      type: object
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [ingredient, packaging] }
+        ingredient_id: { type: string }
+        sku: { type: string }
+        name: { type: string }
+        description: { type: string }
+        grade: { type: string }
+        specification: { type: string }
+        pack_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_unit: { type: string }
+        pack_description: { type: string }
+        min_order_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        lead_time_days: { type: integer }
+        availability: { type: string }
+        delivery_constraints: { type: string }
+        active: { type: boolean }
+      description: Changing the ingredient or the pack sends the mapping back for review.
+    MappingInput:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [confirmed, rejected] }
+        note: { type: string }
+    SupplierAvailability:
+      type: object
+      required: [id, supplier_id, supplier_name, ingredient_id, ingredient_name, status, estimated_quantity, unit, available_from, available_until, confidence, source, confirmed_at, recorded_by_name]
+      properties:
+        id: { type: string, format: uuid }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        status: { type: string, enum: [available_now, expected_harvest, limited, unavailable, seasonal] }
+        estimated_quantity: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        unit: { type: [string, "null"] }
+        available_from: { type: [string, "null"], format: date }
+        available_until: { type: [string, "null"], format: date }
+        confidence: { type: string, enum: [confirmed_by_supplier, supplier_estimate, staff_estimate] }
+        source: { type: string }
+        confirmed_at: { type: string, format: date-time }
+        recorded_by_name: { type: string }
+    AvailabilityInput:
+      type: object
+      required: [supplier_id, ingredient_id, status, confidence]
+      additionalProperties: false
+      properties:
+        supplier_id: { type: string, format: uuid }
+        ingredient_id: { type: string, format: uuid }
+        status: { type: string }
+        estimated_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        available_from: { type: string, format: date }
+        available_until: { type: string, format: date }
+        confidence: { type: string }
+        source: { type: string }
+      description: "What the supplier said. Never stock, never a promise."
+    ProcurementSettings:
+      type: object
+      required: [approval_limit_minor, receiving_tolerance_percent, currencies, allow_unapproved_suppliers, unapproved_policy_ref, updated_at, notes]
+      properties:
+        approval_limit_minor: { type: [integer, "null"] }
+        receiving_tolerance_percent: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        currencies:
+          type: array
+          items: { type: string }
+        allow_unapproved_suppliers: { type: boolean }
+        unapproved_policy_ref: { type: string }
+        updated_at: { type: string, format: date-time }
+        notes:
+          type: array
+          items: { type: string }
+    ProcurementSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        approval_limit_minor: { type: integer }
+        clear_approval_limit: { type: boolean }
+        receiving_tolerance_percent: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        clear_tolerance: { type: boolean }
+        currencies:
+          type: array
+          items: { type: string }
+        allow_unapproved_suppliers: { type: boolean }
+        unapproved_policy_ref: { type: string }
+    RunRequirement:
+      type: object
+      required: [ingredient_id, ingredient_name, preparation, quantity, unit, status, approximate, batch_ids]
+      properties:
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        preparation: { type: string }
+        quantity: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        unit: { type: string }
+        status: { type: string }
+        approximate: { type: boolean }
+        batch_ids:
+          type: array
+          items: { type: string, format: uuid }
+    SupplyOption:
+      type: object
+      required: [product_id, product_name, supplier_id, supplier_name, pack_quantity, pack_unit, pack_base, min_order_packs, packs, quantity, surplus, price_minor, currency, cost_minor, lead_time_days, earliest_delivery, lead_time_risk, availability, notes]
+      properties:
+        product_id: { type: string, format: uuid }
+        product_name: { type: string }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        pack_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_unit: { type: string }
+        pack_base: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        min_order_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        surplus: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        price_minor: { type: [integer, "null"] }
+        currency: { type: [string, "null"] }
+        cost_minor: { type: [integer, "null"] }
+        lead_time_days: { type: [integer, "null"] }
+        earliest_delivery: { type: [string, "null"], format: date }
+        lead_time_risk: { type: boolean }
+        availability: { type: string }
+        notes:
+          type: array
+          items: { type: string }
+    LinePurchaseOrder:
+      type: object
+      required: [po_id, number, status, packs, quantity, expected_delivery]
+      properties:
+        po_id: { type: string, format: uuid }
+        number: { type: string }
+        status:
+          type: string
+          enum: [draft, pending_approval, approved, issued, partially_received, received, closed, cancelled]
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        quantity: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        expected_delivery: { type: [string, "null"], format: date }
+    ProcurementLine:
+      type: object
+      required: [id, ingredient_id, ingredient_name, unit, gross, buffer, reserved, issued, available, inbound, inbound_late, shortage, incomplete, explain, options, suggested_product_id, decision, product_id, packs, decision_note, decided_by_name, decided_at, purchase_orders]
+      properties:
+        id: { type: string, format: uuid }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        unit: { type: string }
+        gross: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        buffer: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reserved: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        issued: { type: string, description: "Already issued to the plan's batches, net of returns: it counts toward the requirement." }
+        available: { type: string, description: "Usable stock nobody has reserved: shown, not counted until reserved." }
+        inbound:
+          type: string
+          description: "Still to receive on PO lines bought for this line, expected by the required-by date."
+        inbound_late: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        shortage:
+          type: [string, "null"]
+          description: "gross + buffer \u2212 reserved \u2212 inbound, never below zero; null when incomplete."
+        incomplete: { type: boolean }
+        explain:
+          type: array
+          items: { type: string }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/SupplyOption" }
+        suggested_product_id: { type: [string, "null"] }
+        decision: { type: string, enum: [pending, buy, no_purchase, deferred] }
+        product_id: { type: [string, "null"] }
+        packs: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        decision_note: { type: string }
+        decided_by_name: { type: [string, "null"] }
+        decided_at: { type: [string, "null"], format: date-time }
+        purchase_orders:
+          type: array
+          items: { $ref: "#/components/schemas/LinePurchaseOrder" }
+    ProcurementRun:
+      type: object
+      required: [id, number, plan_id, plan_number, snapshot_revision, week, required_by, source_event_id, status, review_reason, approved_by_name, approved_at, created_by_name, created_at, lines, shortages, pending, warnings, newer_revision]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        plan_id: { type: string, format: uuid }
+        plan_number: { type: string }
+        snapshot_revision: { type: integer }
+        week: { type: string, format: date }
+        required_by: { type: string, format: date }
+        source_event_id: { type: [integer, "null"] }
+        status: { type: string, enum: [open, approved, closed, cancelled] }
+        review_reason: { type: [string, "null"] }
+        approved_by_name: { type: [string, "null"] }
+        approved_at: { type: [string, "null"], format: date-time }
+        created_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+        lines: { type: integer }
+        shortages: { type: integer }
+        pending: { type: integer }
+        requirements:
+          type: array
+          items: { $ref: "#/components/schemas/RunRequirement" }
+        plan_lines:
+          type: array
+          items: { $ref: "#/components/schemas/ProcurementLine" }
+        warnings:
+          type: array
+          items: { type: string }
+        newer_revision: { type: [integer, "null"] }
+    FailedDelivery:
+      type: object
+      required: [job_id, payload, error, attempts, failed_at]
+      properties:
+        job_id: { type: integer }
+        payload: { type: string }
+        error: { type: string }
+        attempts: { type: integer }
+        failed_at: { type: string, format: date-time }
+    EventDeliveries:
+      type: object
+      required: [last_event_id, updated_at, waiting, failed]
+      properties:
+        last_event_id: { type: integer }
+        updated_at: { type: string, format: date-time }
+        waiting: { type: integer }
+        failed:
+          type: array
+          items: { $ref: "#/components/schemas/FailedDelivery" }
+    DecisionInput:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [pending, buy, no_purchase, deferred] }
+        product_id: { type: string }
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        note: { type: string }
+    ProcurementReasonInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+    POLine:
+      type: object
+      required: [id, position, product_id, ingredient_id, description, packs, pack_quantity, pack_unit, quantity_base, base_unit, unit_price_minor, line_total_minor, procurement_line_id, received_packs, accepted_packs, open_packs]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer }
+        product_id: { type: string, format: uuid }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        description: { type: string }
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_unit: { type: string }
+        quantity_base: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        base_unit: { type: [string, "null"] }
+        unit_price_minor: { type: [integer, "null"], description: Only with purchase_orders.read. }
+        line_total_minor: { type: [integer, "null"] }
+        procurement_line_id: { type: [string, "null"], format: uuid }
+        received_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        accepted_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        open_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+    POEvent:
+      type: object
+      required: [from, to, note, actor_name, created_at]
+      properties:
+        from: { type: [string, "null"] }
+        to: { type: string }
+        note: { type: [string, "null"] }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    PORevision:
+      type: object
+      required: [revision, total_minor, reason, approved_by_name, approved_at, snapshot]
+      properties:
+        revision: { type: integer }
+        total_minor: { type: integer }
+        reason: { type: [string, "null"] }
+        approved_by_name: { type: string }
+        approved_at: { type: string, format: date-time }
+        snapshot: { type: object, description: The order as approved. }
+    PurchaseOrder:
+      type: object
+      required: [id, number, supplier_id, supplier_name, supplier_qualified, run_id, run_number, status, revision, currency, expected_delivery, location_id, location_name, delivery_fee_minor, tax_minor, notes, supplier_exception, buyer_id, buyer_name, approved_by_name, approved_at, limit_approved_by_name, issued_by_name, issued_at, issued_via, cancel_reason, created_at, updated_at, subtotal_minor, total_minor, above_limit, blocking]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        supplier_qualified: { type: boolean }
+        run_id: { type: [string, "null"], format: uuid }
+        run_number: { type: [string, "null"] }
+        status:
+          type: string
+          enum: [draft, pending_approval, approved, issued, partially_received, received, closed, cancelled]
+        revision: { type: integer }
+        currency: { type: string }
+        expected_delivery: { type: [string, "null"], format: date }
+        location_id: { type: [string, "null"], format: uuid }
+        location_name: { type: [string, "null"] }
+        delivery_fee_minor: { type: integer }
+        tax_minor: { type: integer }
+        notes: { type: string }
+        supplier_exception: { type: [string, "null"] }
+        buyer_id: { type: [string, "null"], format: uuid }
+        buyer_name: { type: string }
+        approved_by_name: { type: [string, "null"] }
+        approved_at: { type: [string, "null"], format: date-time }
+        limit_approved_by_name: { type: [string, "null"] }
+        issued_by_name: { type: [string, "null"] }
+        issued_at: { type: [string, "null"], format: date-time }
+        issued_via: { type: [string, "null"] }
+        cancel_reason: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        subtotal_minor: { type: integer }
+        total_minor: { type: integer }
+        above_limit: { type: boolean }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/POLine" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/POEvent" }
+        revisions:
+          type: array
+          items: { $ref: "#/components/schemas/PORevision" }
+        blocking:
+          type: array
+          items: { type: string }
+    POLineInput:
+      type: object
+      required: [product_id, packs]
+      additionalProperties: false
+      properties:
+        product_id: { type: string, format: uuid }
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit_price_minor: { type: integer }
+        quotation_line_id: { type: string }
+        procurement_line_id: { type: string }
+      description: "Without a price, the supplier price in force is used."
+    POInput:
+      type: object
+      additionalProperties: false
+      properties:
+        supplier_id: { type: string, format: uuid }
+        run_id: { type: string }
+        currency: { type: string }
+        expected_delivery: { type: string }
+        location_id: { type: string }
+        delivery_fee_minor: { type: integer }
+        notes: { type: string }
+        supplier_exception: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/POLineInput" }
+        reason: { type: string }
+      description: On an approved order a change needs a reason and starts a new revision needing approval.
+    IssueInput:
+      type: object
+      required: [channel]
+      additionalProperties: false
+      properties:
+        channel: { type: string, enum: [phone, whatsapp, email, in_person, document, other] }
+        note: { type: string }
+      description: How staff sent the order. Mise sends nothing itself.
+    RFQLine:
+      type: object
+      required: [id, ingredient_id, ingredient_name, description, quantity, unit]
+      properties:
+        id: { type: string, format: uuid }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        ingredient_name: { type: [string, "null"] }
+        description: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+    RFQInvite:
+      type: object
+      required: [supplier_id, supplier_name, channel, invited_at, responded]
+      properties:
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        channel: { type: [string, "null"] }
+        invited_at: { type: [string, "null"], format: date-time }
+        responded: { type: boolean }
+    QuotationLine:
+      type: object
+      required: [id, product_id, product_name, ingredient_id, packs, pack_quantity, pack_unit, unit_price_minor]
+      properties:
+        id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        product_name: { type: string }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        pack_unit: { type: string }
+        unit_price_minor: { type: integer }
+    Quotation:
+      type: object
+      required: [id, rfq_id, supplier_id, supplier_name, reference, currency, lead_time_days, delivery_terms, valid_until, received_via, received_at, recorded_by_name, lines]
+      properties:
+        id: { type: string, format: uuid }
+        rfq_id: { type: [string, "null"], format: uuid }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        reference: { type: string }
+        currency: { type: string }
+        lead_time_days: { type: [integer, "null"] }
+        delivery_terms: { type: string }
+        valid_until: { type: [string, "null"], format: date }
+        received_via: { type: string }
+        received_at: { type: string, format: date-time }
+        recorded_by_name: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/QuotationLine" }
+    RFQ:
+      type: object
+      required: [id, number, status, run_id, required_by, deadline, notes, buyer_name, created_at, lines, suppliers, quotations]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        status: { type: string, enum: [draft, open, closed, cancelled] }
+        run_id: { type: [string, "null"], format: uuid }
+        required_by: { type: [string, "null"], format: date }
+        deadline: { type: [string, "null"], format: date-time }
+        notes: { type: string }
+        buyer_name: { type: string }
+        created_at: { type: string, format: date-time }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/RFQLine" }
+        suppliers:
+          type: array
+          items: { $ref: "#/components/schemas/RFQInvite" }
+        quotations:
+          type: array
+          items: { $ref: "#/components/schemas/Quotation" }
+    RFQInput:
+      type: object
+      required: [lines, supplier_ids]
+      additionalProperties: false
+      properties:
+        run_id: { type: string }
+        required_by: { type: string, format: date }
+        deadline: { type: string }
+        notes: { type: string }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [quantity, unit]
+            additionalProperties: false
+            properties:
+              ingredient_id: { type: string }
+              description: { type: string }
+              quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              unit: { type: string }
+        supplier_ids:
+          type: array
+          items: { type: string, format: uuid }
+    QuotationInput:
+      type: object
+      required: [supplier_id, currency, received_via, lines]
+      additionalProperties: false
+      properties:
+        rfq_id: { type: string }
+        supplier_id: { type: string, format: uuid }
+        reference: { type: string }
+        currency: { type: string }
+        lead_time_days: { type: integer }
+        delivery_terms: { type: string }
+        valid_until: { type: string, format: date }
+        received_via: { type: string, enum: [phone, whatsapp, email, in_person, document, other] }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [product_id, packs, unit_price_minor]
+            additionalProperties: false
+            properties:
+              product_id: { type: string, format: uuid }
+              packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              unit_price_minor: { type: integer }
+    ProductionPlanRef:
+      type: object
+      required: [id, number, week, production_date]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        week: { type: string, format: date }
+        production_date: { type: string, format: date }
+    RFQInviteInput:
+      type: object
+      required: [supplier_id, channel]
+      additionalProperties: false
+      properties:
+        supplier_id: { type: string, format: uuid }
+        channel: { type: string, enum: [phone, whatsapp, email, in_person, document, other] }
+        note: { type: string }
+      description: "Records that staff asked the supplier, and how. Nothing is sent."
+    StockSummary:
+      type: object
+      required: [ingredient_id, ingredient_name, category, unit, method, on_hand, usable, reserved, available, quarantined, rejected, expired, expiry_review, incoming, lots]
+      properties:
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        category: { type: string }
+        unit: { type: string }
+        method: { type: string, enum: [fifo, fefo] }
+        on_hand: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        usable: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reserved: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        available: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        quarantined: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        rejected: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        expired: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        expiry_review: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        incoming: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        lots: { type: integer }
+    StockView:
+      type: object
+      required: [items, definitions]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StockSummary" }
+        definitions:
+          type: object
+          additionalProperties: { type: string }
+          description: What each figure means.
+    InventoryMovement:
+      type: object
+      required: [id, lot_id, lot_code, ingredient_id, ingredient_name, type, on_hand_delta, reserved_delta, on_hand_after, reserved_after, unit, reason, from_location, to_location, from_status, to_status, batch_id, batch_code, plan_id, actor_name, created_at]
+      properties:
+        id: { type: integer }
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        type:
+          type: string
+          enum: [receipt, reserve, release, issue, return, transfer, adjustment, waste, supplier_return, status]
+        on_hand_delta: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reserved_delta: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        on_hand_after: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reserved_after: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        reason: { type: string }
+        from_location: { type: [string, "null"] }
+        to_location: { type: [string, "null"] }
+        from_status: { type: [string, "null"] }
+        to_status: { type: [string, "null"] }
+        batch_id: { type: [string, "null"] }
+        batch_code: { type: [string, "null"] }
+        plan_id: { type: [string, "null"] }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    InventoryReservation:
+      type: object
+      required: [id, plan_id, plan_number, ingredient_id, ingredient_name, lot_id, lot_code, quantity, open_quantity, unit, status, release_reason, created_by_name, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        plan_id: { type: string, format: uuid }
+        plan_number: { type: string }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        open_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        status: { type: string, enum: [active, issued, released] }
+        release_reason: { type: [string, "null"] }
+        created_by_name: { type: string }
+        created_at: { type: string, format: date-time }
+    BatchLotUse:
+      type: object
+      required: [batch_id, batch_code, meal_name, batch_status, lot_id, lot_code, ingredient_id, ingredient_name, issued, returned, consumed, unit, first_issued_at]
+      properties:
+        batch_id: { type: string, format: uuid }
+        batch_code: { type: string }
+        meal_name: { type: string }
+        batch_status: { type: string }
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        issued: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        returned: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        consumed: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+        first_issued_at: { type: string, format: date-time }
+    InventoryLot:
+      type: object
+      required: [id, code, ingredient_id, ingredient_name, supplier_id, supplier_name, po_id, po_number, receipt_id, receipt_number, supplier_lot_ref, received_at, unit, received_quantity, on_hand, reserved, status, expiry_date, expiry_status, expiry_note, location_id, location_name, unit_cost_minor, currency, expired, usable, blocked]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, description: "Internal identifier; the supplier's lot reference is separate." }
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        po_id: { type: string, format: uuid }
+        po_number: { type: string }
+        receipt_id: { type: string, format: uuid }
+        receipt_number: { type: string }
+        supplier_lot_ref: { type: string }
+        received_at: { type: string, format: date-time }
+        unit: { type: string }
+        received_quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        on_hand: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reserved: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        status: { type: string, enum: [available, quarantined, on_hold, rejected] }
+        expiry_date: { type: [string, "null"], format: date }
+        expiry_status: { type: string, enum: [recorded, not_recorded, none_applies] }
+        expiry_note: { type: string }
+        location_id: { type: string, format: uuid }
+        location_name: { type: string }
+        unit_cost_minor: { type: [integer, "null"] }
+        currency: { type: [string, "null"] }
+        expired: { type: boolean }
+        usable: { type: boolean }
+        blocked: { type: string }
+        movements:
+          type: array
+          items: { $ref: "#/components/schemas/InventoryMovement" }
+        reservations:
+          type: array
+          items: { $ref: "#/components/schemas/InventoryReservation" }
+        batches:
+          type: array
+          items: { $ref: "#/components/schemas/BatchLotUse" }
+    LotStatusInput:
+      type: object
+      required: [status, reason]
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [available, on_hold, rejected] }
+        reason: { type: string }
+    LotExpiryInput:
+      type: object
+      additionalProperties: false
+      properties:
+        expiry_date: { type: string, format: date }
+        none_applies: { type: boolean }
+        note: { type: string }
+      description: "The date printed on the product or the supplier's documents, or a person's confirmation that none applies. Never a guess."
+    LotTransferInput:
+      type: object
+      required: [location_id]
+      additionalProperties: false
+      properties:
+        location_id: { type: string, format: uuid }
+        reason: { type: string }
+    LotQuantityInput:
+      type: object
+      required: [quantity, reason]
+      additionalProperties: false
+      properties:
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reason: { type: string }
+    AdjustmentInput:
+      type: object
+      required: [lot_id, category, new_on_hand, reason]
+      additionalProperties: false
+      properties:
+        lot_id: { type: string, format: uuid }
+        category: { type: string, enum: [count_discrepancy, damage, spoilage, measurement_correction, other] }
+        new_on_hand: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reason: { type: string }
+        evidence: { type: string }
+    ReserveInput:
+      type: object
+      required: [plan_id, ingredient_id, quantity]
+      additionalProperties: false
+      properties:
+        plan_id: { type: string, format: uuid }
+        ingredient_id: { type: string, format: uuid }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+    ReserveResult:
+      type: object
+      required: [reservations, reserved, short, method]
+      properties:
+        reservations:
+          type: array
+          items: { $ref: "#/components/schemas/InventoryReservation" }
+        reserved: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        short: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        method: { type: string, enum: [fifo, fefo] }
+    InventoryReasonInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+    BatchRef:
+      type: object
+      required: [id, code, plan_id, plan_number, meal_id, meal_name, recipe_version, recipe_name, week, production_date, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        plan_id: { type: string, format: uuid }
+        plan_number: { type: string }
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        recipe_version: { type: integer }
+        recipe_name: { type: string }
+        week: { type: string, format: date }
+        production_date: { type: string, format: date }
+        status: { type: string }
+    IssuedLot:
+      type: object
+      required: [lot_id, lot_code, quantity, from_reserved, unit]
+      properties:
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        from_reserved: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        unit: { type: string }
+    IssueStockInput:
+      type: object
+      required: [batch_id, ingredient_id, quantity]
+      additionalProperties: false
+      properties:
+        batch_id: { type: string, format: uuid }
+        ingredient_id: { type: string, format: uuid }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        lot_id: { type: string }
+    IssueResult:
+      type: object
+      required: [batch, issued]
+      properties:
+        batch: { $ref: "#/components/schemas/BatchRef" }
+        issued:
+          type: array
+          items: { $ref: "#/components/schemas/IssuedLot" }
+    ReturnStockInput:
+      type: object
+      required: [batch_id, lot_id, quantity]
+      additionalProperties: false
+      properties:
+        batch_id: { type: string, format: uuid }
+        lot_id: { type: string, format: uuid }
+        quantity: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        reason: { type: string }
+    ReconcileLine:
+      type: object
+      required: [ingredient_id, ingredient_name, unit, planned, issued, returned, consumed, variance, recorded_waste, notes]
+      properties:
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        unit: { type: string }
+        planned: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        issued: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        returned: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        consumed: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        variance: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        recorded_waste: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        notes:
+          type: array
+          items: { type: string }
+    Reconciliation:
+      type: object
+      required: [batch, lines, lots, definitions]
+      properties:
+        batch: { $ref: "#/components/schemas/BatchRef" }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/ReconcileLine" }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/BatchLotUse" }
+        definitions:
+          type: object
+          additionalProperties: { type: string }
+    LotRef:
+      type: object
+      required: [id, code, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        status: { type: string }
+    CountLine:
+      type: object
+      required: [id, lot_id, lot_code, ingredient_name, unit, expected, counted, variance, moved_since, counted_by_name, counted_at]
+      properties:
+        id: { type: string, format: uuid }
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        ingredient_name: { type: string }
+        unit: { type: string }
+        expected: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        counted: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        variance: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        moved_since: { type: boolean }
+        counted_by_name: { type: string }
+        counted_at: { type: string, format: date-time }
+    StockCount:
+      type: object
+      required: [id, number, location_id, location_name, status, notes, started_by_name, submitted_by_name, posted_by_name, created_at, submitted_at, posted_at, lines, to_count]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        location_id: { type: string, format: uuid }
+        location_name: { type: string }
+        status: { type: string, enum: [open, submitted, posted, cancelled] }
+        notes: { type: string }
+        started_by_name: { type: string }
+        submitted_by_name: { type: [string, "null"] }
+        posted_by_name: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        submitted_at: { type: [string, "null"], format: date-time }
+        posted_at: { type: [string, "null"], format: date-time }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/CountLine" }
+        to_count:
+          type: array
+          items: { $ref: "#/components/schemas/LotRef" }
+    StartCountInput:
+      type: object
+      required: [location_id]
+      additionalProperties: false
+      properties:
+        location_id: { type: string, format: uuid }
+        notes: { type: string }
+    CountLinesInput:
+      type: object
+      required: [lines]
+      additionalProperties: false
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            required: [lot_id, counted]
+            additionalProperties: false
+            properties:
+              lot_id: { type: string, format: uuid }
+              counted: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+    StorageLocation:
+      type: object
+      required: [id, code, name, type, capacity_note, temperature_note, active, lots, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [receiving, dry, chilled, frozen, preparation, quarantine, other] }
+        capacity_note: { type: string }
+        temperature_note: { type: string }
+        active: { type: boolean }
+        lots: { type: integer }
+        updated_at: { type: string, format: date-time }
+    LocationInput:
+      type: object
+      additionalProperties: false
+      properties:
+        code: { type: string }
+        name: { type: string }
+        type: { type: string }
+        capacity_note: { type: string }
+        temperature_note: { type: string }
+        active: { type: boolean }
+    InventoryPolicy:
+      type: object
+      required: [category, method, note, default, updated_at]
+      properties:
+        category: { type: string }
+        method: { type: string, enum: [fifo, fefo] }
+        note: { type: string }
+        default: { type: boolean }
+        updated_at: { type: [string, "null"], format: date-time }
+    InventoryPolicyInput:
+      type: object
+      required: [category, method, note]
+      additionalProperties: false
+      properties:
+        category: { type: string }
+        method: { type: string, enum: [fifo, fefo] }
+        note: { type: string }
+    ReceivingChecklistItem:
+      type: object
+      required: [id, name, criteria, categories, procedure_ref, position, active, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        criteria: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        procedure_ref: { type: string }
+        position: { type: integer }
+        active: { type: boolean }
+        updated_at: { type: string, format: date-time }
+    ReceivingChecklistInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        criteria: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        procedure_ref: { type: string }
+        position: { type: integer }
+        active: { type: boolean }
+    InspectionResult:
+      type: object
+      required: [item_id, name, result, note]
+      properties:
+        item_id: { type: string, format: uuid }
+        name: { type: string }
+        result: { type: string, enum: [pass, fail, not_applicable] }
+        note: { type: string }
+    ReceiptLine:
+      type: object
+      required: [id, po_line_id, description, ingredient_id, delivered_packs, accepted_packs, quarantined_packs, rejected_packs, supplier_lot_ref, expiry_date, location_name, inspection, temperature_c, discrepancy, discrepancy_note, lots]
+      properties:
+        id: { type: string, format: uuid }
+        po_line_id: { type: string, format: uuid }
+        description: { type: string }
+        ingredient_id: { type: [string, "null"], format: uuid }
+        delivered_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        accepted_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        quarantined_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        rejected_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+        supplier_lot_ref: { type: string }
+        expiry_date: { type: [string, "null"], format: date }
+        location_name: { type: [string, "null"] }
+        inspection:
+          type: array
+          items: { $ref: "#/components/schemas/InspectionResult" }
+        temperature_c: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+        discrepancy: { type: string }
+        discrepancy_note: { type: string }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/LotRef" }
+    GoodsReceipt:
+      type: object
+      required: [id, number, po_id, po_number, supplier_id, supplier_name, delivery_ref, notes, received_by_name, received_at, lines, replayed]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        po_id: { type: string, format: uuid }
+        po_number: { type: string }
+        supplier_id: { type: string, format: uuid }
+        supplier_name: { type: string }
+        delivery_ref: { type: string }
+        notes: { type: string }
+        received_by_name: { type: string }
+        received_at: { type: string, format: date-time }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/ReceiptLine" }
+        replayed: { type: boolean, description: This submission was already recorded (same idempotency key). }
+    ReceiptInput:
+      type: object
+      required: [po_id, idempotency_key, lines]
+      additionalProperties: false
+      properties:
+        po_id: { type: string, format: uuid }
+        idempotency_key: { type: string }
+        delivery_ref: { type: string }
+        notes: { type: string }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [po_line_id, delivered_packs]
+            additionalProperties: false
+            properties:
+              po_line_id: { type: string, format: uuid }
+              delivered_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              accepted_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              quarantined_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              rejected_packs: { type: string, pattern: "^-?[0-9]+(\\.[0-9]+)?$", description: "An exact decimal, as a string." }
+              supplier_lot_ref: { type: string }
+              expiry_date: { type: string }
+              location_id: { type: string }
+              quarantine_location_id: { type: string }
+              inspection:
+                type: array
+                items:
+                  type: object
+                  required: [item_id, result, note]
+                  additionalProperties: false
+                  properties:
+                    item_id: { type: string, format: uuid }
+                    result: { type: string }
+                    note: { type: string }
+              temperature_c: { type: [string, "null"], description: "An exact decimal, as a string; null when unknown." }
+              discrepancy: { type: string }
+              discrepancy_note: { type: string }
+      description: "delivered = accepted + quarantined + rejected, in packs. Accepting needs the receiving checklist, every item recorded, none failed."
+    TraceBatch:
+      type: object
+      required: [use, batch, order_numbers]
+      properties:
+        use: { $ref: "#/components/schemas/BatchLotUse" }
+        batch: { $ref: "#/components/schemas/BatchRef" }
+        order_numbers:
+          type: array
+          items: { type: string }
+    TraceLot:
+      type: object
+      required: [lot, batches]
+      properties:
+        lot: { $ref: "#/components/schemas/InventoryLot" }
+        batches:
+          type: array
+          items: { $ref: "#/components/schemas/TraceBatch" }
+    Trace:
+      type: object
+      required: [scope, lots, notice]
+      properties:
+        scope: { type: string, enum: [lot, batch, supplier, purchase_order] }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/TraceLot" }
+        notice: { type: string }
+    SupplierPriceInput:
+      type: object
+      required: [amount_minor, currency, valid_from]
+      additionalProperties: false
+      properties:
+        amount_minor: { type: integer }
+        currency: { type: string }
+        valid_from: { type: string, format: date }
+        valid_until: { type: string, format: date }
+        origin: { type: string, enum: [price_list, quotation, verbal, other] }
+        note: { type: string }
+      description: Per pack. Earlier prices are kept.

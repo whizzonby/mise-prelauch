@@ -536,6 +536,92 @@ export type PackagingInput = S["PackagingInput"];
 export type OutputInput = S["OutputInput"];
 export type TaskInput = S["TaskInput"];
 
+// ---------- Sprint 6: supply chain (generated types) ----------
+
+export type Supplier = S["Supplier"];
+export type SupplierPage = S["SupplierPage"];
+export type SupplierInput = S["SupplierInput"];
+export type SupplierActionInput = S["SupplierActionInput"];
+export type SupplierReviewInput = S["SupplierReviewInput"];
+export type CriterionResult = S["CriterionResult"];
+export type SupplierFarm = S["SupplierFarm"];
+export type FarmInput = S["FarmInput"];
+export type SupplierDocument = S["SupplierDocument"];
+export type SupplierDocumentInput = S["SupplierDocumentInput"];
+export type SupplierCommunication = S["SupplierCommunication"];
+export type CommunicationInput = S["CommunicationInput"];
+export type SupplierCriterion = S["SupplierCriterion"];
+export type CriterionInput = S["CriterionInput"];
+export type SupplierStatusEvent = S["SupplierStatusEvent"];
+export type SupplierReview = S["SupplierReview"];
+export type SupplierProduct = S["SupplierProduct"];
+export type SupplierProductInput = S["SupplierProductInput"];
+export type SupplierPrice = S["SupplierPrice"];
+export type SupplierPriceInput = S["SupplierPriceInput"];
+export type MappingInput = S["MappingInput"];
+export type SupplierAvailability = S["SupplierAvailability"];
+export type AvailabilityInput = S["AvailabilityInput"];
+export type ProcurementSettings = S["ProcurementSettings"];
+export type ProcurementSettingsInput = S["ProcurementSettingsInput"];
+export type ProcurementRun = S["ProcurementRun"];
+export type ProcurementLine = S["ProcurementLine"];
+export type RunRequirement = S["RunRequirement"];
+export type SupplyOption = S["SupplyOption"];
+export type LinePurchaseOrder = S["LinePurchaseOrder"];
+export type ProductionPlanRef = S["ProductionPlanRef"];
+export type EventDeliveries = S["EventDeliveries"];
+export type DecisionInput = S["DecisionInput"];
+export type PurchaseOrder = S["PurchaseOrder"];
+export type POLine = S["POLine"];
+export type POEvent = S["POEvent"];
+export type PORevision = S["PORevision"];
+export type POInput = S["POInput"];
+export type POLineInput = S["POLineInput"];
+export type IssueInput = S["IssueInput"];
+export type RFQ = S["RFQ"];
+export type RFQLine = S["RFQLine"];
+export type RFQInvite = S["RFQInvite"];
+export type RFQInput = S["RFQInput"];
+export type RFQInviteInput = S["RFQInviteInput"];
+export type Quotation = S["Quotation"];
+export type QuotationLine = S["QuotationLine"];
+export type QuotationInput = S["QuotationInput"];
+export type StockSummary = S["StockSummary"];
+export type StockView = S["StockView"];
+export type InventoryLot = S["InventoryLot"];
+export type InventoryMovement = S["InventoryMovement"];
+export type InventoryReservation = S["InventoryReservation"];
+export type BatchLotUse = S["BatchLotUse"];
+export type LotStatusInput = S["LotStatusInput"];
+export type LotExpiryInput = S["LotExpiryInput"];
+export type LotTransferInput = S["LotTransferInput"];
+export type LotQuantityInput = S["LotQuantityInput"];
+export type AdjustmentInput = S["AdjustmentInput"];
+export type ReserveInput = S["ReserveInput"];
+export type ReserveResult = S["ReserveResult"];
+export type BatchRef = S["BatchRef"];
+export type IssueStockInput = S["IssueStockInput"];
+export type IssueResult = S["IssueResult"];
+export type ReturnStockInput = S["ReturnStockInput"];
+export type Reconciliation = S["Reconciliation"];
+export type ReconcileLine = S["ReconcileLine"];
+export type StockCount = S["StockCount"];
+export type CountLine = S["CountLine"];
+export type StorageLocation = S["StorageLocation"];
+export type LocationInput = S["LocationInput"];
+export type InventoryPolicy = S["InventoryPolicy"];
+export type InventoryPolicyInput = S["InventoryPolicyInput"];
+export type ReceivingChecklistItem = S["ReceivingChecklistItem"];
+export type ReceivingChecklistInput = S["ReceivingChecklistInput"];
+export type GoodsReceipt = S["GoodsReceipt"];
+export type ReceiptLine = S["ReceiptLine"];
+export type ReceiptInput = S["ReceiptInput"];
+export type InspectionResult = S["InspectionResult"];
+export type Trace = S["Trace"];
+export type TraceLot = S["TraceLot"];
+export type TraceBatch = S["TraceBatch"];
+export type LotRef = S["LotRef"];
+
 export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extraHeaders }: ClientOptions) {
   const base = baseUrl.replace(/\/$/, "");
 
@@ -931,6 +1017,135 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
     },
 
     /** Sprint 5: culinary (ingredients, recipes, reviews) and production. Server-side only. */
+    /** Sprint 6: suppliers, procurement, purchasing, receiving, inventory and traceability. Admin session; permissions per route. */
+    supply: {
+      suppliers: (token: string, query: { q?: string; type?: string; status?: string; farmers?: boolean; page?: number; page_size?: number } = {}) =>
+        request<SupplierPage>("/admin/suppliers", { token, query, cache: "no-store" }),
+      supplier: (token: string, id: string) => request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createSupplier: (token: string, input: SupplierInput) => request<Supplier>("/admin/suppliers", { method: "POST", body: input, token, cache: "no-store" }),
+      updateSupplier: (token: string, id: string, input: SupplierInput) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      supplierAction: (token: string, id: string, action: "submit" | "suspend" | "reactivate" | "deactivate", input: SupplierActionInput = {}) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}/${action}`, { method: "POST", body: input, token, cache: "no-store" }),
+      reviewSupplier: (token: string, id: string, input: SupplierReviewInput) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}/review`, { method: "POST", body: input, token, cache: "no-store" }),
+      saveFarm: (token: string, id: string, input: FarmInput) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}/farm`, { method: "PUT", body: input, token, cache: "no-store" }),
+      addDocument: (token: string, id: string, input: SupplierDocumentInput) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}/documents`, { method: "POST", body: input, token, cache: "no-store" }),
+      verifyDocument: (token: string, id: string) =>
+        request<Supplier>(`/admin/supplier-documents/${encodeURIComponent(id)}/verify`, { method: "POST", token, cache: "no-store" }),
+      logCommunication: (token: string, id: string, input: CommunicationInput) =>
+        request<Supplier>(`/admin/suppliers/${encodeURIComponent(id)}/communications`, { method: "POST", body: input, token, cache: "no-store" }),
+      criteria: (token: string) => request<{ items: SupplierCriterion[] }>("/admin/supplier-criteria", { token, cache: "no-store" }),
+      saveCriterion: (token: string, id: string | null, input: CriterionInput) =>
+        id
+          ? request<{ items: SupplierCriterion[] }>(`/admin/supplier-criteria/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<{ items: SupplierCriterion[] }>("/admin/supplier-criteria", { method: "POST", body: input, token, cache: "no-store" }),
+      products: (token: string, query: { supplier_id?: string; ingredient_id?: string; mapping?: string; q?: string; purchasable?: boolean } = {}) =>
+        request<{ items: SupplierProduct[] }>("/admin/supplier-products", { token, query, cache: "no-store" }),
+      product: (token: string, id: string) => request<SupplierProduct>(`/admin/supplier-products/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createProduct: (token: string, supplierId: string, input: SupplierProductInput) =>
+        request<SupplierProduct>(`/admin/suppliers/${encodeURIComponent(supplierId)}/products`, { method: "POST", body: input, token, cache: "no-store" }),
+      updateProduct: (token: string, id: string, input: SupplierProductInput) =>
+        request<SupplierProduct>(`/admin/supplier-products/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      reviewMapping: (token: string, id: string, input: MappingInput) =>
+        request<SupplierProduct>(`/admin/supplier-products/${encodeURIComponent(id)}/mapping`, { method: "POST", body: input, token, cache: "no-store" }),
+      addPrice: (token: string, id: string, input: SupplierPriceInput) =>
+        request<SupplierProduct>(`/admin/supplier-products/${encodeURIComponent(id)}/prices`, { method: "POST", body: input, token, cache: "no-store" }),
+      availability: (token: string, query: { supplier_id?: string; ingredient_id?: string; current?: boolean } = {}) =>
+        request<{ items: SupplierAvailability[] }>("/admin/supplier-availability", { token, query, cache: "no-store" }),
+      recordAvailability: (token: string, input: AvailabilityInput) =>
+        request<{ items: SupplierAvailability[] }>("/admin/supplier-availability", { method: "POST", body: input, token, cache: "no-store" }),
+
+      runs: (token: string, status?: string) => request<{ items: ProcurementRun[] }>("/admin/procurement/runs", { token, query: { status }, cache: "no-store" }),
+      run: (token: string, id: string) => request<ProcurementRun>(`/admin/procurement/runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createRun: (token: string, planId: string) =>
+        request<ProcurementRun>("/admin/procurement/runs", { method: "POST", body: { plan_id: planId }, token, cache: "no-store" }),
+      decide: (token: string, runId: string, lineId: string, input: DecisionInput) =>
+        request<ProcurementRun>(`/admin/procurement/runs/${encodeURIComponent(runId)}/lines/${encodeURIComponent(lineId)}/decision`, { method: "POST", body: input, token, cache: "no-store" }),
+      approveRun: (token: string, id: string) =>
+        request<ProcurementRun>(`/admin/procurement/runs/${encodeURIComponent(id)}/approve`, { method: "POST", token, cache: "no-store" }),
+      reopenRun: (token: string, id: string, reason: string) =>
+        request<ProcurementRun>(`/admin/procurement/runs/${encodeURIComponent(id)}/reopen`, { method: "POST", body: { reason }, token, cache: "no-store" }),
+      ordersFromRun: (token: string, id: string) =>
+        request<{ items: PurchaseOrder[] }>(`/admin/procurement/runs/${encodeURIComponent(id)}/purchase-orders`, { method: "POST", token, cache: "no-store" }),
+      pendingPlans: (token: string) => request<{ items: ProductionPlanRef[] }>("/admin/procurement/pending-plans", { token, cache: "no-store" }),
+      deliveries: (token: string) => request<EventDeliveries>("/admin/procurement/deliveries", { token, cache: "no-store" }),
+      procurementSettings: (token: string) => request<ProcurementSettings>("/admin/procurement/settings", { token, cache: "no-store" }),
+      saveProcurementSettings: (token: string, input: ProcurementSettingsInput) =>
+        request<ProcurementSettings>("/admin/procurement/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      rfqs: (token: string, status?: string) => request<{ items: RFQ[] }>("/admin/procurement/rfqs", { token, query: { status }, cache: "no-store" }),
+      rfq: (token: string, id: string) => request<RFQ>(`/admin/procurement/rfqs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createRFQ: (token: string, input: RFQInput) => request<RFQ>("/admin/procurement/rfqs", { method: "POST", body: input, token, cache: "no-store" }),
+      recordInvitation: (token: string, id: string, input: RFQInviteInput) =>
+        request<RFQ>(`/admin/procurement/rfqs/${encodeURIComponent(id)}/invitations`, { method: "POST", body: input, token, cache: "no-store" }),
+      endRFQ: (token: string, id: string, action: "close" | "cancel") =>
+        request<RFQ>(`/admin/procurement/rfqs/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
+      quotations: (token: string) => request<{ items: Quotation[] }>("/admin/procurement/quotations", { token, cache: "no-store" }),
+      recordQuotation: (token: string, input: QuotationInput) =>
+        request<Quotation>("/admin/procurement/quotations", { method: "POST", body: input, token, cache: "no-store" }),
+
+      purchaseOrders: (token: string, query: { status?: string; supplier_id?: string; run_id?: string; q?: string; receivable?: boolean } = {}) =>
+        request<{ items: PurchaseOrder[] }>("/admin/purchase-orders", { token, query, cache: "no-store" }),
+      purchaseOrder: (token: string, id: string) => request<PurchaseOrder>(`/admin/purchase-orders/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createPurchaseOrder: (token: string, input: POInput) =>
+        request<PurchaseOrder>("/admin/purchase-orders", { method: "POST", body: input, token, cache: "no-store" }),
+      updatePurchaseOrder: (token: string, id: string, input: POInput) =>
+        request<PurchaseOrder>(`/admin/purchase-orders/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      purchaseOrderAction: (token: string, id: string, action: "submit" | "approve" | "reject" | "issue" | "cancel" | "close", body?: object) =>
+        request<PurchaseOrder>(`/admin/purchase-orders/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+
+      stock: (token: string, q?: string) => request<StockView>("/admin/inventory", { token, query: { q }, cache: "no-store" }),
+      lots: (token: string, query: { ingredient_id?: string; status?: string; location_id?: string; supplier_id?: string; q?: string; held?: boolean } = {}) =>
+        request<{ items: InventoryLot[] }>("/admin/inventory/lots", { token, query, cache: "no-store" }),
+      lot: (token: string, id: string) => request<InventoryLot>(`/admin/inventory/lots/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      lotAction: (token: string, id: string, action: "status" | "expiry" | "transfer" | "waste" | "supplier-return", body: object) =>
+        request<InventoryLot>(`/admin/inventory/lots/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      adjust: (token: string, input: AdjustmentInput) =>
+        request<InventoryLot>("/admin/inventory/adjustments", { method: "POST", body: input, token, cache: "no-store" }),
+      movements: (token: string, query: { lot_id?: string; ingredient_id?: string; type?: string; batch_id?: string; from?: string; to?: string } = {}) =>
+        request<{ items: InventoryMovement[] }>("/admin/inventory/movements", { token, query, cache: "no-store" }),
+      reservations: (token: string, query: { plan_id?: string; ingredient_id?: string; lot_id?: string; status?: string } = {}) =>
+        request<{ items: InventoryReservation[] }>("/admin/inventory/reservations", { token, query, cache: "no-store" }),
+      reserve: (token: string, input: ReserveInput) =>
+        request<ReserveResult>("/admin/inventory/reservations", { method: "POST", body: input, token, cache: "no-store" }),
+      releaseReservation: (token: string, id: string, reason: string) =>
+        request<InventoryReservation>(`/admin/inventory/reservations/${encodeURIComponent(id)}/release`, { method: "POST", body: { reason }, token, cache: "no-store" }),
+      issue: (token: string, input: IssueStockInput) => request<IssueResult>("/admin/inventory/issues", { method: "POST", body: input, token, cache: "no-store" }),
+      returnStock: (token: string, input: ReturnStockInput) =>
+        request<BatchLotUse>("/admin/inventory/returns", { method: "POST", body: input, token, cache: "no-store" }),
+      reconciliation: (token: string, batchId: string) =>
+        request<Reconciliation>(`/admin/inventory/batches/${encodeURIComponent(batchId)}/reconciliation`, { token, cache: "no-store" }),
+      counts: (token: string) => request<{ items: StockCount[] }>("/admin/inventory/counts", { token, cache: "no-store" }),
+      count: (token: string, id: string) => request<StockCount>(`/admin/inventory/counts/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      startCount: (token: string, locationId: string, notes = "") =>
+        request<StockCount>("/admin/inventory/counts", { method: "POST", body: { location_id: locationId, notes }, token, cache: "no-store" }),
+      recordCounts: (token: string, id: string, lines: { lot_id: string; counted: string }[]) =>
+        request<StockCount>(`/admin/inventory/counts/${encodeURIComponent(id)}/lines`, { method: "PUT", body: { lines }, token, cache: "no-store" }),
+      countAction: (token: string, id: string, action: "submit" | "post" | "cancel") =>
+        request<StockCount>(`/admin/inventory/counts/${encodeURIComponent(id)}/${action}`, { method: "POST", token, cache: "no-store" }),
+      locations: (token: string) => request<{ items: StorageLocation[] }>("/admin/inventory/locations", { token, cache: "no-store" }),
+      saveLocation: (token: string, id: string | null, input: LocationInput) =>
+        id
+          ? request<{ items: StorageLocation[] }>(`/admin/inventory/locations/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<{ items: StorageLocation[] }>("/admin/inventory/locations", { method: "POST", body: input, token, cache: "no-store" }),
+      policies: (token: string) => request<{ items: InventoryPolicy[] }>("/admin/inventory/policies", { token, cache: "no-store" }),
+      savePolicy: (token: string, input: InventoryPolicyInput) =>
+        request<{ items: InventoryPolicy[] }>("/admin/inventory/policies", { method: "PUT", body: input, token, cache: "no-store" }),
+      receipts: (token: string, poId?: string) => request<{ items: GoodsReceipt[] }>("/admin/receiving", { token, query: { po_id: poId }, cache: "no-store" }),
+      receipt: (token: string, id: string) => request<GoodsReceipt>(`/admin/receiving/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      receive: (token: string, input: ReceiptInput) => request<GoodsReceipt>("/admin/receiving", { method: "POST", body: input, token, cache: "no-store" }),
+      checklist: (token: string) => request<{ items: ReceivingChecklistItem[] }>("/admin/receiving/checklist", { token, cache: "no-store" }),
+      saveChecklistItem: (token: string, id: string | null, input: ReceivingChecklistInput) =>
+        id
+          ? request<{ items: ReceivingChecklistItem[] }>(`/admin/receiving/checklist/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<{ items: ReceivingChecklistItem[] }>("/admin/receiving/checklist", { method: "POST", body: input, token, cache: "no-store" }),
+      trace: (token: string, query: { lot?: string; batch?: string; supplier?: string; purchase_order?: string }) =>
+        request<Trace>("/admin/traceability", { token, query, cache: "no-store" }),
+      report: (token: string, kind: "procurement" | "inventory" | "suppliers", from: string, to: string) =>
+        request<Report>(`/admin/reports/${kind}`, { token, query: { from, to }, cache: "no-store" }),
+    },
     kitchen: {
       units: (token: string) => request<{ items: Unit[] }>("/admin/units", { token, cache: "no-store" }),
       ingredients: (token: string, query: { q?: string; category?: string; active?: string; page?: number; page_size?: number } = {}) =>

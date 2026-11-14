@@ -1,5 +1,5 @@
 // Dev helper: signs in to the admin once and screenshots the main console pages at
-// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir> [sprint-4|sprint-5]
+// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir> [sprint-4|sprint-5|sprint-6]
 import { chromium } from "@playwright/test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -37,6 +37,34 @@ const kitchen = [
   ["recipe-approvals", "/recipe-approvals"],
   ["production-report", "/reports/production"],
 ];
+const supply = [
+  ["supply-overview", "/supply"],
+  ["procurement-runs", "/procurement"],
+  ["procurement-run", "/procurement", 'main a[href^="/procurement/"]'],
+  ["purchase-orders", "/purchase-orders"],
+  ["purchase-order", "/purchase-orders?status=partially_received", 'main a[href^="/purchase-orders/"]'],
+  ["purchase-order-print", "/purchase-orders?status=partially_received", 'main a[href^="/purchase-orders/"]', "/print"],
+  ["quotations", "/quotations"],
+  ["receiving", "/receiving"],
+  ["receive-form", "/receiving", 'main a[href^="/receiving/new"]'],
+  ["receipt", "/receiving", 'main a[href^="/receiving/GR"], main a[href^="/receiving/"]:not([href*="new"])'],
+  ["inventory", "/inventory"],
+  ["lots", "/inventory/lots"],
+  ["lot", "/inventory/lots?status=available", 'main a[href^="/inventory/lots/"]'],
+  ["movements", "/inventory/movements"],
+  ["stock-counts", "/inventory/counts"],
+  ["traceability", "/traceability"],
+  ["supply-settings", "/supply/settings"],
+  ["suppliers", "/suppliers"],
+  ["supplier", "/suppliers?status=approved", 'main a[href^="/suppliers/"]'],
+  ["supplier-farm", "/suppliers?tab=farmers", 'main a[href^="/suppliers/"]', "?tab=farm"],
+  ["supplier-products", "/supplier-products"],
+  ["supplier-product", "/supplier-products?mapping=confirmed", 'main a[href^="/supplier-products/"]'],
+  ["availability", "/supplier-availability"],
+  ["report-procurement", "/reports/procurement"],
+  ["report-inventory", "/reports/inventory"],
+  ["report-suppliers", "/reports/suppliers"],
+];
 const sprint4 = [
   ["overview", "/"],
   ["customers", "/customers"],
@@ -57,7 +85,7 @@ const sprint4 = [
   ["settings", "/settings"],
   ["alerts", "/alerts"],
 ];
-const pages = set === "sprint-5" ? kitchen : sprint4;
+const pages = set === "sprint-5" ? kitchen : set === "sprint-6" ? supply : sprint4;
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

@@ -445,22 +445,24 @@ func (s *Service) SetConversion(ctx context.Context, actor, id string, in Conver
 
 // CostRef is a reference cost used for estimates only.
 type CostRef struct {
-	ID            string    `json:"id"`
-	Kind          string    `json:"kind"`
-	IngredientID  *string   `json:"ingredient_id"`
-	Label         string    `json:"label"`
-	AmountMinor   int64     `json:"amount_minor"`
-	Currency      string    `json:"currency"`
-	PerQuantity   string    `json:"per_quantity"`
-	Unit          string    `json:"unit"`
-	Source        string    `json:"source"`
+	ID           string  `json:"id"`
+	Kind         string  `json:"kind"`
+	IngredientID *string `json:"ingredient_id"`
+	Label        string  `json:"label"`
+	AmountMinor  int64   `json:"amount_minor"`
+	Currency     string  `json:"currency"`
+	PerQuantity  string  `json:"per_quantity"`
+	Unit         string  `json:"unit"`
+	Source       string  `json:"source"`
+	// reference (entered here), supplier_quote, purchase_order or receipt.
+	Origin        string    `json:"origin"`
 	EffectiveFrom string    `json:"effective_from"`
 	CreatedAt     time.Time `json:"created_at"`
 }
 
 func (s *Service) costRefs(ctx context.Context, q db.Querier, kind, ingredientID string) ([]CostRef, error) {
 	rows, err := q.Query(ctx, `
-		SELECT id, kind, ingredient_id, label, amount_minor, currency, trim_scale(per_quantity)::text, unit, source, effective_from::text, created_at
+		SELECT id, kind, ingredient_id, label, amount_minor, currency, trim_scale(per_quantity)::text, unit, source, origin, effective_from::text, created_at
 		FROM ingredient_cost_references
 		WHERE kind = $1 AND ($2::uuid IS NULL OR ingredient_id = $2::uuid)
 		ORDER BY effective_from DESC, created_at DESC LIMIT 50`, kind, nilIfEmpty(ingredientID))
@@ -469,7 +471,7 @@ func (s *Service) costRefs(ctx context.Context, q db.Querier, kind, ingredientID
 	}
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (CostRef, error) {
 		var c CostRef
-		err := r.Scan(&c.ID, &c.Kind, &c.IngredientID, &c.Label, &c.AmountMinor, &c.Currency, &c.PerQuantity, &c.Unit, &c.Source, &c.EffectiveFrom, &c.CreatedAt)
+		err := r.Scan(&c.ID, &c.Kind, &c.IngredientID, &c.Label, &c.AmountMinor, &c.Currency, &c.PerQuantity, &c.Unit, &c.Source, &c.Origin, &c.EffectiveFrom, &c.CreatedAt)
 		return c, err
 	})
 }
@@ -479,6 +481,43 @@ func (s *Service) CostReferences(ctx context.Context, kind string) ([]CostRef, e
 		kind = "packaging"
 	}
 	return s.costRefs(ctx, s.pool, kind, "")
+}
+
+// SupplyCost is a cost seen in purchasing: quoted by a supplier, ordered on a
+// purchase order, or paid for stock received. Each is a new reference, kept
+// with its origin, so quoted, ordered and actual costs stay distinct and none
+// overwrites another.
+type SupplyCost struct {
+	IngredientID  string
+	AmountMinor   int64
+	Currency      string
+	PerQuantity   qty.Q
+	Unit          string
+	Origin        string // supplier_quote, purchase_order, receipt
+	OriginID      string
+	Source        string
+	EffectiveFrom time.Time
+}
+
+// RecordSupplyCost writes a supply cost with q, the caller's transaction.
+func RecordSupplyCost(ctx context.Context, q db.Querier, actor string, c SupplyCost) error {
+	switch c.Origin {
+	case "supplier_quote", "purchase_order", "receipt":
+	default:
+		return errors.New("culinary: unknown cost origin " + c.Origin)
+	}
+	if c.PerQuantity.Sign() <= 0 || c.AmountMinor < 0 {
+		return errors.New("culinary: a supply cost needs a positive quantity")
+	}
+	source := c.Source
+	if runes(source) > 300 {
+		source = string([]rune(source)[:300])
+	}
+	_, err := q.Exec(ctx, `
+		INSERT INTO ingredient_cost_references (ingredient_id, kind, label, amount_minor, currency, per_quantity, unit, source, origin, origin_id, effective_from, created_by)
+		VALUES ($1, 'ingredient', '', $2, $3, $4::numeric, $5, $6, $7, $8, $9, $10)`,
+		c.IngredientID, c.AmountMinor, c.Currency, c.PerQuantity.String(), c.Unit, source, c.Origin, nilIfEmpty(c.OriginID), c.EffectiveFrom, nilIfEmpty(actor))
+	return err
 }
 
 // CostInput records a reference cost.

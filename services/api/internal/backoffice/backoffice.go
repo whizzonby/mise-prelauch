@@ -214,6 +214,47 @@ func (s *Service) ScanAlerts(ctx context.Context, now time.Time) (int, error) {
 					"Week of " + week.Format("2 Jan") + ".", "", "", "subscriptions.read"}, err
 			}, now),
 	}
+	// Supply chain (Sprint 6). Business dates in Trinidad and Tobago.
+	today := `($1::timestamptz AT TIME ZONE 'America/Port_of_Spain')::date`
+	steps = append(steps,
+		collect(`SELECT po.id, po.number, s.name, po.expected_delivery FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id
+		         WHERE po.status IN ('approved', 'issued', 'partially_received') AND po.expected_delivery < `+today,
+			func(r pgx.Rows) (found, error) {
+				var id, number, supplier string
+				var expected time.Time
+				err := r.Scan(&id, &number, &supplier, &expected)
+				return found{"po_overdue:" + id + ":" + expected.Format("2006-01-02"), "purchase_order_overdue", "warning",
+					number + " from " + supplier + " is overdue", "Expected " + expected.Format("2 Jan") + " and not fully received.",
+					"purchase_order", id, "purchase_orders.read"}, err
+			}, now),
+		collect(`SELECT l.id, l.code, i.name, l.expiry_date FROM inventory_lots l JOIN ingredients i ON i.id = l.ingredient_id
+		         WHERE l.on_hand > 0 AND l.status IN ('available', 'on_hold') AND l.expiry_status = 'recorded' AND l.expiry_date < `+today,
+			func(r pgx.Rows) (found, error) {
+				var id, code, name string
+				var expiry time.Time
+				err := r.Scan(&id, &code, &name, &expiry)
+				return found{"lot_expired:" + id, "lot_expired", "warning", name + " lot " + code + " has expired",
+					"Expired " + expiry.Format("2 Jan") + ". It is no longer allocated; record waste or a return.", "inventory_lot", id, "inventory.read"}, err
+			}, now),
+		collect(`SELECT l.id, l.code, i.name FROM inventory_lots l JOIN ingredients i ON i.id = l.ingredient_id
+		         WHERE l.on_hand > 0 AND l.status = 'available' AND l.expiry_status = 'not_recorded' AND $1::timestamptz IS NOT NULL`,
+			func(r pgx.Rows) (found, error) {
+				var id, code, name string
+				err := r.Scan(&id, &code, &name)
+				return found{"lot_expiry_review:" + id, "lot_expiry_review", "info", name + " lot " + code + " needs an expiry review",
+					"No expiry date was recorded on receipt, so it is not used until someone records one or confirms none applies.",
+					"inventory_lot", id, "receiving.inspect"}, err
+			}, now),
+		collect(`SELECT p.id, p.number FROM production_plans p WHERE p.status = 'released' AND p.released_at < $1::timestamptz - interval '1 hour'
+		         AND p.week_start >= `+today+` - 7 AND NOT EXISTS (SELECT 1 FROM procurement_runs r WHERE r.plan_id = p.id AND r.status <> 'cancelled')`,
+			func(r pgx.Rows) (found, error) {
+				var id, number string
+				err := r.Scan(&id, &number)
+				return found{"procurement_missing:" + id, "procurement_missing", "warning", "Plan " + number + " has no procurement run",
+					"It was released over an hour ago and purchasing has not picked it up. Create the run from Procurement planning.",
+					"production_plan", id, "procurement.plan"}, err
+			}, now),
+	)
 	if stale, err := s.Support.Stale(ctx, s.pool, now.Add(-72*time.Hour)); err == nil {
 		for _, c := range stale {
 			list = append(list, found{fmt.Sprintf("case_stale:%s:%s", c.ID, now.Format("2006-01-02")), "support_case", "warning",

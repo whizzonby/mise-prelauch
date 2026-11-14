@@ -39,7 +39,7 @@ func (s *Service) Report(ctx context.Context, kind, from, to string) (*Report, e
 	if err1 != nil || err2 != nil || t.Before(f) || t.Sub(f) > 731*24*time.Hour {
 		return nil, errRange
 	}
-	r := &Report{Kind: kind, From: from, To: to, TimeZone: TimeZone, Breakdowns: map[string][]Share{}, Definitions: map[string]string{}}
+	r := &Report{Kind: kind, From: from, To: to, TimeZone: TimeZone, Totals: []Metric{}, Series: []Series{}, Breakdowns: map[string][]Share{}, Definitions: map[string]string{}}
 	r.Interval = "week"
 	if t.Sub(f) <= 62*24*time.Hour {
 		r.Interval = "day"
@@ -240,6 +240,112 @@ func (s *Service) Report(ctx context.Context, kind, from, to string) (*Report, e
 			 FROM ingredient_requirements r JOIN production_plans p ON p.id = r.plan_id JOIN ingredients i ON i.id = r.ingredient_id
 			 WHERE p.status <> 'cancelled' AND p.production_date BETWEEN $1::date AND $2::date AND r.status = 'ok'
 			 GROUP BY i.name, r.preparation, r.unit ORDER BY 1`, rng...))
+	case "procurement":
+		// Purchase orders count once, at their latest revision approved in
+		// the range. Money is TTD only: no conversion rate is configured, so
+		// orders in another currency are left out of value totals.
+		approvedInRange := `SELECT DISTINCT ON (v.po_id) v.po_id, v.total_minor, v.approved_at FROM purchase_order_revisions v JOIN purchase_orders po ON po.id = v.po_id
+			WHERE po.currency = 'TTD' AND ` + inRange("v.approved_at") + ` ORDER BY v.po_id, v.revision DESC`
+		add(series("po_value", "Purchase orders approved (TTD)", "money", "Value of purchase orders approved, by local day or week of approval; each order once, at its latest revision approved in the range.",
+			`coalesce(sum(a.total_minor), 0)::bigint FROM (`+buckets+`) b(g) LEFT JOIN (`+approvedInRange+`) a ON `+local("a.approved_at")+` = b.g GROUP BY b.g ORDER BY b.g`))
+		add(total("runs", "Procurement runs", "count", "Released production plans taken into procurement in the range.",
+			`SELECT count(*) FROM procurement_runs r WHERE `+inRange("r.created_at"), rng...))
+		add(total("shortages", "Runs with shortages", "count", "Procurement runs created in the range that found at least one ingredient short or incomplete when created.",
+			`SELECT count(*) FROM domain_events e WHERE e.type = 'procurement.shortage_identified' AND `+inRange("e.occurred_at"), rng...))
+		add(total("pos_approved", "Orders approved", "count", "Purchase orders approved in the range (each order once).",
+			`SELECT count(*) FROM (`+approvedInRange+`) a`, rng...))
+		add(total("po_value", "Value approved (TTD)", "money", "Total of purchase orders approved in the range, each at its latest revision approved in the range, TTD only.",
+			`SELECT coalesce(sum(total_minor), 0) FROM (`+approvedInRange+`) a`, rng...))
+		add(total("pos_issued", "Orders issued", "count", "Purchase orders issued to suppliers in the range.",
+			`SELECT count(*) FROM purchase_orders po WHERE `+inRange("po.issued_at"), rng...))
+		add(total("receipts", "Deliveries received", "count", "Goods receipts recorded in the range.",
+			`SELECT count(*) FROM goods_receipts g WHERE `+inRange("g.received_at"), rng...))
+		add(total("open_pos", "Open orders (now)", "count", "Approved, issued or partly received orders not yet fully received, today.",
+			`SELECT count(*) FROM purchase_orders WHERE status IN ('approved', 'issued', 'partially_received')`))
+		add(total("overdue_pos", "Overdue orders (now)", "count", "Open orders whose expected delivery date has passed, today (Trinidad and Tobago).",
+			`SELECT count(*) FROM purchase_orders WHERE status IN ('approved', 'issued', 'partially_received') AND expected_delivery < (now() AT TIME ZONE '`+TimeZone+`')::date`))
+		add(total("rfqs", "Requests for quotation", "count", "Requests for quotation created in the range.",
+			`SELECT count(*) FROM rfqs WHERE `+inRange("created_at"), rng...))
+		add(total("quotations", "Quotations recorded", "count", "Quotations recorded as received in the range.",
+			`SELECT count(*) FROM quotations WHERE `+inRange("received_at"), rng...))
+		add(breakdown("value_by_supplier", "Value of orders approved in the range by supplier (TTD, each order once).",
+			`SELECT s.name, sum(a.total_minor)::bigint FROM (`+approvedInRange+`) a JOIN purchase_orders po ON po.id = a.po_id JOIN suppliers s ON s.id = po.supplier_id
+			 GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("decisions", "Purchasing decisions recorded on runs created in the range, by decision.",
+			`SELECT replace(l.decision, '_', ' '), count(*) FROM procurement_lines l JOIN procurement_runs r ON r.id = l.run_id WHERE `+inRange("r.created_at")+`
+			 GROUP BY l.decision ORDER BY 2 DESC, 1`, rng...))
+	case "inventory":
+		add(series("receipts", "Lots received", "count", "Lots created on receipt (accepted, quarantined or rejected), by local day or week.",
+			`count(l.id)::bigint FROM (`+buckets+`) b(g) LEFT JOIN inventory_lots l ON `+local("l.received_at")+` = b.g AND `+inRange("l.received_at")+` GROUP BY b.g ORDER BY b.g`))
+		add(series("issues", "Issues to production", "count", "Stock issue movements to production batches, by local day or week.",
+			`count(m.id)::bigint FROM (`+buckets+`) b(g) LEFT JOIN inventory_movements m ON m.type = 'issue' AND `+local("m.created_at")+` = b.g AND `+inRange("m.created_at")+` GROUP BY b.g ORDER BY b.g`))
+		add(total("lots_received", "Lots received", "count", "Lots created on receipt in the range, whatever their status.",
+			`SELECT count(*) FROM inventory_lots l WHERE `+inRange("l.received_at"), rng...))
+		add(total("lots_rejected", "Lots rejected or quarantined on receipt", "count", "Lots created in the range that were not accepted on receipt.",
+			`SELECT count(*) FROM inventory_movements m JOIN inventory_lots l ON l.id = m.lot_id WHERE m.type = 'receipt' AND l.status IN ('rejected', 'quarantined')
+			 AND `+inRange("m.created_at"), rng...))
+		add(total("received_value", "Accepted stock value (TTD)", "money", "Accepted packs × the order's price per pack, for deliveries received in the range (TTD only).",
+			`SELECT coalesce(round(sum(gl.accepted_packs * gl.unit_cost_minor)), 0)::bigint FROM goods_receipt_lines gl JOIN goods_receipts g ON g.id = gl.receipt_id
+			 WHERE gl.currency = 'TTD' AND `+inRange("g.received_at"), rng...))
+		add(total("issues", "Issue movements", "count", "Stock issued to production batches in the range (one per lot per issue).",
+			`SELECT count(*) FROM inventory_movements m WHERE m.type = 'issue' AND `+inRange("m.created_at"), rng...))
+		add(total("returns", "Returns from production", "count", "Stock returned from batches to the store in the range.",
+			`SELECT count(*) FROM inventory_movements m WHERE m.type = 'return' AND `+inRange("m.created_at"), rng...))
+		add(total("adjustments", "Adjustments", "count", "Stock adjustments (including posted count variances) in the range.",
+			`SELECT count(*) FROM stock_adjustments a WHERE `+inRange("a.created_at"), rng...))
+		add(total("store_waste", "Store waste records", "count", "Stock wasted in storage in the range (production waste is in the production report).",
+			`SELECT count(*) FROM inventory_movements m WHERE m.type = 'waste' AND `+inRange("m.created_at"), rng...))
+		add(total("counts_posted", "Counts posted", "count", "Stock counts approved and posted in the range.",
+			`SELECT count(*) FROM stock_counts c WHERE c.status = 'posted' AND `+inRange("c.posted_at"), rng...))
+		add(total("expired_lots", "Expired lots with stock (now)", "count", "Lots past their recorded expiry date still holding stock, today.",
+			`SELECT count(*) FROM inventory_lots WHERE on_hand > 0 AND expiry_status = 'recorded' AND expiry_date < (now() AT TIME ZONE '`+TimeZone+`')::date`))
+		add(total("expiry_review", "Lots awaiting an expiry review (now)", "count", "Available lots with stock and no expiry recorded or confirmed, today.",
+			`SELECT count(*) FROM inventory_lots WHERE on_hand > 0 AND status = 'available' AND expiry_status = 'not_recorded'`))
+		add(breakdown("on_hand", "Stock on hand now by ingredient, in its base unit, rounded to whole units.",
+			`SELECT i.name || ' (' || l.unit || ')', round(sum(l.on_hand))::bigint FROM inventory_lots l JOIN ingredients i ON i.id = l.ingredient_id
+			 WHERE l.on_hand > 0 GROUP BY i.name, l.unit ORDER BY 1`))
+		add(breakdown("issued", "Stock issued to production in the range by ingredient, net of returns, in its base unit, rounded to whole units.",
+			`SELECT i.name || ' (' || m.unit || ')', round(-sum(m.on_hand_delta))::bigint FROM inventory_movements m JOIN ingredients i ON i.id = m.ingredient_id
+			 WHERE m.type IN ('issue', 'return') AND `+inRange("m.created_at")+` GROUP BY i.name, m.unit ORDER BY 1`, rng...))
+		add(breakdown("movements", "Ledger movements in the range by type.",
+			`SELECT replace(m.type, '_', ' '), count(*) FROM inventory_movements m WHERE `+inRange("m.created_at")+` GROUP BY m.type ORDER BY 2 DESC, 1`, rng...))
+	case "suppliers":
+		// Factual figures per supplier: no ratings, no scores.
+		recv := `SELECT po.id, po.supplier_id, po.expected_delivery, po.issued_at, min(g.received_at) AS first_receipt, count(g.id) AS receipts
+			FROM purchase_orders po JOIN goods_receipts g ON g.po_id = po.id GROUP BY po.id HAVING ` + inRange("min(g.received_at)")
+		add(total("suppliers_approved", "Approved suppliers (now)", "count", "Suppliers approved and not lapsed, today.",
+			`SELECT count(*) FROM suppliers WHERE status = 'approved' AND (review_expires_on IS NULL OR review_expires_on >= (now() AT TIME ZONE '`+TimeZone+`')::date)`))
+		add(total("deliveries", "Orders first delivered", "count", "Purchase orders whose first delivery was received in the range.",
+			`SELECT count(*) FROM (`+recv+`) d`, rng...))
+		add(total("on_time", "Delivered on time", "count", "Of those, orders first delivered on or before their expected date (Trinidad and Tobago).",
+			`SELECT count(*) FROM (`+recv+`) d WHERE (d.first_receipt AT TIME ZONE '`+TimeZone+`')::date <= d.expected_delivery`, rng...))
+		add(breakdown("orders_placed", "Purchase orders approved in the range, by supplier (each order once).",
+			`SELECT s.name, count(DISTINCT v.po_id) FROM purchase_order_revisions v JOIN purchase_orders po ON po.id = v.po_id JOIN suppliers s ON s.id = po.supplier_id
+			 WHERE `+inRange("v.approved_at")+` GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("orders_delivered", "Orders first delivered in the range, by supplier.",
+			`SELECT s.name, count(*) FROM (`+recv+`) d JOIN suppliers s ON s.id = d.supplier_id GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("on_time", "Orders first delivered on or before the expected date, by supplier.",
+			`SELECT s.name, count(*) FROM (`+recv+`) d JOIN suppliers s ON s.id = d.supplier_id
+			 WHERE (d.first_receipt AT TIME ZONE '`+TimeZone+`')::date <= d.expected_delivery GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("partial_deliveries", "Orders delivered in more than one receipt, or closed short, with a receipt in the range, by supplier.",
+			`SELECT s.name, count(DISTINCT po.id) FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id
+			 WHERE EXISTS (SELECT 1 FROM goods_receipts g WHERE g.po_id = po.id AND `+inRange("g.received_at")+`)
+			 AND ((SELECT count(*) FROM goods_receipts g WHERE g.po_id = po.id) > 1
+			      OR EXISTS (SELECT 1 FROM purchase_order_lines pl WHERE pl.po_id = po.id AND pl.received_packs < pl.packs AND po.status = 'closed'))
+			 GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("rejected_packs", "Packs rejected or quarantined on receipt in the range, by supplier (rounded).",
+			`SELECT s.name, round(sum(gl.rejected_packs + gl.quarantined_packs))::bigint FROM goods_receipt_lines gl JOIN goods_receipts g ON g.id = gl.receipt_id
+			 JOIN suppliers s ON s.id = g.supplier_id WHERE `+inRange("g.received_at")+` GROUP BY s.name HAVING sum(gl.rejected_packs + gl.quarantined_packs) > 0 ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("lead_time_days", "Average days from issuing an order to its first delivery, for orders first delivered in the range, by supplier (rounded).",
+			`SELECT s.name, round(avg(EXTRACT(EPOCH FROM d.first_receipt - d.issued_at) / 86400))::bigint FROM (`+recv+`) d JOIN suppliers s ON s.id = d.supplier_id
+			 WHERE d.issued_at IS NOT NULL GROUP BY s.name ORDER BY 1`, rng...))
+		add(breakdown("purchase_value", "Value of orders approved in the range by supplier (TTD, each order at its latest revision in the range).",
+			`SELECT s.name, sum(a.total_minor)::bigint FROM (SELECT DISTINCT ON (v.po_id) v.po_id, v.total_minor FROM purchase_order_revisions v
+			 JOIN purchase_orders po ON po.id = v.po_id WHERE po.currency = 'TTD' AND `+inRange("v.approved_at")+` ORDER BY v.po_id, v.revision DESC) a
+			 JOIN purchase_orders po ON po.id = a.po_id JOIN suppliers s ON s.id = po.supplier_id GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
+		add(breakdown("price_changes", "Prices recorded in the range, by supplier (each new price for a product counts once).",
+			`SELECT s.name, count(*) FROM supplier_prices pr JOIN supplier_products p ON p.id = pr.product_id JOIN suppliers s ON s.id = p.supplier_id
+			 WHERE `+inRange("pr.created_at")+` GROUP BY s.name ORDER BY 2 DESC, 1`, rng...))
 	default:
 		return nil, httpx.NewError(http.StatusNotFound, "not_found", "Unknown report.")
 	}

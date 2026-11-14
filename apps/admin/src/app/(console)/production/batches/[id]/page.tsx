@@ -34,6 +34,13 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
     <>
       <PageHeader
         back={{ href: "/production/batches", label: "All batches" }}
+        actions={
+          can(admin, "inventory.read") ? (
+            <Link href={`/inventory/batches/${b.id}`} className="type-body-sm inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
+              Ingredients from stock
+            </Link>
+          ) : null
+        }
         title={b.meal_name}
         description={
           <>

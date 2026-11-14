@@ -24,6 +24,7 @@ import (
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
 	"mise.tt/api/internal/identity"
+	"mise.tt/api/internal/inventory"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/menus"
 	"mise.tt/api/internal/orders"
@@ -36,10 +37,12 @@ import (
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/platform/token"
+	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/production"
 	"mise.tt/api/internal/referrals"
 	"mise.tt/api/internal/reporting"
 	"mise.tt/api/internal/subscriptions"
+	"mise.tt/api/internal/suppliers"
 	"mise.tt/api/internal/support"
 )
 
@@ -366,6 +369,10 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	cul, prod := NewKitchen(cfg, pool, com, bo)
 	(&culinary.Handler{S: cul, Identity: ids}).Routes(mux)
 	(&production.Handler{S: prod, Identity: ids}).Routes(mux)
+	sc := NewSupplyChain(cfg, pool, com, bo, prod)
+	(&suppliers.Handler{S: sc.Suppliers, Identity: ids}).Routes(mux)
+	(&procurement.Handler{S: sc.Procurement, Identity: ids}).Routes(mux)
+	(&inventory.Handler{S: sc.Inventory, Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

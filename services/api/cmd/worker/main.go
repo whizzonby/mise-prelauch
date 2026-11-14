@@ -16,6 +16,7 @@ import (
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
+	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
 
@@ -76,6 +77,13 @@ func run() error {
 	bo := server.NewBackoffice(cfg, pool, ids, com)
 	runner.Register(backoffice.JobExport, bo.HandleExport)
 	go bo.RunAlerts(ctx, cfg.Commerce.SchedulerInterval)
+	// Sprint 6: released production plans become procurement runs. The
+	// dispatcher hands production.plan_released events to the job queue; the
+	// handler is idempotent and retried, and failures stay visible.
+	_, prod := server.NewKitchen(cfg, pool, com, bo)
+	sc := server.NewSupplyChain(cfg, pool, com, bo, prod)
+	runner.Register(procurement.JobPlanReleased, sc.Procurement.HandlePlanReleased)
+	go sc.Procurement.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
 
 	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
 	err = runner.Run(ctx)

@@ -62,6 +62,32 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       ],
     },
     {
+      label: "Supply chain",
+      items: [
+        ...(can(admin, "procurement.read") || can(admin, "inventory.read") ? [{ href: "/supply", label: "Supply overview" }] : []),
+        ...item(admin, "procurement.read", "/procurement", "Procurement planning"),
+        ...item(admin, "receiving.read", "/purchase-orders", "Purchase orders"),
+        ...item(admin, "procurement.read", "/quotations", "Quotations"),
+        ...item(admin, "receiving.read", "/receiving", "Goods receiving"),
+        ...item(admin, "inventory.read", "/inventory", "Inventory"),
+        ...item(admin, "inventory.read", "/inventory/lots", "Ingredient lots"),
+        ...item(admin, "inventory.read", "/inventory/movements", "Stock movements"),
+        ...item(admin, "inventory.read", "/inventory/counts", "Stock counts"),
+        ...item(admin, "traceability.read", "/traceability", "Traceability"),
+        ...(can(admin, "procurement.read") || can(admin, "inventory.configure") ? [{ href: "/supply/settings", label: "Supply settings" }] : []),
+      ],
+    },
+    {
+      label: "Suppliers",
+      items: [
+        ...item(admin, "suppliers.read", "/suppliers", "Supplier directory"),
+        ...item(admin, "suppliers.read", "/suppliers?tab=farmers", "Farmers"),
+        ...item(admin, "supplier_products.read", "/supplier-products", "Supplier products"),
+        ...item(admin, "supplier_products.read", "/supplier-availability", "Availability"),
+        ...item(admin, "supplier_reports.read", "/reports/suppliers", "Supplier performance"),
+      ],
+    },
+    {
       label: "Culinary",
       items: [
         ...item(admin, "recipes.read", "/recipes", "Recipes"),
@@ -84,6 +110,8 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       items: [
         ...item(admin, "reports.read", "/reports", "Reports"),
         ...item(admin, "production_reports.read", "/reports/production", "Production"),
+        ...item(admin, "supplier_reports.read", "/reports/procurement", "Procurement"),
+        ...item(admin, "supplier_reports.read", "/reports/inventory", "Inventory"),
         ...item(admin, "production.read", "/production/requirements", "Ingredient requirements"),
         ...item(admin, "analytics.view", "/reports/waitlist", "Waitlist"),
         { href: "/exports", label: "Exports" },
@@ -102,7 +130,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
 
   return (
     <div className="min-h-svh lg:grid lg:grid-cols-[16rem_1fr]">
-      <header className="on-dark flex flex-col gap-3 bg-primary px-5 py-3 text-primary-foreground lg:sticky lg:top-0 lg:h-svh lg:gap-6 lg:overflow-y-auto lg:px-4 lg:py-6">
+      <header className="on-dark flex flex-col gap-3 bg-primary print:hidden px-5 py-3 text-primary-foreground lg:sticky lg:top-0 lg:h-svh lg:gap-6 lg:overflow-y-auto lg:px-4 lg:py-6">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" className="text-[1.75rem]" aria-label="Mise admin home">
             <Wordmark />

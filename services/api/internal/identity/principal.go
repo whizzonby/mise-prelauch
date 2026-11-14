@@ -68,6 +68,33 @@ const (
 	PermPackagingManage       Permission = "packaging.manage"
 	PermWasteRecord           Permission = "waste.record"
 	PermProductionReportsRead Permission = "production_reports.read"
+
+	// Sprint 6: suppliers, procurement, purchasing, receiving and inventory.
+	PermSuppliersRead              Permission = "suppliers.read"
+	PermSuppliersManage            Permission = "suppliers.manage"
+	PermSuppliersApprove           Permission = "suppliers.approve"
+	PermSupplierProductsRead       Permission = "supplier_products.read"
+	PermSupplierProductsManage     Permission = "supplier_products.manage"
+	PermProcurementRead            Permission = "procurement.read"
+	PermProcurementPlan            Permission = "procurement.plan"
+	PermProcurementApprove         Permission = "procurement.approve"
+	PermProcurementConfigure       Permission = "procurement.configure"
+	PermPurchaseOrdersRead         Permission = "purchase_orders.read"
+	PermPurchaseOrdersCreate       Permission = "purchase_orders.create"
+	PermPurchaseOrdersApprove      Permission = "purchase_orders.approve"
+	PermPurchaseOrdersApproveLimit Permission = "purchase_orders.approve_above_limit"
+	PermPurchaseOrdersIssue        Permission = "purchase_orders.issue"
+	PermReceivingRead              Permission = "receiving.read"
+	PermReceivingManage            Permission = "receiving.manage"
+	PermReceivingInspect           Permission = "receiving.inspect"
+	PermInventoryRead              Permission = "inventory.read"
+	PermInventoryReserve           Permission = "inventory.reserve"
+	PermInventoryIssue             Permission = "inventory.issue"
+	PermInventoryAdjust            Permission = "inventory.adjust"
+	PermInventoryCount             Permission = "inventory.count"
+	PermInventoryConfigure         Permission = "inventory.configure"
+	PermTraceabilityRead           Permission = "traceability.read"
+	PermSupplierReportsRead        Permission = "supplier_reports.read"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -84,6 +111,11 @@ var AllPermissions = []Permission{
 	PermChefsManage, PermProductionRead, PermProductionPlan, PermProductionApprove, PermProductionExecute,
 	PermProductionConfigure, PermQualityRead, PermQualityInspect, PermQualityReleaseHold, PermPackagingManage,
 	PermWasteRecord, PermProductionReportsRead,
+	PermSuppliersRead, PermSuppliersManage, PermSuppliersApprove, PermSupplierProductsRead, PermSupplierProductsManage,
+	PermProcurementRead, PermProcurementPlan, PermProcurementApprove, PermProcurementConfigure, PermPurchaseOrdersRead,
+	PermPurchaseOrdersCreate, PermPurchaseOrdersApprove, PermPurchaseOrdersApproveLimit, PermPurchaseOrdersIssue,
+	PermReceivingRead, PermReceivingManage, PermReceivingInspect, PermInventoryRead, PermInventoryReserve, PermInventoryIssue,
+	PermInventoryAdjust, PermInventoryCount, PermInventoryConfigure, PermTraceabilityRead, PermSupplierReportsRead,
 }
 
 // RoleCustomer is the role every registered customer holds.

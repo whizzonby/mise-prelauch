@@ -112,12 +112,22 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "pass":
     case "done":
     case "ok":
+    case "received":
+    case "available":
+    case "recorded":
+    case "none_applies":
+    case "issued_stock":
       return "success";
     case "submitted":
     case "under_review":
     case "in_progress":
     case "awaiting_quality_check":
     case "current":
+    case "pending_review":
+    case "pending_approval":
+    case "issued":
+    case "partially_received":
+    case "proposed":
       return "accent";
     case "quality_hold":
     case "on_hold":
@@ -129,6 +139,11 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "open":
       return "error";
     case "past_due":
+    case "rejected":
+    case "suspended":
+    case "expired":
+    case "quarantined":
+    case "not_recorded":
     case "failed":
     case "needs_resolution":
     case "unpaid":

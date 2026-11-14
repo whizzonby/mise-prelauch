@@ -76,6 +76,8 @@ async function submit(page: Page, form: string, button: string, message: string)
 }
 
 test("a chef drafts a recipe step by step; the culinary team, a nutritionist and the director take it to publication", async ({ page, request, browser }) => {
+  // Several staff sessions in their own browsers: give it room on a loaded machine.
+  test.slow();
   const chef = await staff(browser, request, "chef", "Marisa Chef");
   const name = `Coconut bake ${Date.now().toString(36)}`;
 
@@ -167,6 +169,8 @@ test("a chef drafts a recipe step by step; the culinary team, a nutritionist and
 });
 
 test("the kitchen takes a released batch through tasks, output, a quality hold, packing and completion", async ({ request, browser }) => {
+  // Several staff sessions in their own browsers: give it room on a loaded machine.
+  test.slow();
   const batch = await releasedBatch(request);
   const cook = await staff(browser, request, "kitchen_staff", "Devon Cook");
   const qa = await staff(browser, request, "quality_inspector", "Anika Inspector");

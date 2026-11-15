@@ -280,4 +280,4 @@ gives definitions per figure. Nothing in Sprint 8 has been started; it needs exp
 
 ## Commit
 
-Recorded in `SPRINT_7_PLAN.md` (Progress) once committed.
+Sprint 7 committed as `815af31` on `sprint-7/delivery-fulfillment` (local; not pushed), working tree clean after the commit. This hash note was added in a follow-up commit.

@@ -211,3 +211,5 @@ sources, so analytics can tell staff-recorded data from partner-reported data.
   an unlinked courier login crashed "My runs".
 - [x] Stage 8 (14 Nov): Go 147/147, Vitest 43/43, Playwright 55/55 (one worker, three batches), screenshots in
   docs/screenshots/sprint-7, report docs/SPRINT_7_REPORT.md.
+
+Committed 15 Nov 2026 (internet time) as `815af31`; not pushed.

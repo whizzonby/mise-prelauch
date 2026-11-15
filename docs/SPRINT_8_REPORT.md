@@ -370,4 +370,4 @@ Ready to start once authorised. Recommended first items, in order:
 
 ## Commit
 
-Recorded in a follow-up commit, as in Sprint 7.
+Sprint 8 committed as `f2e1ce0` on `sprint-8/analytics-automation` (local; not pushed), working tree clean after the commit. This hash note was added in a follow-up commit.

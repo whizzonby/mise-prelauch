@@ -147,7 +147,16 @@ The supply-chain tests (Sprint 6) also need an open procurement run with a batch
 started, so run `seed-demo` twice before a full run (once for the kitchen tests, once for
 purchasing). They create their own suppliers, products and storage locations, and the
 qualification criterion and receiving check they need, named as E2E procedures. On a machine
-short of memory, run the whole suite with `--workers=2`.
+short of memory, run the whole suite with `--workers=2` (or `--workers=1`).
+
+The delivery tests (Sprint 7) need demo delivery configuration and fulfillments made by real
+readiness events: `pnpm misectl delivery seed-demo -ready` sets up a demo zone, two weeks of
+demo service days and windows, demo capacity, an approved demo partner and courier (all marked
+demo; none is a real business decision), a demo proof policy if none is set, and takes the newest
+untouched released demo plan through the kitchen so its orders become fulfillments. Each test run
+uses two fulfillments. Before a full run: `production seed-demo`, `delivery seed-demo -ready`,
+then `production seed-demo` again (so the kitchen and purchasing tests still have an untouched plan).
+`E2E_SHOTS=1` also saves the report screenshots only a test can reach (packer, courier, customer).
 
 Released production plans reach procurement through the event queue: the worker hands
 `production.plan_released` events to a job after a 30-second settling delay. To deliver events

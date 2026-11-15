@@ -136,7 +136,7 @@ func loadNotifications(ctx context.Context, q db.Querier, customerID string) (*N
 	out := &NotificationPreferences{Upcoming: vocab.UpcomingTopics}
 	out.AccountSecurity.Enabled, out.AccountSecurity.Required = true, true
 	for _, t := range vocab.Topics {
-		topic := Topic{Topic: t.Key, Label: t.Label}
+		topic := Topic{Topic: t.Key, Label: t.Label, Enabled: vocab.ServiceTopics[t.Key]}
 		for _, r := range rows {
 			if r.Topic == t.Key {
 				topic.Enabled, topic.Source, topic.UpdatedAt = r.Enabled, &r.Source, &r.UpdatedAt

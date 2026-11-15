@@ -62,6 +62,26 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       ],
     },
     {
+      label: "Delivery & fulfillment",
+      items: [
+        ...item(admin, "delivery_reports.read", "/delivery", "Overview"),
+        ...item(admin, "fulfillment.read", "/fulfillment", "Fulfillment queue"),
+        ...item(admin, "delivery_zones.read", "/delivery/calendar", "Delivery calendar"),
+        ...item(admin, "delivery.read", "/delivery/planning", "Dispatch planning"),
+        ...(can(admin, "delivery.read") || can(admin, "delivery.read_assigned")
+          ? [{ href: "/delivery/runs", label: can(admin, "delivery.read") ? "Dispatch runs" : "My runs" }]
+          : []),
+        ...item(admin, "delivery_partners.read", "/delivery/partners", "Delivery partners"),
+        ...item(admin, "delivery_partners.read", "/delivery/couriers", "Couriers"),
+        ...item(admin, "delivery_zones.read", "/delivery/zones", "Delivery zones"),
+        ...item(admin, "delivery_exceptions.read", "/delivery/exceptions", "Tracking & exceptions"),
+        ...item(admin, "delivery_exceptions.read", "/delivery/returns", "Returns"),
+        ...item(admin, "delivery.read", "/delivery/reconciliation", "Reconciliation"),
+        ...item(admin, "delivery_reports.read", "/reports/delivery", "Delivery reports"),
+        ...item(admin, "delivery_zones.read", "/delivery/settings", "Delivery settings"),
+      ],
+    },
+    {
       label: "Supply chain",
       items: [
         ...(can(admin, "procurement.read") || can(admin, "inventory.read") ? [{ href: "/supply", label: "Supply overview" }] : []),

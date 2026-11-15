@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math/big"
 	"net/http"
 	"regexp"
@@ -28,9 +27,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mise.tt/api/internal/audit"
+	"mise.tt/api/internal/platform/consumer"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
-	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/outbox"
 	"mise.tt/api/internal/platform/qty"
 	"mise.tt/api/internal/production"
@@ -911,64 +910,26 @@ func (s *Service) ReopenRun(ctx context.Context, actor, id, reason string) (*Run
 // event into a procurement run.
 const JobPlanReleased = "procurement.plan_released"
 
-// consumer is this module's row in event_consumer_offsets.
-const consumer = "procurement"
+// consumerName is this module's row in event_consumer_offsets.
+const consumerName = "procurement"
 
 type releasedPayload struct {
 	EventID int64  `json:"event_id"`
 	PlanID  string `json:"plan_id"`
 }
 
-// Dispatch hands newly released plans to the job queue. Events are read
-// after a short settling delay: an event id is assigned when its row is
-// written, but a transaction that started earlier can commit later, and the
-// offset must not move past an event not yet visible. The handler is
-// idempotent, so delivering twice is harmless; the planning screen also
-// lists released plans without a run, in case anything is ever missed.
-func (s *Service) Dispatch(ctx context.Context) (int, error) {
-	n := 0
-	err := s.tx(ctx, func(tx pgx.Tx) error {
-		var last int64
-		if err := tx.QueryRow(ctx, `SELECT last_event_id FROM event_consumer_offsets WHERE consumer = $1 FOR UPDATE`, consumer).Scan(&last); err != nil {
-			return err
-		}
-		rows, err := tx.Query(ctx, `SELECT id, type, aggregate_id FROM domain_events
-			WHERE id > $1 AND occurred_at <= now() - make_interval(secs => $2) ORDER BY id LIMIT 500`, last, s.SettleDelay.Seconds())
-		if err != nil {
-			return err
-		}
-		type ev struct {
-			id  int64
-			typ string
-			agg string
-		}
-		var events []ev
-		for rows.Next() {
-			var e ev
-			if err := rows.Scan(&e.id, &e.typ, &e.agg); err != nil {
-				rows.Close()
-				return err
-			}
-			events = append(events, e)
-		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		for _, e := range events {
-			if e.typ == "production.plan_released" {
-				if err := jobs.Enqueue(ctx, tx, JobPlanReleased, releasedPayload{EventID: e.id, PlanID: e.agg}); err != nil {
-					return err
-				}
-				n++
-			}
-			last = e.id
-		}
-		_, err = tx.Exec(ctx, `UPDATE event_consumer_offsets SET last_event_id = $2, updated_at = now() WHERE consumer = $1`, consumer, last)
-		return err
-	})
-	return n, err
+// dispatcher hands production.plan_released events to the job queue
+// (platform/consumer: durable offset, settling delay, at-least-once). The
+// handler is idempotent; the planning screen also lists released plans
+// without a run, in case anything is ever missed.
+func (s *Service) dispatcher() *consumer.Dispatcher {
+	return &consumer.Dispatcher{Pool: s.pool, Name: consumerName, SettleDelay: s.SettleDelay, Routes: map[string]consumer.Route{
+		"production.plan_released": {Kind: JobPlanReleased, Payload: func(id int64, agg string) any { return releasedPayload{EventID: id, PlanID: agg} }},
+	}}
 }
+
+// Dispatch hands newly released plans to the job queue.
+func (s *Service) Dispatch(ctx context.Context) (int, error) { return s.dispatcher().Dispatch(ctx) }
 
 // HandlePlanReleased is the job handler. Retried with backoff by the job
 // queue; after its attempts it stays failed (visible) for someone to replay.
@@ -984,60 +945,21 @@ func (s *Service) HandlePlanReleased(ctx context.Context, payload json.RawMessag
 
 // RunDispatcher dispatches every interval until ctx ends (the worker runs it).
 func (s *Service) RunDispatcher(ctx context.Context, interval time.Duration) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-	for {
-		if _, err := s.Dispatch(ctx); err != nil && ctx.Err() == nil {
-			slog.ErrorContext(ctx, "procurement event dispatch failed", "error", err.Error())
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
+	s.dispatcher().Run(ctx, interval)
 }
 
 // Replay moves the consumer back so events after fromID are delivered again.
 func Replay(ctx context.Context, q db.Querier, fromID int64) error {
-	if fromID < 0 {
-		return errors.New("procurement: replay from a positive event id")
-	}
-	_, err := q.Exec(ctx, `UPDATE event_consumer_offsets SET last_event_id = $2, updated_at = now() WHERE consumer = $1`, consumer, fromID)
-	return err
+	return consumer.Replay(ctx, q, consumerName, fromID)
 }
 
 // Deliveries reports the consumer's state for the overview: the offset and
 // any failed or waiting jobs.
-type Deliveries struct {
-	LastEventID int64     `json:"last_event_id"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Waiting     int       `json:"waiting"`
-	Failed      []Failed  `json:"failed"`
-}
+type Deliveries = consumer.Status
 
 // Failed is a delivery that ran out of attempts.
-type Failed struct {
-	JobID     int64     `json:"job_id"`
-	Payload   string    `json:"payload"`
-	Error     string    `json:"error"`
-	Attempts  int       `json:"attempts"`
-	UpdatedAt time.Time `json:"failed_at"`
-}
+type Failed = consumer.Failed
 
 func (s *Service) Deliveries(ctx context.Context) (*Deliveries, error) {
-	var d Deliveries
-	if err := s.pool.QueryRow(ctx, `SELECT last_event_id, updated_at FROM event_consumer_offsets WHERE consumer = $1`, consumer).Scan(&d.LastEventID, &d.UpdatedAt); err != nil {
-		return nil, err
-	}
-	if err := s.pool.QueryRow(ctx, `SELECT count(*) FROM jobs WHERE kind = $1 AND status IN ('queued', 'running')`, JobPlanReleased).Scan(&d.Waiting); err != nil {
-		return nil, err
-	}
-	rows, err := s.pool.Query(ctx, `SELECT id, payload::text, COALESCE(last_error, ''), attempts, COALESCE(finished_at, created_at)
-		FROM jobs WHERE kind = $1 AND status = 'failed' ORDER BY id DESC LIMIT 20`, JobPlanReleased)
-	if err != nil {
-		return nil, err
-	}
-	d.Failed, err = pgx.CollectRows(rows, pgx.RowToStructByPos[Failed])
-	return &d, err
+	return consumer.StatusOf(ctx, s.pool, consumerName, JobPlanReleased)
 }

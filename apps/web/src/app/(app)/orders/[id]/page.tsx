@@ -8,12 +8,24 @@ import { notFound } from "next/navigation";
 import { formatMoney, shortDate } from "@/lib/commerce";
 import { api, requireCustomer } from "@/lib/session";
 
+import { DeliverySection } from "./delivery-section";
+
 export const metadata: Metadata = { title: "Order" };
+
+const STATUS: Record<string, string> = {
+  confirmed: "Confirmed",
+  awaiting_production: "Confirmed",
+  in_production: "Being prepared",
+  ready_for_fulfillment: "Packed",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
 
 /**
  * One order, as it was made: the meals and versions, the amounts and the
- * address at the time. Delivery details appear once delivery is arranged
- * (a later stage); nothing is shown that has not happened.
+ * address at the time, and its delivery: only milestones that have
+ * actually happened, in plain words.
  */
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { token } = await requireCustomer();
@@ -22,6 +34,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
   });
+  const delivery = await api.commerce.orderDelivery(token, id).catch(() => null);
   const a = order.address;
   return (
     <>
@@ -30,11 +43,17 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </Link>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="type-h2">Week of {shortDate(order.week)}</h1>
-        <Tag tone="success">{order.status === "confirmed" ? "Confirmed" : order.status}</Tag>
+        <Tag tone="success">{STATUS[order.status] ?? "Confirmed"}</Tag>
       </div>
       <p className="type-body-sm mt-2 text-muted">
         Order {order.number} · {order.plan_name} plan
       </p>
+
+      {delivery ? (
+        <div className="mt-8 max-w-[40rem]">
+          <DeliverySection orderId={order.id} d={delivery} />
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem]">
         <section aria-labelledby="meals">
@@ -86,7 +105,6 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             <address className="type-body-sm mt-2 not-italic text-muted">
               {[a.recipient_name, a.line1, a.line2, a.area, a.city, a.region_label].filter(Boolean).join(", ")}
             </address>
-            <p className="type-caption mt-3 text-muted">We&apos;ll share delivery timing once it&apos;s arranged.</p>
           </section>
         </aside>
       </div>

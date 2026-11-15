@@ -16,6 +16,7 @@ import (
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
+	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
@@ -84,6 +85,12 @@ func run() error {
 	sc := server.NewSupplyChain(cfg, pool, com, bo, prod)
 	runner.Register(procurement.JobPlanReleased, sc.Procurement.HandlePlanReleased)
 	go sc.Procurement.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
+	// Sprint 7: production.ready_for_fulfillment events become fulfillment
+	// obligations (idempotent per order, retried, failures visible).
+	ff := server.NewFulfilment(cfg, pool, com, bo, prod)
+	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
+	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
+	go ff.Fulfillment.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
 
 	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
 	err = runner.Run(ctx)

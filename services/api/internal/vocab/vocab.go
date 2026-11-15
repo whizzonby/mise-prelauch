@@ -163,13 +163,18 @@ var Topics = List{
 	{"weekly_menu", "Weekly menu announcements"},
 	{"promotions", "Offers and promotions"},
 	{"referral_updates", "Invitations and referral updates"},
+	// Service messages about orders already paid for: on unless turned off.
+	{"delivery_updates", "Delivery updates"},
 }
+
+// ServiceTopics are about orders the customer already paid for, not
+// marketing: they are on until the customer turns them off.
+var ServiceTopics = map[string]bool{"delivery_updates": true}
 
 // UpcomingTopics are listed so customers know they are coming; they cannot be
 // set until the features that send them exist.
 var UpcomingTopics = List{
 	{"subscription_reminders", "Subscription reminders"},
-	{"delivery_updates", "Delivery updates"},
 }
 
 // LaunchConsentTopics are the topics covered by the consent a waitlist lead

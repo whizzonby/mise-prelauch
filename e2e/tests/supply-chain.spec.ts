@@ -247,7 +247,8 @@ test("from a released plan to an approved order, a partial delivery, stock issue
   // At the door, on a phone: two of three bags; one torn.
   const receiver = await staff(browser, request, "receiving_staff", "Andre Receiver", { width: 390, height: 844 });
   await receiver.goto(`${urls.admin}/receiving`);
-  await receiver.getByRole("link", { name: "Receive" }).first().click();
+  // This run's order (earlier runs leave their partly received orders open).
+  await receiver.locator(`main a[href="/receiving/new?po=${orderUrl.split("/").pop()}"]`).click();
   const line = receiver.getByRole("region", { name: /Chicken thighs, 2 kg bag/ });
   await line.getByLabel("Packs delivered", { exact: true }).fill("2");
   await line.getByLabel("Accepted", { exact: true }).fill("1");

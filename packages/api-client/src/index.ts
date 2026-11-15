@@ -622,6 +622,83 @@ export type TraceLot = S["TraceLot"];
 export type TraceBatch = S["TraceBatch"];
 export type LotRef = S["LotRef"];
 
+// ---------- Sprint 7: fulfillment and delivery (generated types) ----------
+
+export type Fulfillment = S["Fulfillment"];
+export type FulfillmentPackage = S["FulfillmentPackage"];
+export type FulfillmentItem = S["FulfillmentItem"];
+export type FulfillmentHistory = S["FulfillmentHistory"];
+export type FulfillmentCheck = S["FulfillmentCheck"];
+export type VerifyInput = S["VerifyInput"];
+export type FulfillmentOutcome = S["FulfillmentOutcome"];
+export type ConsumerStatus = S["ConsumerStatus"];
+export type PackageLabel = S["PackageLabel"];
+export type FulfillmentTrace = S["FulfillmentTrace"];
+export type FulfillmentTraceItem = S["FulfillmentTraceItem"];
+export type FulfillmentTraceLot = S["FulfillmentTraceLot"];
+export type DeliverySettings = S["DeliverySettings"];
+export type DeliverySettingsInput = S["DeliverySettingsInput"];
+export type DeliveryZone = S["DeliveryZone"];
+export type DeliveryZoneInput = S["DeliveryZoneInput"];
+export type DeliveryRegion = S["DeliveryRegion"];
+export type RegionCoverage = S["RegionCoverage"];
+export type ServiceDay = S["ServiceDay"];
+export type ServiceDayInput = S["ServiceDayInput"];
+export type DeliveryWindow = S["DeliveryWindow"];
+export type DeliveryCapacity = S["DeliveryCapacity"];
+export type DeliveryCapacityInput = S["DeliveryCapacityInput"];
+export type DeliveryPartner = S["DeliveryPartner"];
+export type DeliveryPartnerInput = S["DeliveryPartnerInput"];
+export type PartnerCriterion = S["PartnerCriterion"];
+export type PartnerCriterionInput = S["PartnerCriterionInput"];
+export type PartnerStatusInput = S["PartnerStatusInput"];
+export type PartnerStatusEvent = S["PartnerStatusEvent"];
+export type Courier = S["Courier"];
+export type CourierInput = S["CourierInput"];
+export type DeliveryCost = S["DeliveryCost"];
+export type DeliveryCostInput = S["DeliveryCostInput"];
+export type Delivery = S["Delivery"];
+export type DeliveryAddress = S["DeliveryAddress"];
+export type PackageRef = S["PackageRef"];
+export type TrackingEvent = S["TrackingEvent"];
+export type DeliveryProof = S["DeliveryProof"];
+export type RescheduleRequest = S["RescheduleRequest"];
+export type PendingReschedule = S["PendingReschedule"];
+export type DeliveryReturn = S["DeliveryReturn"];
+export type DeliveryNotification = S["DeliveryNotification"];
+export type DeliveryCaseLink = S["DeliveryCaseLink"];
+export type ScheduleInput = S["ScheduleInput"];
+export type AddressCorrectionInput = S["AddressCorrectionInput"];
+export type StatusUpdateInput = S["StatusUpdateInput"];
+export type ProofInput = S["ProofInput"];
+export type OutcomeInput = S["OutcomeInput"];
+export type ReturnInput = S["ReturnInput"];
+export type ReturnReviewInput = S["ReturnReviewInput"];
+export type CorrectionInput = S["CorrectionInput"];
+export type RescheduleRequestInput = S["RescheduleRequestInput"];
+export type RescheduleDecisionInput = S["RescheduleDecisionInput"];
+export type DeliveryException = S["DeliveryException"];
+export type DeliveryExceptionEvent = S["DeliveryExceptionEvent"];
+export type DeliveryExceptionInput = S["DeliveryExceptionInput"];
+export type DeliveryExceptionUpdate = S["DeliveryExceptionUpdate"];
+export type DispatchRun = S["DispatchRun"];
+export type DispatchStop = S["DispatchStop"];
+export type DispatchManifest = S["DispatchManifest"];
+export type ManifestContent = S["ManifestContent"];
+export type ManifestStop = S["ManifestStop"];
+export type Handoff = S["Handoff"];
+export type DispatchRunInput = S["DispatchRunInput"];
+export type StopInput = S["StopInput"];
+export type HandoffInput = S["HandoffInput"];
+export type DeliveryReconciliation = S["DeliveryReconciliation"];
+export type DeliveryDiscrepancy = S["DeliveryDiscrepancy"];
+export type DeliveryOverview = S["DeliveryOverview"];
+export type DeliveryReport = S["DeliveryReport"];
+export type DeliveryBreakdown = S["DeliveryBreakdown"];
+export type CustomerDelivery = S["CustomerDelivery"];
+export type DeliveryMilestone = S["DeliveryMilestone"];
+export type DeliverySupportResult = S["DeliverySupportResult"];
+
 export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extraHeaders }: ClientOptions) {
   const base = baseUrl.replace(/\/$/, "");
 
@@ -1264,6 +1341,107 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<Report>("/admin/reports/production", { token, query: { from, to }, cache: "no-store" }),
     },
 
+    /** Sprint 7: fulfillment and delivery. Admin session; permissions per route (couriers see only their own runs). */
+    delivery: {
+      fulfillments: (token: string, query: { status?: string; week?: string; q?: string } = {}) =>
+        request<{ items: Fulfillment[] }>("/admin/fulfillment", { token, query, cache: "no-store" }),
+      fulfillment: (token: string, id: string) => request<Fulfillment>(`/admin/fulfillment/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      syncFulfillment: (token: string) => request<{ items: FulfillmentOutcome[] }>("/admin/fulfillment/sync", { method: "POST", token, cache: "no-store" }),
+      consumer: (token: string) => request<ConsumerStatus>("/admin/fulfillment/consumer", { token, cache: "no-store" }),
+      verify: (token: string, id: string, input: VerifyInput) =>
+        request<Fulfillment>(`/admin/fulfillment/${encodeURIComponent(id)}/verify`, { method: "POST", body: input, token, cache: "no-store" }),
+      releaseFulfillment: (token: string, id: string, version?: number) =>
+        request<Fulfillment>(`/admin/fulfillment/${encodeURIComponent(id)}/release`, { method: "POST", body: { version }, token, cache: "no-store" }),
+      labels: (token: string, id: string) => request<{ items: PackageLabel[] }>(`/admin/fulfillment/${encodeURIComponent(id)}/labels`, { token, cache: "no-store" }),
+      fulfillmentTrace: (token: string, id: string) => request<FulfillmentTrace>(`/admin/fulfillment/${encodeURIComponent(id)}/trace`, { token, cache: "no-store" }),
+      flagBatch: (token: string, id: string, reason: string) =>
+        request<{ exception_id: string }>(`/admin/fulfillment/batches/${encodeURIComponent(id)}/flag`, { method: "POST", body: { reason }, token, cache: "no-store" }),
+
+      overview: (token: string, date?: string) => request<DeliveryOverview>("/admin/delivery/overview", { token, query: { date }, cache: "no-store" }),
+      report: (token: string, from: string, to: string) => request<DeliveryReport>("/admin/reports/delivery", { token, query: { from, to }, cache: "no-store" }),
+      settings: (token: string) => request<DeliverySettings>("/admin/delivery/settings", { token, cache: "no-store" }),
+      saveSettings: (token: string, input: DeliverySettingsInput) =>
+        request<DeliverySettings>("/admin/delivery/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      zones: (token: string) => request<{ items: DeliveryZone[] }>("/admin/delivery/zones", { token, cache: "no-store" }),
+      saveZone: (token: string, id: string | null, input: DeliveryZoneInput) =>
+        id
+          ? request<DeliveryZone>(`/admin/delivery/zones/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<DeliveryZone>("/admin/delivery/zones", { method: "POST", body: input, token, cache: "no-store" }),
+      coverage: (token: string) => request<{ items: RegionCoverage[] }>("/admin/delivery/coverage", { token, cache: "no-store" }),
+      calendar: (token: string, from?: string, days?: number) =>
+        request<{ items: ServiceDay[] }>("/admin/delivery/calendar", { token, query: { from, days }, cache: "no-store" }),
+      saveServiceDay: (token: string, input: ServiceDayInput) =>
+        request<ServiceDay>("/admin/delivery/calendar", { method: "PUT", body: input, token, cache: "no-store" }),
+      capacity: (token: string, date: string) => request<{ items: DeliveryCapacity[] }>("/admin/delivery/capacity", { token, query: { date }, cache: "no-store" }),
+      setCapacity: (token: string, input: DeliveryCapacityInput) =>
+        request<{ items: DeliveryCapacity[] }>("/admin/delivery/capacity", { method: "PUT", body: input, token, cache: "no-store" }),
+      partners: (token: string) => request<{ items: DeliveryPartner[] }>("/admin/delivery/partners", { token, cache: "no-store" }),
+      partner: (token: string, id: string) => request<DeliveryPartner>(`/admin/delivery/partners/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      savePartner: (token: string, id: string | null, input: DeliveryPartnerInput) =>
+        id
+          ? request<DeliveryPartner>(`/admin/delivery/partners/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<DeliveryPartner>("/admin/delivery/partners", { method: "POST", body: input, token, cache: "no-store" }),
+      partnerCriterion: (token: string, id: string, input: PartnerCriterionInput) =>
+        request<DeliveryPartner>(`/admin/delivery/partners/${encodeURIComponent(id)}/criteria`, { method: "PUT", body: input, token, cache: "no-store" }),
+      partnerStatus: (token: string, id: string, input: PartnerStatusInput) =>
+        request<DeliveryPartner>(`/admin/delivery/partners/${encodeURIComponent(id)}/status`, { method: "POST", body: input, token, cache: "no-store" }),
+      couriers: (token: string) => request<{ items: Courier[] }>("/admin/delivery/couriers", { token, cache: "no-store" }),
+      saveCourier: (token: string, id: string | null, input: CourierInput) =>
+        id
+          ? request<Courier>(`/admin/delivery/couriers/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" })
+          : request<Courier>("/admin/delivery/couriers", { method: "POST", body: input, token, cache: "no-store" }),
+      costs: (token: string, runId?: string) => request<{ items: DeliveryCost[] }>("/admin/delivery/costs", { token, query: { run_id: runId }, cache: "no-store" }),
+      recordCost: (token: string, input: DeliveryCostInput) =>
+        request<DeliveryCost>("/admin/delivery/costs", { method: "POST", body: input, token, cache: "no-store" }),
+      exceptions: (token: string, query: { status?: string; stage?: string; delivery_id?: string; customer_id?: string } = {}) =>
+        request<{ items: DeliveryException[] }>("/admin/delivery/exceptions", { token, query, cache: "no-store" }),
+      exception: (token: string, id: string) => request<DeliveryException>(`/admin/delivery/exceptions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      raiseException: (token: string, input: DeliveryExceptionInput) =>
+        request<DeliveryException>("/admin/delivery/exceptions", { method: "POST", body: input, token, cache: "no-store" }),
+      updateException: (token: string, id: string, input: DeliveryExceptionUpdate) =>
+        request<DeliveryException>(`/admin/delivery/exceptions/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      deliveries: (token: string, query: { status?: string; date?: string; zone_id?: string; customer_id?: string; order_id?: string; q?: string } = {}) =>
+        request<{ items: Delivery[] }>("/admin/delivery/deliveries", { token, query, cache: "no-store" }),
+      delivery: (token: string, id: string) => request<Delivery>(`/admin/delivery/deliveries/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      deliveryAction: (
+        token: string,
+        id: string,
+        action: "schedule" | "events" | "proof" | "deliver" | "fail" | "reattempt" | "return" | "cancel" | "correct" | "reschedule-requests" | "cases",
+        body: object,
+      ) => request<Delivery>(`/admin/delivery/deliveries/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      correctAddress: (token: string, id: string, input: AddressCorrectionInput) =>
+        request<Delivery>(`/admin/delivery/deliveries/${encodeURIComponent(id)}/address`, { method: "PUT", body: input, token, cache: "no-store" }),
+      rescheduleRequests: (token: string) => request<{ items: PendingReschedule[] }>("/admin/delivery/reschedule-requests", { token, cache: "no-store" }),
+      decideReschedule: (token: string, id: string, input: RescheduleDecisionInput) =>
+        request<Delivery>(`/admin/delivery/reschedule-requests/${encodeURIComponent(id)}/decide`, { method: "POST", body: input, token, cache: "no-store" }),
+      returns: (token: string, status?: string) => request<{ items: DeliveryReturn[] }>("/admin/delivery/returns", { token, query: { status }, cache: "no-store" }),
+      reviewReturn: (token: string, id: string, input: ReturnReviewInput) =>
+        request<{ items: DeliveryReturn[] }>(`/admin/delivery/returns/${encodeURIComponent(id)}/review`, { method: "POST", body: input, token, cache: "no-store" }),
+      runs: (token: string, query: { date?: string; status?: string } = {}) =>
+        request<{ items: DispatchRun[] }>("/admin/delivery/dispatch-runs", { token, query, cache: "no-store" }),
+      run: (token: string, id: string) => request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createRun: (token: string, input: DispatchRunInput) =>
+        request<DispatchRun>("/admin/delivery/dispatch-runs", { method: "POST", body: input, token, cache: "no-store" }),
+      addStop: (token: string, id: string, input: StopInput) =>
+        request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/stops`, { method: "POST", body: input, token, cache: "no-store" }),
+      removeStop: (token: string, id: string, stop: string, reason: string) =>
+        request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/stops/${encodeURIComponent(stop)}/remove`, { method: "POST", body: { reason }, token, cache: "no-store" }),
+      sequence: (token: string, id: string, stopIds: string[]) =>
+        request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/sequence`, { method: "PUT", body: { stop_ids: stopIds }, token, cache: "no-store" }),
+      runAction: (token: string, id: string, action: "finalize" | "reopen" | "release", body: object = {}) =>
+        request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/${action}`, { method: "POST", body, token, cache: "no-store" }),
+      handoff: (token: string, id: string, input: HandoffInput) =>
+        request<DispatchRun>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/handoffs`, { method: "POST", body: input, token, cache: "no-store" }),
+      manifest: (token: string, id: string) => request<DispatchManifest>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/manifest`, { token, cache: "no-store" }),
+      /** The raw CSV response, to stream to the browser. */
+      manifestCsv: (token: string, id: string) =>
+        send(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/manifest`, { token, query: { format: "csv" }, cache: "no-store" }),
+      reconciliation: (token: string, id: string) =>
+        request<DeliveryReconciliation>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/reconciliation`, { token, cache: "no-store" }),
+      reconcile: (token: string, id: string, explanation: string) =>
+        request<DeliveryReconciliation>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/reconcile`, { method: "POST", body: { explanation }, token, cache: "no-store" }),
+    },
+
     /** Plans and published menus. Public: the same for everyone. */
     shop: {
       info: () => request<SubscriptionInfo>("/subscription-info", { cache: "no-store" }),
@@ -1351,6 +1529,12 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<Checkout>("/checkout/sessions", { method: "POST", body: { billing_cycle_id: billingCycleId }, token, cache: "no-store" }),
       checkout: (token: string, id: string) =>
         request<CheckoutResult>(`/checkout/sessions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      /** Sprint 7: the order's delivery (milestones, confirmed date, code while out). */
+      orderDelivery: (token: string, id: string) => request<CustomerDelivery>(`/me/orders/${encodeURIComponent(id)}/delivery`, { token, cache: "no-store" }),
+      deliverySupport: (token: string, id: string, message: string) =>
+        request<DeliverySupportResult>(`/me/orders/${encodeURIComponent(id)}/delivery/support`, { method: "POST", body: { message }, token, cache: "no-store" }),
+      requestReschedule: (token: string, id: string, input: { preferred_date?: string; reason: string }) =>
+        request<CustomerDelivery>(`/me/orders/${encodeURIComponent(id)}/delivery/reschedule-requests`, { method: "POST", body: input, token, cache: "no-store" }),
     },
 
     /** The test payment simulator (never available in production). */

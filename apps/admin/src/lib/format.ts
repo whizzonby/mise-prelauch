@@ -98,6 +98,44 @@ export function localInputValue(iso: string | null | undefined): string {
 
 export function commerceTone(status: string): "neutral" | "success" | "warning" | "error" | "accent" {
   switch (status) {
+    // Sprint 7: fulfillment and delivery.
+    case "verified":
+    case "ready_for_dispatch":
+    case "handed_over":
+    case "fulfilled":
+    case "delivered":
+    case "serviceable":
+    case "sent":
+    case "reconciled":
+    case "accepted":
+    case "resolved":
+      return "success";
+    case "ready_for_verification":
+    case "verification_in_progress":
+    case "assigned":
+    case "ready_for_pickup":
+    case "picked_up":
+    case "in_transit":
+    case "arriving":
+    case "queued":
+    case "requested":
+      return "accent";
+    case "exception":
+    case "delivery_failed":
+    case "discrepancy":
+    case "not_serviceable":
+    case "critical":
+    case "high":
+    case "missing":
+      return "error";
+    case "pending_assignment":
+    case "unzoned":
+    case "returned":
+    case "quarantined":
+    case "awaiting_review":
+    case "skipped":
+    case "medium":
+      return "warning";
     case "active":
     case "published":
     case "paid":

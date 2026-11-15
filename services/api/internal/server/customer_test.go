@@ -262,12 +262,15 @@ func TestNotificationPreferences(t *testing.T) {
 		t.Errorf("account security = %v", sec)
 	}
 	for _, topic := range list(t, res.Data["topics"]) {
-		if obj(t, topic)["enabled"] != false {
-			t.Errorf("optional topic on by default without consent: %v", topic)
+		// Delivery updates are service messages about a paid order: on until
+		// turned off. Every marketing topic stays off without consent.
+		want := obj(t, topic)["topic"] == "delivery_updates"
+		if obj(t, topic)["enabled"] != want {
+			t.Errorf("topic default: %v", topic)
 		}
 	}
 	h.wantError(h.do("PUT", "/api/v1/me/notification-preferences", map[string]any{"topics": map[string]bool{"account_security": false}}, me), http.StatusUnprocessableEntity, "validation_failed")
-	h.wantError(h.do("PUT", "/api/v1/me/notification-preferences", map[string]any{"topics": map[string]bool{"delivery_updates": true}}, me), http.StatusUnprocessableEntity, "validation_failed")
+	h.wantError(h.do("PUT", "/api/v1/me/notification-preferences", map[string]any{"topics": map[string]bool{"subscription_reminders": true}}, me), http.StatusUnprocessableEntity, "validation_failed")
 	h.wantError(h.do("PUT", "/api/v1/me/notification-preferences", map[string]any{"topics": map[string]bool{"spam": true}}, me), http.StatusUnprocessableEntity, "validation_failed")
 
 	res = h.do("PUT", "/api/v1/me/notification-preferences", map[string]any{"topics": map[string]bool{"promotions": true, "meal_updates": false}}, me)
@@ -352,7 +355,9 @@ func TestUnsubscribedLeadConsentIsNotCarriedOver(t *testing.T) {
 	}
 	me := bearer(h.customer("quiet@example.com"))
 	for _, tp := range list(t, h.do("GET", "/api/v1/me/notification-preferences", nil, me).Data["topics"]) {
-		if obj(t, tp)["enabled"] != false {
+		// Marketing consent is not carried over; service messages about a
+		// paid delivery are not marketing (vocab.ServiceTopics).
+		if obj(t, tp)["topic"] != "delivery_updates" && obj(t, tp)["enabled"] != false {
 			t.Errorf("topic on for an unsubscribed lead: %v", tp)
 		}
 	}

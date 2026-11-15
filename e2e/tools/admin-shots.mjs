@@ -1,5 +1,5 @@
 // Dev helper: signs in to the admin once and screenshots the main console pages at
-// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir> [sprint-4|sprint-5|sprint-6]
+// desktop and phone widths. Run from e2e/: node tools/admin-shots.mjs <out-dir> [sprint-4|sprint-5|sprint-6|sprint-7]
 import { chromium } from "@playwright/test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -85,7 +85,29 @@ const sprint4 = [
   ["settings", "/settings"],
   ["alerts", "/alerts"],
 ];
-const pages = set === "sprint-5" ? kitchen : set === "sprint-6" ? supply : sprint4;
+const delivery = [
+  ["delivery-overview", "/delivery"],
+  ["fulfillment-queue", "/fulfillment?status=all"],
+  ["fulfillment-verify", "/fulfillment?status=ready_for_verification", 'main a[href^="/fulfillment/"]'],
+  ["fulfillment-fulfilled", "/fulfillment?status=fulfilled", 'main a[href^="/fulfillment/"]'],
+  ["delivery-calendar", "/delivery/calendar"],
+  ["dispatch-planning", "/delivery/planning"],
+  ["dispatch-runs", "/delivery/runs"],
+  ["dispatch-run-reconciled", "/delivery/runs?status=reconciled", 'main a[href^="/delivery/runs/"]'],
+  ...(process.env.SHOT_DELIVERY ? [["delivery-detail", `/delivery/deliveries/${process.env.SHOT_DELIVERY}`]] : []),
+  ...(process.env.SHOT_CUSTOMER ? [["customer-deliveries", `/customers/${process.env.SHOT_CUSTOMER}?tab=deliveries`]] : []),
+  ["delivery-partners", "/delivery/partners"],
+  ["delivery-partner", "/delivery/partners", 'main a[href^="/delivery/partners/"]'],
+  ["couriers", "/delivery/couriers"],
+  ["delivery-zones", "/delivery/zones"],
+  ["delivery-exceptions", "/delivery/exceptions?status=all"],
+  ["delivery-exception", "/delivery/exceptions?status=all", 'main a[href^="/delivery/exceptions/"]'],
+  ["delivery-returns", "/delivery/returns?status=all"],
+  ["delivery-reconciliation", "/delivery/reconciliation"],
+  ["delivery-report", "/reports/delivery"],
+  ["delivery-settings", "/delivery/settings"],
+];
+const pages = set === "sprint-5" ? kitchen : set === "sprint-6" ? supply : set === "sprint-7" ? delivery : sprint4;
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

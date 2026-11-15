@@ -7,7 +7,8 @@
 //	misectl commerce seed-demo                 (demo plans and menus; needs CATALOG_DEMO_ENABLED)
 //	misectl commerce tick [-at 2026-11-20T04:00:00Z]   (one scheduler run; -at only when local)
 //	misectl production seed-demo               (a released demo production plan; local only, needs the worker)
-//	misectl events replay -consumer procurement -from 0   (re-deliver domain events after an id; consumers are idempotent)
+//	misectl delivery seed-demo [-ready]        (demo zone, days, partner and courier; -ready also completes the newest demo plan; local only)
+//	misectl events replay -consumer procurement|fulfillment -from 0   (re-deliver domain events after an id; consumers are idempotent)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -33,7 +34,7 @@ import (
 
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
-	"mise.tt/api/internal/procurement"
+	"mise.tt/api/internal/platform/consumer"
 	"mise.tt/api/internal/server"
 )
 
@@ -49,7 +50,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl delivery seed-demo [-ready] | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -168,20 +169,34 @@ func run(args []string) error {
 		fmt.Printf("demo production ready: plan %s for the week of %s, %d orders, meals %v, batches %v\n", out.Plan, out.Week, out.Orders, out.Meals, out.Batches)
 		return nil
 
+	case "delivery seed-demo":
+		fs := flag.NewFlagSet("delivery seed-demo", flag.ContinueOnError)
+		ready := fs.Bool("ready", false, "also complete the newest released demo production plan, so fulfillments exist")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		out, err := server.SeedDemoDelivery(ctx, cfg, pool, *ready)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("demo delivery ready: zone %s, %d service days, partner %s, courier %s, batches completed %v, fulfillments created %d\n",
+			out.Zone, len(out.ServiceDays), out.Partner, out.Courier, out.Completed, out.Obligations)
+		return nil
+
 	case "events replay":
 		fs := flag.NewFlagSet("events replay", flag.ContinueOnError)
-		consumer := fs.String("consumer", "", "the consumer to move back (procurement)")
+		consumerName := fs.String("consumer", "", "the consumer to move back (procurement or fulfillment)")
 		from := fs.Int64("from", -1, "deliver again every event after this id")
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
-		if *consumer != "procurement" {
-			return errors.New("-consumer procurement is the only consumer")
+		if *consumerName != "procurement" && *consumerName != "fulfillment" {
+			return errors.New("-consumer must be procurement or fulfillment")
 		}
-		if err := procurement.Replay(ctx, pool, *from); err != nil {
+		if err := consumer.Replay(ctx, pool, *consumerName, *from); err != nil {
 			return err
 		}
-		fmt.Printf("%s will receive events after %d again on the worker's next dispatch\n", *consumer, *from)
+		fmt.Printf("%s will receive events after %d again on the worker's next dispatch\n", *consumerName, *from)
 		return nil
 
 	case "doctor ":

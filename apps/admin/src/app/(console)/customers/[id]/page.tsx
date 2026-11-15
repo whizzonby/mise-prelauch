@@ -34,6 +34,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
     { key: "overview", label: "Overview" },
     { key: "orders", label: "Orders" },
     { key: "billing", label: "Billing" },
+    { key: "deliveries", label: "Deliveries", hidden: !can(admin, "delivery.read") },
     { key: "preferences", label: "Preferences", hidden: !c.can_view_sensitive },
     { key: "activity", label: "Activity" },
     { key: "notes", label: "Notes" },
@@ -64,6 +65,9 @@ export default async function CustomerPage({ params, searchParams }: { params: P
         {tab === "overview" ? <Overview c={c} canSubs={can(admin, "subscriptions.read")} /> : null}
         {tab === "orders" ? <Orders token={token} id={id} /> : null}
         {tab === "billing" ? <Billing token={token} id={id} canPayments={can(admin, "payments.read")} /> : null}
+        {tab === "deliveries" && can(admin, "delivery.read") ? (
+          <Deliveries token={token} id={id} canExceptions={can(admin, "delivery_exceptions.read")} canPartners={can(admin, "delivery_partners.read")} />
+        ) : null}
         {tab === "preferences" && c.can_view_sensitive ? <Preferences token={token} id={id} /> : null}
         {tab === "activity" ? <Activity token={token} id={id} /> : null}
         {tab === "notes" ? <Notes token={token} id={id} canWrite={can(admin, "leads.manage")} /> : null}
@@ -318,5 +322,60 @@ function Cases({ cases }: { cases: C["cases"] }) {
         </tr>
       ))}
     </DataTable>
+  );
+}
+
+/** Sprint 7: every delivery of this customer, its exceptions, and where each stands. */
+async function Deliveries({ token, id, canExceptions, canPartners }: { token: string; id: string; canExceptions: boolean; canPartners: boolean }) {
+  const [list, exceptions] = await Promise.all([
+    api.delivery.deliveries(token, { customer_id: id, status: "all" }),
+    canExceptions ? api.delivery.exceptions(token, { customer_id: id, status: "all" }) : Promise.resolve(null),
+  ]);
+  return (
+    <div className="grid gap-6">
+      <Panel title="Deliveries" note="Status, attempts and proof come from the delivery records. Open one for its full tracking history.">
+        {list.items.length ? (
+          <DataTable head={["Delivery", "Order", "Date", ...(canPartners ? ["Partner"] : []), "Attempt", "Proof", "Status"]}>
+            {list.items.map((d) => (
+              <tr key={d.id}>
+                <td className="p-3">
+                  <Link href={`/delivery/deliveries/${d.id}`} className="font-semibold underline underline-offset-4">
+                    {d.number}
+                  </Link>
+                </td>
+                <td className="p-3">{d.order_number}</td>
+                <td className="p-3">{d.service_date ? formatDay(d.service_date) : "Not scheduled"}</td>
+                {canPartners ? <td className="p-3">{d.partner_name ?? "—"}</td> : null}
+                <td className="p-3">{d.attempt}</td>
+                <td className="p-3">{d.has_proof ? "Recorded" : "—"}</td>
+                <td className="p-3">
+                  <StatusTag status={d.status} />
+                </td>
+              </tr>
+            ))}
+          </DataTable>
+        ) : (
+          <EmptyState>No deliveries yet.</EmptyState>
+        )}
+      </Panel>
+      {exceptions ? (
+        <Panel title="Delivery exceptions">
+          {exceptions.items.length ? (
+            <ul className="type-body-sm grid gap-2">
+              {exceptions.items.map((e) => (
+                <li key={e.id}>
+                  <Link href={`/delivery/exceptions/${e.id}`} className="font-semibold underline underline-offset-4">
+                    {e.number}
+                  </Link>{" "}
+                  · {humanize(e.type)} · {e.summary} · <StatusTag status={e.status} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState>No exceptions.</EmptyState>
+          )}
+        </Panel>
+      ) : null}
+    </div>
   );
 }

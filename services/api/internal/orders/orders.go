@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -467,4 +468,56 @@ func (s *Service) Advance(ctx context.Context, q db.Querier, orderIDs []string, 
 		n++
 	}
 	return n, rows.Err()
+}
+
+// FulfillmentFacts is what fulfillment needs to decide whether an order may
+// be fulfilled: its status, who it is for, what was paid and the address
+// copied when it was made. Fulfillment reads this; it never edits an order.
+type FulfillmentFacts struct {
+	OrderID       string
+	Number        string
+	CustomerID    string
+	Status        string
+	Week          time.Time
+	TotalMinor    int64
+	PaymentStatus string // "" when the week was free (no payment)
+	Address       json.RawMessage
+	Kits          int
+}
+
+// PaymentEligible: the week was paid and not refunded, or nothing was owed.
+func (f FulfillmentFacts) PaymentEligible() (bool, string) {
+	switch {
+	case f.PaymentStatus == "" && f.TotalMinor == 0:
+		return true, ""
+	case f.PaymentStatus == "succeeded":
+		return true, ""
+	case f.PaymentStatus == "":
+		return false, "The order has no payment but a total above zero."
+	}
+	return false, "The order's payment is " + strings.ReplaceAll(f.PaymentStatus, "_", " ") + "."
+}
+
+// Facts returns an order's FulfillmentFacts, or httpx.ErrNotFound.
+func (s *Service) Facts(ctx context.Context, q db.Querier, orderID string) (*FulfillmentFacts, error) {
+	var f FulfillmentFacts
+	err := q.QueryRow(ctx, `
+		SELECT o.id, o.number, o.customer_id, o.status, o.week_start, o.total_minor, COALESCE(p.status, ''), o.address_snapshot,
+		       (SELECT COALESCE(sum(quantity), 0)::int FROM order_items WHERE order_id = o.id)
+		FROM orders o LEFT JOIN payments p ON p.id = o.payment_id WHERE o.id = $1`, orderID).
+		Scan(&f.OrderID, &f.Number, &f.CustomerID, &f.Status, &f.Week, &f.TotalMinor, &f.PaymentStatus, &f.Address, &f.Kits)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, httpx.ErrNotFound
+	}
+	return &f, err
+}
+
+// ReadyOrderIDs lists every order at ready_for_fulfillment (the fulfillment
+// "sync" action uses it to catch anything a missed event left behind).
+func (s *Service) ReadyOrderIDs(ctx context.Context, q db.Querier) ([]string, error) {
+	rows, err := q.Query(ctx, `SELECT id::text FROM orders WHERE status = 'ready_for_fulfillment' ORDER BY week_start, number`)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }

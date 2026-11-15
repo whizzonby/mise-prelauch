@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.6.0
+  version: 1.7.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -79,6 +79,12 @@ tags:
     description: Procurement planning, quotations and purchase orders (Sprint 6).
   - name: admin-inventory
     description: Receiving, lots, the stock ledger, reservations, issues, counts and traceability (Sprint 6).
+  - name: admin-fulfillment
+    description: "Fulfillment: obligations from production readiness, kit verification, release (Sprint 7)."
+  - name: admin-delivery
+    description: "Delivery: zones, calendar, capacity, partners, dispatch, custody, tracking, proof, exceptions, reconciliation (Sprint 7)."
+  - name: customer-delivery
+    description: A customer's own delivery status, support and reschedule requests (Sprint 7).
 paths:
   /api/v1/health:
     get:
@@ -8888,6 +8894,1902 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
 
+  /api/v1/admin/fulfillment:
+    get:
+      tags: [admin-fulfillment]
+      operationId: adminFulfillments
+      description: The queue; exceptions first. Needs fulfillment.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: week
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Fulfillment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/sync:
+    post:
+      tags: [admin-fulfillment]
+      operationId: adminSyncFulfillment
+      description: Evaluates ready orders that have no fulfillment (a missed event). Needs fulfillment.release.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Outcomes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/FulfillmentOutcome" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/consumer:
+    get:
+      tags: [admin-fulfillment]
+      operationId: adminFulfillmentConsumer
+      description: "The readiness consumer's offset and failed jobs. Needs fulfillment.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ConsumerStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/batches/{id}/flag:
+    post:
+      tags: [admin-fulfillment]
+      operationId: adminFlagBatch
+      description: Raises a blocking exception that stops verification and release of every order with kits from the batch. Production records are not changed. Needs fulfillment.verify.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "201":
+          description: Raised.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [exception_id]
+                    properties:
+                      exception_id: { type: string, format: uuid }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/{id}:
+    get:
+      tags: [admin-fulfillment]
+      operationId: adminFulfillment
+      description: Needs fulfillment.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Fulfillment.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Fulfillment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/{id}/verify:
+    post:
+      tags: [admin-fulfillment]
+      operationId: adminVerifyItem
+      description: Same idempotency key twice returns the current state. Needs fulfillment.verify.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyInput" }
+      responses:
+        "200":
+          description: Fulfillment.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Fulfillment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/{id}/release:
+    post:
+      tags: [admin-fulfillment]
+      operationId: adminReleaseFulfillment
+      description: "Re-checks holds, batch flags, eligibility and blocking exceptions, then creates the delivery. Needs fulfillment.release."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionInput" }
+      responses:
+        "200":
+          description: Fulfillment.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Fulfillment" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/{id}/labels:
+    get:
+      tags: [admin-fulfillment]
+      operationId: adminFulfillmentLabels
+      description: Not certified for live use until delivery settings say so. Needs fulfillment.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/PackageLabel" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/fulfillment/{id}/trace:
+    get:
+      tags: [admin-fulfillment]
+      operationId: adminFulfillmentTrace
+      description: Needs fulfillment.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Trace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FulfillmentTrace" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/settings:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliverySettings
+      description: With the operational blockers. Needs admin.access (any staff, because couriers need the proof policy).
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliverySettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-delivery]
+      operationId: adminSaveDeliverySettings
+      description: Needs delivery_settings.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySettingsInput" }
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliverySettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/zones:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryZones
+      description: Needs delivery_zones.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryZone" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminCreateDeliveryZone
+      description: A region belongs to at most one zone. Needs delivery_zones.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryZoneInput" }
+      responses:
+        "201":
+          description: Zone.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryZone" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/zones/{id}:
+    patch:
+      tags: [admin-delivery]
+      operationId: adminUpdateDeliveryZone
+      description: Needs delivery_zones.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryZoneInput" }
+      responses:
+        "200":
+          description: Zone.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryZone" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/coverage:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryCoverage
+      description: Every customer-facing region and the zone covering it. Needs delivery_zones.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/RegionCoverage" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/calendar:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryCalendar
+      description: Needs delivery_zones.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: days
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ServiceDay" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-delivery]
+      operationId: adminSaveServiceDay
+      description: "An approved delivery date or a closure, for all zones or one. Needs delivery_zones.manage."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServiceDayInput" }
+      responses:
+        "200":
+          description: Day.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ServiceDay" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/capacity:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryCapacity
+      description: "No row means capacity is unknown, never unlimited. Needs delivery_zones.read."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: date, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryCapacity" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-delivery]
+      operationId: adminSetDeliveryCapacity
+      description: Cannot go below what is assigned. Needs delivery_zones.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryCapacityInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryCapacity" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/exceptions:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryExceptions
+      description: Needs delivery_exceptions.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: stage
+          in: query
+          required: false
+          schema: { type: string }
+        - name: delivery_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryException" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminRaiseDeliveryException
+      description: A blocking exception on a fulfillment interrupts it. Needs delivery_exceptions.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryExceptionInput" }
+      responses:
+        "201":
+          description: Raised.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryException" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/exceptions/{id}:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryException
+      description: Needs delivery_exceptions.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Exception.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryException" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-delivery]
+      operationId: adminUpdateDeliveryException
+      description: Needs delivery_exceptions.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryExceptionUpdate" }
+      responses:
+        "200":
+          description: Exception.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryException" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/overview:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryOverview
+      description: Counts from records; blockers listed. Needs delivery_reports.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: date, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: Overview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryOverview" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/delivery:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryReport
+      description: Every figure defined; on-time only where a date was confirmed. Needs delivery_reports.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Report.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryReport" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/partners:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryPartners
+      description: Needs delivery_partners.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminCreateDeliveryPartner
+      description: Starts as draft. Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryPartnerInput" }
+      responses:
+        "201":
+          description: Partner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/partners/{id}:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryPartner
+      description: Needs delivery_partners.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Partner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-delivery]
+      operationId: adminUpdateDeliveryPartner
+      description: An approved partner whose agreement is no longer signed is suspended. Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryPartnerInput" }
+      responses:
+        "200":
+          description: Partner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/partners/{id}/criteria:
+    put:
+      tags: [admin-delivery]
+      operationId: adminRecordPartnerCriterion
+      description: Withdrawing a criterion suspends an approved partner. Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerCriterionInput" }
+      responses:
+        "200":
+          description: Partner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/partners/{id}/status:
+    post:
+      tags: [admin-delivery]
+      operationId: adminSetPartnerStatus
+      description: Approval needs a signed agreement and every criterion met. Needs delivery_partners.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerStatusInput" }
+      responses:
+        "200":
+          description: Partner.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryPartner" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/couriers:
+    get:
+      tags: [admin-delivery]
+      operationId: adminCouriers
+      description: Needs delivery_partners.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Courier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminCreateCourier
+      description: A linked login must hold the courier role. Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourierInput" }
+      responses:
+        "201":
+          description: Courier.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Courier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/couriers/{id}:
+    patch:
+      tags: [admin-delivery]
+      operationId: adminUpdateCourier
+      description: Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourierInput" }
+      responses:
+        "200":
+          description: Courier.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Courier" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/costs:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryCosts
+      description: Needs delivery_partners.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: run_id, in: query, required: false, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryCost" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminRecordDeliveryCost
+      description: Factual records only; a contracted cost needs its rate reference. Needs delivery_partners.manage.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliveryCostInput" }
+      responses:
+        "201":
+          description: Cost.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryCost" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveries
+      description: "Needs delivery.read or delivery.read_assigned (couriers: only their own runs)."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: zone_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: customer_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: order_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDelivery
+      description: "Proofs need delivery_proof.read. Needs delivery.read or delivery.read_assigned (couriers: only their own runs)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/schedule:
+    post:
+      tags: [admin-delivery]
+      operationId: adminScheduleDelivery
+      description: An approved service day (and approved window) for the zone. Needs delivery.plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScheduleInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/address:
+    put:
+      tags: [admin-delivery]
+      operationId: adminCorrectDeliveryAddress
+      description: Before dispatch only; the old address stays in the history. Needs delivery.plan.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddressCorrectionInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/events:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRecordDeliveryStatus
+      description: "In transit, arriving or a note. Same key twice is one event. Needs delivery.update_status (couriers: own runs)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StatusUpdateInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/proof:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRecordProof
+      description: Accepted only for an approved method whose check passes; a wrong code is kept as rejected. Needs delivery_proof.create.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProofInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/deliver:
+    post:
+      tags: [admin-delivery]
+      operationId: adminCompleteDelivery
+      description: Needs accepted proof for the current attempt. Needs delivery.confirm.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutcomeInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/fail:
+    post:
+      tags: [admin-delivery]
+      operationId: adminFailDelivery
+      description: A configured reason; raises an exception. Needs delivery.confirm.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutcomeInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/reattempt:
+    post:
+      tags: [admin-delivery]
+      operationId: adminReattemptDelivery
+      description: A new attempt needs a new handoff. Needs delivery.reschedule.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/return:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRecordDeliveryReturn
+      description: "Packages are quarantined for review, never returned to stock. Needs delivery_exceptions.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReturnInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/cancel:
+    post:
+      tags: [admin-delivery]
+      operationId: adminCancelDelivery
+      description: Before pickup. The order and payment are unchanged. Needs delivery.dispatch.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/correct:
+    post:
+      tags: [admin-delivery]
+      operationId: adminCorrectDelivery
+      description: The only way to undo a recorded outcome; explicit and audited. Needs delivery_settings.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorrectionInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/reschedule-requests:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRequestReschedule
+      description: Needs delivery.reschedule.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RescheduleRequestInput" }
+      responses:
+        "201":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/deliveries/{id}/cases:
+    post:
+      tags: [admin-delivery]
+      operationId: adminLinkDeliveryCase
+      description: Links a support case of the same customer. Needs delivery_exceptions.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaseLinkInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/reschedule-requests:
+    get:
+      tags: [admin-delivery]
+      operationId: adminRescheduleRequests
+      description: Open requests. Needs delivery.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/PendingReschedule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/reschedule-requests/{id}/decide:
+    post:
+      tags: [admin-delivery]
+      operationId: adminDecideReschedule
+      description: Checks the calendar and known capacity. Needs delivery.reschedule.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RescheduleDecisionInput" }
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Delivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/returns:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDeliveryReturns
+      description: Needs delivery_exceptions.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryReturn" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/returns/{id}/review:
+    post:
+      tags: [admin-delivery]
+      operationId: adminReviewReturn
+      description: "Discarded, or the approved procedure followed. Needs delivery_exceptions.manage."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReturnReviewInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DeliveryReturn" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDispatchRuns
+      description: "Needs delivery.read or delivery.read_assigned (couriers: only their own runs)."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-delivery]
+      operationId: adminCreateDispatchRun
+      description: "Approved partners only, unless the exception policy allows it with a reason. Needs delivery.assign."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DispatchRunInput" }
+      responses:
+        "201":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDispatchRun
+      description: "Needs delivery.read or delivery.read_assigned (couriers: only their own runs)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/manifest:
+    get:
+      tags: [admin-delivery]
+      operationId: adminDispatchManifest
+      description: "JSON, or ?format=csv. Never cached; every download audited. Needs delivery.read or delivery.read_assigned (couriers: only their own runs)."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Manifest.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchManifest" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/stops:
+    post:
+      tags: [admin-delivery]
+      operationId: adminAddStop
+      description: "Checks partner approval and coverage, the schedule and capacity under row locks. Needs delivery.assign."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StopInput" }
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/stops/{stop}/remove:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRemoveStop
+      description: Needs delivery.assign.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: stop
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/sequence:
+    put:
+      tags: [admin-delivery]
+      operationId: adminSequenceStops
+      description: Manual order; there is no route optimiser. Needs delivery.assign.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SequenceInput" }
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/finalize:
+    post:
+      tags: [admin-delivery]
+      operationId: adminFinalizeRun
+      description: Freezes the manifest. Needs delivery.dispatch.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/reopen:
+    post:
+      tags: [admin-delivery]
+      operationId: adminReopenRun
+      description: "The manifest is superseded, not deleted. Needs delivery.dispatch."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonInput" }
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/release:
+    post:
+      tags: [admin-delivery]
+      operationId: adminReleaseRun
+      description: Ready for pickup; nothing is in custody until a handoff. Needs delivery.dispatch.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/handoffs:
+    post:
+      tags: [admin-delivery]
+      operationId: adminRecordHandoff
+      description: Per package; a rejected or missing package raises a blocking exception. Needs delivery.dispatch.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HandoffInput" }
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DispatchRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/reconciliation:
+    get:
+      tags: [admin-delivery]
+      operationId: adminRunReconciliation
+      description: Needs delivery.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Reconciliation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryReconciliation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/delivery/dispatch-runs/{id}/reconcile:
+    post:
+      tags: [admin-delivery]
+      operationId: adminReconcileRun
+      description: Refused while any discrepancy remains. Needs delivery.reconcile.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExplanationInput" }
+      responses:
+        "200":
+          description: Reconciliation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliveryReconciliation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/orders/{id}/delivery:
+    get:
+      tags: [customer-delivery]
+      operationId: myOrderDelivery
+      description: "Your order's delivery: milestones, confirmed date and window, address, and your code while it is out."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerDelivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/me/orders/{id}/delivery/support:
+    post:
+      tags: [customer-delivery]
+      operationId: myDeliverySupport
+      description: Opens a support case linked to the delivery.
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeliverySupportInput" }
+      responses:
+        "201":
+          description: Received.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeliverySupportResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/orders/{id}/delivery/reschedule-requests:
+    post:
+      tags: [customer-delivery]
+      operationId: myRescheduleRequest
+      description: "A request, not a promise: staff confirm a new date."
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RescheduleRequestInput" }
+      responses:
+        "201":
+          description: Delivery.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerDelivery" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -9197,7 +11099,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -13654,3 +15556,1176 @@ components:
         origin: { type: string, enum: [price_list, quotation, verbal, other] }
         note: { type: string }
       description: Per pack. Earlier prices are kept.
+    # ---------------- Sprint 7: fulfillment and delivery
+    FulfillmentItem:
+      type: object
+      required: [id, meal_id, meal_name, quantity, batch_id, batch_code, recipe_version_id, recipe_version, status, verified_quantity]
+      properties:
+        id: { type: string, format: uuid }
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        quantity: { type: integer }
+        batch_id: { type: string, format: uuid }
+        batch_code: { type: string }
+        recipe_version_id: { type: string, format: uuid }
+        recipe_version: { type: integer }
+        status: { type: string, enum: [pending, verified, discrepancy] }
+        verified_quantity: { type: [integer, "null"] }
+    FulfillmentPackage:
+      type: object
+      required: [id, code, sequence, verification_status, verified_at, handoff_status, items]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        sequence: { type: integer }
+        verification_status: { type: string, enum: [pending, verified, discrepancy] }
+        verified_at: { type: [string, "null"], format: date-time }
+        handoff_status: { type: string, enum: [pending, handed_over, returned, missing] }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentItem" }
+    FulfillmentHistory:
+      type: object
+      required: [from, to, reason, actor_name, at]
+      properties:
+        from: { type: [string, "null"] }
+        to: { type: string }
+        reason: { type: [string, "null"] }
+        actor_name: { type: [string, "null"] }
+        at: { type: string, format: date-time }
+    FulfillmentCheck:
+      type: object
+      required: [item_id, counted_quantity, scanned_batch_code, result, discrepancy, actor_name, at]
+      properties:
+        item_id: { type: string, format: uuid }
+        counted_quantity: { type: integer }
+        scanned_batch_code: { type: string }
+        result: { type: string, enum: [verified, discrepancy] }
+        discrepancy: { type: [string, "null"] }
+        actor_name: { type: [string, "null"] }
+        at: { type: string, format: date-time }
+    Fulfillment:
+      type: object
+      required: [id, number, order_id, order_number, customer_id, customer_name, week, plan_id, status, resume_status, version, kits_required, created_at, verified_at, released_at, handed_over_at, fulfilled_at, delivery_id, delivery_number, region, open_blocking_exceptions]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        order_id: { type: string, format: uuid }
+        order_number: { type: string }
+        customer_id: { type: string, format: uuid }
+        customer_name: { type: string }
+        week: { type: string, format: date }
+        plan_id: { type: [string, "null"], format: uuid }
+        status:
+          type: string
+          enum: [ready_for_verification, verification_in_progress, verified, ready_for_dispatch, handed_over, fulfilled, exception, cancelled]
+        resume_status: { type: [string, "null"] }
+        version: { type: integer }
+        kits_required: { type: integer }
+        created_at: { type: string, format: date-time }
+        verified_at: { type: [string, "null"], format: date-time }
+        released_at: { type: [string, "null"], format: date-time }
+        handed_over_at: { type: [string, "null"], format: date-time }
+        fulfilled_at: { type: [string, "null"], format: date-time }
+        delivery_id: { type: [string, "null"], format: uuid }
+        delivery_number: { type: [string, "null"] }
+        region: { type: string }
+        open_blocking_exceptions: { type: integer }
+        packages:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentPackage" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentHistory" }
+        verifications:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentCheck" }
+    VerifyInput:
+      type: object
+      required: [item_id, counted_quantity, scanned_batch_code, idempotency_key]
+      additionalProperties: false
+      properties:
+        item_id: { type: string, format: uuid }
+        counted_quantity: { type: integer }
+        scanned_batch_code: { type: string }
+        recipe_confirmed: { type: boolean }
+        packaging_ok: { type: boolean }
+        label_ok: { type: boolean }
+        discrepancy: { type: string }
+        idempotency_key: { type: string }
+      description: "One item checked at the packing table. Any mismatch is recorded as a discrepancy, never as verified."
+    VersionInput:
+      type: object
+      additionalProperties: false
+      properties:
+        version: { type: integer }
+    FulfillmentOutcome:
+      type: object
+      required: [order_id, result]
+      properties:
+        order_id: { type: string, format: uuid }
+        result: { type: string, enum: [created, exception, cancelled, exists, not_ready] }
+        detail: { type: string }
+    ConsumerStatus:
+      type: object
+      required: [last_event_id, updated_at, waiting, failed]
+      properties:
+        last_event_id: { type: integer }
+        updated_at: { type: string, format: date-time }
+        waiting: { type: integer }
+        failed:
+          type: array
+          items:
+            type: object
+            required: [job_id, payload, error, attempts, failed_at]
+            properties:
+              job_id: { type: integer }
+              payload: { type: string }
+              error: { type: string }
+              attempts: { type: integer }
+              failed_at: { type: string, format: date-time }
+    PackageLabel:
+      type: object
+      required: [package_code, scan_code, order_number, recipient, region, zone_code, delivery_date, kits, contents, handling, certified]
+      properties:
+        package_code: { type: string }
+        scan_code: { type: string }
+        order_number: { type: string }
+        recipient: { type: string }
+        region: { type: string }
+        zone_code: { type: [string, "null"] }
+        delivery_date: { type: [string, "null"], format: date }
+        kits: { type: integer }
+        contents:
+          type: array
+          items: { type: string }
+        handling: { type: string }
+        certified: { type: boolean }
+        notice: { type: string }
+    FulfillmentTraceLot:
+      type: object
+      required: [lot_id, lot_code, ingredient, supplier_name]
+      properties:
+        lot_id: { type: string, format: uuid }
+        lot_code: { type: string }
+        ingredient: { type: string }
+        supplier_name: { type: string }
+    FulfillmentTraceItem:
+      type: object
+      required: [package_code, meal_name, quantity, batch_id, batch_code, recipe_version, lots]
+      properties:
+        package_code: { type: string }
+        meal_name: { type: string }
+        quantity: { type: integer }
+        batch_id: { type: string, format: uuid }
+        batch_code: { type: string }
+        recipe_version: { type: integer }
+        lots:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentTraceLot" }
+    FulfillmentTrace:
+      type: object
+      required: [order_number, level, items, delivery]
+      properties:
+        order_number: { type: string }
+        level: { type: string, enum: [batch] }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/FulfillmentTraceItem" }
+        delivery:
+          oneOf:
+            - type: object
+              required: [number, status, proof_method, delivered_at]
+              properties:
+                number: { type: string }
+                status: { type: string }
+                proof_method: { type: [string, "null"] }
+                delivered_at: { type: [string, "null"], format: date-time }
+            - type: "null"
+      description: "Batch-level: package \u2192 batch \u2192 ingredient lots. Kit-level lot allocation is not recorded."
+    DeliverySettings:
+      type: object
+      required: [proof_methods, proof_policy_ref, reschedule_cutoff_hours, failure_reasons, allow_unapproved_partners, unapproved_partner_policy_ref, label_certified, customer_emails_approved, updated_at, blockers]
+      properties:
+        proof_methods:
+          type: array
+          items: { type: string }
+        proof_policy_ref: { type: string }
+        reschedule_cutoff_hours: { type: [integer, "null"] }
+        failure_reasons:
+          type: array
+          items: { type: string }
+        allow_unapproved_partners: { type: boolean }
+        unapproved_partner_policy_ref: { type: string }
+        label_certified: { type: boolean }
+        customer_emails_approved: { type: boolean }
+        updated_at: { type: string, format: date-time }
+        blockers:
+          type: array
+          items: { type: string }
+    DeliverySettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        proof_methods:
+          type: array
+          items: { type: string }
+        proof_policy_ref: { type: string }
+        reschedule_cutoff_hours: { type: integer }
+        clear_reschedule_policy: { type: boolean }
+        failure_reasons:
+          type: array
+          items: { type: string }
+        allow_unapproved_partners: { type: boolean }
+        unapproved_partner_policy_ref: { type: string }
+        label_certified: { type: boolean }
+        customer_emails_approved: { type: boolean }
+      description: Fields left out keep their value. Photo proof cannot be enabled (no secure evidence storage).
+    DeliveryRegion:
+      type: object
+      required: [country, region, status]
+      properties:
+        country: { type: string }
+        region: { type: string }
+        status: { type: string }
+    DeliveryZone:
+      type: object
+      required: [id, code, name, status, fee_policy_ref, notes, regions, partner_count, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [draft, active, inactive] }
+        fee_policy_ref: { type: string }
+        notes: { type: string }
+        regions:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryRegion" }
+        partner_count: { type: integer }
+        updated_at: { type: string, format: date-time }
+    DeliveryZoneInput:
+      type: object
+      required: [code, name]
+      additionalProperties: false
+      properties:
+        code: { type: string }
+        name: { type: string }
+        status: { type: string }
+        fee_policy_ref: { type: string }
+        notes: { type: string }
+        regions:
+          type: array
+          items: { type: string }
+    RegionCoverage:
+      type: object
+      required: [country, region, status, zone_id, zone_code]
+      properties:
+        country: { type: string }
+        region: { type: string }
+        status: { type: string }
+        zone_id: { type: [string, "null"], format: uuid }
+        zone_code: { type: [string, "null"] }
+    DeliveryWindow:
+      type: object
+      required: [id, label, starts_at, ends_at, status]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        starts_at: { type: string }
+        ends_at: { type: string }
+        status: { type: string, enum: [draft, approved] }
+    ServiceDay:
+      type: object
+      required: [id, date, zone_id, zone_code, status, cutoff_at, notes, windows]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        zone_id: { type: [string, "null"], format: uuid }
+        zone_code: { type: [string, "null"] }
+        status: { type: string, enum: [open, closed] }
+        cutoff_at: { type: [string, "null"], format: date-time }
+        notes: { type: string }
+        windows:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryWindow" }
+    ServiceDayInput:
+      type: object
+      required: [date, status]
+      additionalProperties: false
+      properties:
+        date: { type: string, format: date }
+        zone_id: { type: string }
+        status: { type: string, enum: [open, closed] }
+        cutoff_at: { type: string, format: date-time }
+        notes: { type: string }
+        windows:
+          type: array
+          items:
+            type: object
+            required: [label, starts_at, ends_at]
+            additionalProperties: false
+            properties:
+              label: { type: string }
+              starts_at: { type: string }
+              ends_at: { type: string }
+              status: { type: string }
+    DeliveryCapacity:
+      type: object
+      required: [id, date, zone_id, zone_code, window_id, window_label, partner_id, partner_name, courier_id, courier_name, capacity, assigned, remaining, notes]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        zone_id: { type: [string, "null"], format: uuid }
+        zone_code: { type: [string, "null"] }
+        window_id: { type: [string, "null"], format: uuid }
+        window_label: { type: [string, "null"] }
+        partner_id: { type: [string, "null"], format: uuid }
+        partner_name: { type: [string, "null"] }
+        courier_id: { type: [string, "null"], format: uuid }
+        courier_name: { type: [string, "null"] }
+        capacity: { type: integer }
+        assigned: { type: integer }
+        remaining: { type: integer }
+        notes: { type: string }
+    DeliveryCapacityInput:
+      type: object
+      required: [date, capacity]
+      additionalProperties: false
+      properties:
+        date: { type: string, format: date }
+        zone_id: { type: string }
+        window_id: { type: string }
+        partner_id: { type: string }
+        courier_id: { type: string }
+        capacity: { type: integer }
+        notes: { type: string }
+    PartnerCriterion:
+      type: object
+      required: [criterion, met, evidence, recorded_at]
+      properties:
+        criterion: { type: string }
+        met: { type: [boolean, "null"] }
+        evidence: { type: string }
+        recorded_at: { type: [string, "null"], format: date-time }
+    PartnerStatusEvent:
+      type: object
+      required: [from, to, reason, actor_name, at]
+      properties:
+        from: { type: [string, "null"] }
+        to: { type: string }
+        reason: { type: [string, "null"] }
+        actor_name: { type: [string, "null"] }
+        at: { type: string, format: date-time }
+    DeliveryPartner:
+      type: object
+      required: [id, name, contact_name, phone, email, escalation_contact, integration_mode, agreement_status, agreement_ref, status, capabilities, supported_windows, capacity_note, billing_reference, notes, demo, version, approved_at, zone_ids, courier_count, assignable, adapter_supports]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        contact_name: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        escalation_contact: { type: string }
+        integration_mode: { type: string, enum: [manual, file, api, internal_fleet] }
+        agreement_status: { type: string, enum: [none, negotiating, signed, expired, terminated] }
+        agreement_ref: { type: string }
+        status: { type: string, enum: [draft, pending_approval, approved, suspended, retired] }
+        capabilities:
+          type: array
+          items: { type: string }
+        supported_windows: { type: string }
+        capacity_note: { type: string }
+        billing_reference: { type: string }
+        notes: { type: string }
+        demo: { type: boolean }
+        version: { type: integer }
+        approved_at: { type: [string, "null"], format: date-time }
+        zone_ids:
+          type: array
+          items: { type: string, format: uuid }
+        courier_count: { type: integer }
+        assignable: { type: boolean }
+        adapter_supports:
+          type: array
+          items: { type: string }
+        criteria:
+          type: array
+          items: { $ref: "#/components/schemas/PartnerCriterion" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/PartnerStatusEvent" }
+    DeliveryPartnerInput:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string }
+        contact_name: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        escalation_contact: { type: string }
+        integration_mode: { type: string }
+        agreement_status: { type: string }
+        agreement_ref: { type: string }
+        capabilities:
+          type: array
+          items: { type: string }
+        supported_windows: { type: string }
+        capacity_note: { type: string }
+        billing_reference: { type: string }
+        notes: { type: string }
+        zone_ids:
+          type: array
+          items: { type: string, format: uuid }
+        version: { type: integer }
+    PartnerCriterionInput:
+      type: object
+      required: [criterion, met]
+      additionalProperties: false
+      properties:
+        criterion: { type: string }
+        met: { type: boolean }
+        evidence: { type: string }
+    PartnerStatusInput:
+      type: object
+      required: [status, reason]
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [draft, pending_approval, approved, suspended, retired] }
+        reason: { type: string }
+    Courier:
+      type: object
+      required: [id, partner_id, partner_name, name, phone, user_id, user_email, zone_ids, status, notes, demo, runs, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        partner_id: { type: string, format: uuid }
+        partner_name: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        user_id: { type: [string, "null"], format: uuid }
+        user_email: { type: [string, "null"] }
+        zone_ids:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [active, inactive] }
+        notes: { type: string }
+        demo: { type: boolean }
+        runs: { type: integer }
+        updated_at: { type: string, format: date-time }
+    CourierInput:
+      type: object
+      required: [partner_id, name]
+      additionalProperties: false
+      properties:
+        partner_id: { type: string, format: uuid }
+        name: { type: string }
+        phone: { type: string }
+        user_email: { type: string }
+        zone_ids:
+          type: array
+          items: { type: string, format: uuid }
+        status: { type: string }
+        notes: { type: string }
+    DeliveryCost:
+      type: object
+      required: [id, partner_id, partner_name, delivery_id, delivery_number, run_id, run_number, kind, amount_minor, currency, rate_reference, status, notes, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        partner_id: { type: string, format: uuid }
+        partner_name: { type: string }
+        delivery_id: { type: [string, "null"], format: uuid }
+        delivery_number: { type: [string, "null"] }
+        run_id: { type: [string, "null"], format: uuid }
+        run_number: { type: [string, "null"] }
+        kind: { type: string, enum: [estimated, contracted, actual, adjustment] }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        rate_reference: { type: string }
+        status: { type: string, enum: [recorded, disputed, approved] }
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+    DeliveryCostInput:
+      type: object
+      required: [partner_id, kind, amount_minor]
+      additionalProperties: false
+      properties:
+        partner_id: { type: string, format: uuid }
+        delivery_id: { type: string }
+        run_id: { type: string }
+        kind: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        rate_reference: { type: string }
+        notes: { type: string }
+    DeliveryAddress:
+      type: object
+      required: [recipient_name, line1, city, region]
+      properties:
+        recipient_name: { type: string }
+        phone: { type: [string, "null"] }
+        line1: { type: string }
+        line2: { type: [string, "null"] }
+        area: { type: [string, "null"] }
+        city: { type: string }
+        region: { type: string }
+        region_label: { type: string }
+        country: { type: string }
+        instructions: { type: [string, "null"] }
+    PackageRef:
+      type: object
+      required: [id, code, contents, kits]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        contents: { type: string }
+        kits: { type: integer }
+    TrackingEvent:
+      type: object
+      required: [id, type, from, to, attempt, source, actor_name, occurred_at, recorded_at, location, notes, details]
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        from: { type: [string, "null"] }
+        to: { type: [string, "null"] }
+        attempt: { type: integer }
+        source: { type: string, enum: [staff, partner, customer, system] }
+        actor_name: { type: [string, "null"] }
+        occurred_at: { type: string, format: date-time }
+        recorded_at: { type: string, format: date-time }
+        location: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        details: { type: object, additionalProperties: true }
+      description: "Append-only. A location appears only when it was verified. Milestones, not live GPS."
+    DeliveryProof:
+      type: object
+      required: [id, attempt, method, status, recipient_name, partner_reference, notes, rejection_reason, recorded_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        attempt: { type: integer }
+        method:
+          type: string
+          enum: [confirmation_code, recipient_acknowledgment, staff_confirmation, partner_confirmation, photo]
+        status: { type: string, enum: [accepted, rejected] }
+        recipient_name: { type: [string, "null"] }
+        partner_reference: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        rejection_reason: { type: [string, "null"] }
+        recorded_by: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+    RescheduleRequest:
+      type: object
+      required: [id, requested_by, preferred_date, reason, status, new_date, decision_note, created_at, decided_at]
+      properties:
+        id: { type: string, format: uuid }
+        requested_by: { type: string, enum: [customer, staff] }
+        preferred_date: { type: [string, "null"], format: date }
+        reason: { type: string }
+        status: { type: string, enum: [requested, approved, declined, withdrawn] }
+        new_date: { type: [string, "null"], format: date }
+        decision_note: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        decided_at: { type: [string, "null"], format: date-time }
+    PendingReschedule:
+      type: object
+      required: [id, requested_by, preferred_date, reason, status, new_date, decision_note, created_at, decided_at, delivery_id, delivery_number, delivery_status, service_date]
+      properties:
+        id: { type: string, format: uuid }
+        requested_by: { type: string }
+        preferred_date: { type: [string, "null"], format: date }
+        reason: { type: string }
+        status: { type: string }
+        new_date: { type: [string, "null"], format: date }
+        decision_note: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        decided_at: { type: [string, "null"], format: date-time }
+        delivery_id: { type: string, format: uuid }
+        delivery_number: { type: string }
+        delivery_status: { type: string }
+        service_date: { type: [string, "null"], format: date }
+    DeliveryReturn:
+      type: object
+      required: [id, delivery_id, delivery_number, order_number, attempt, reason, returned_at, received_by, condition, disposition, disposition_note, status, reviewed_at, packages]
+      properties:
+        id: { type: string, format: uuid }
+        delivery_id: { type: string, format: uuid }
+        delivery_number: { type: string }
+        order_number: { type: string }
+        attempt: { type: integer }
+        reason: { type: string }
+        returned_at: { type: string, format: date-time }
+        received_by: { type: [string, "null"] }
+        condition: { type: string, enum: [intact, damaged, temperature_concern, unknown] }
+        disposition: { type: string, enum: [quarantined, discarded, other_approved] }
+        disposition_note: { type: [string, "null"] }
+        status: { type: string, enum: [awaiting_review, reviewed] }
+        reviewed_at: { type: [string, "null"], format: date-time }
+        packages:
+          type: array
+          items: { type: string }
+    DeliveryNotification:
+      type: object
+      required: [kind, channel, status, reason, attempts, created_at, updated_at]
+      properties:
+        kind: { type: string }
+        channel: { type: string }
+        status: { type: string, enum: [queued, sent, failed, skipped] }
+        reason: { type: [string, "null"] }
+        attempts: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      description: Sent only when the mail provider accepted it.
+    DeliveryCaseLink:
+      type: object
+      required: [case_id, number, subject, status, linked_at]
+      properties:
+        case_id: { type: string, format: uuid }
+        number: { type: integer }
+        subject: { type: string }
+        status: { type: string }
+        linked_at: { type: string, format: date-time }
+    Delivery:
+      type: object
+      required: [id, number, obligation_id, order_id, order_number, customer_id, customer_name, status, version, attempt, zone_id, zone_code, zone_source, service_date, window_id, window_label, schedule_confirmed_at, address, address_validation, package_count, run_id, run_number, partner_name, stop_sequence, delivered_at, failed_at, open_exceptions, blocking_exceptions, has_proof, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        obligation_id: { type: string, format: uuid }
+        order_id: { type: string, format: uuid }
+        order_number: { type: string }
+        customer_id: { type: string, format: uuid }
+        customer_name: { type: string }
+        status:
+          type: string
+          enum: [pending_assignment, assigned, ready_for_pickup, picked_up, in_transit, arriving, delivered, delivery_failed, returned, cancelled]
+        version: { type: integer }
+        attempt: { type: integer }
+        zone_id: { type: [string, "null"], format: uuid }
+        zone_code: { type: [string, "null"] }
+        zone_source: { type: string, enum: [none, coverage_rule, manual] }
+        service_date: { type: [string, "null"], format: date }
+        window_id: { type: [string, "null"], format: uuid }
+        window_label: { type: [string, "null"] }
+        schedule_confirmed_at: { type: [string, "null"], format: date-time }
+        address: { $ref: "#/components/schemas/DeliveryAddress" }
+        address_validation: { type: string, enum: [serviceable, unzoned, not_serviceable, unknown] }
+        package_count: { type: integer }
+        run_id: { type: [string, "null"], format: uuid }
+        run_number: { type: [string, "null"] }
+        partner_name: { type: [string, "null"] }
+        stop_sequence: { type: [integer, "null"] }
+        delivered_at: { type: [string, "null"], format: date-time }
+        failed_at: { type: [string, "null"], format: date-time }
+        open_exceptions: { type: integer }
+        blocking_exceptions: { type: integer }
+        has_proof: { type: boolean }
+        created_at: { type: string, format: date-time }
+        packages:
+          type: array
+          items: { $ref: "#/components/schemas/PackageRef" }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/TrackingEvent" }
+        proofs:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryProof" }
+        reschedule_requests:
+          type: array
+          items: { $ref: "#/components/schemas/RescheduleRequest" }
+        returns:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryReturn" }
+        notifications:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryNotification" }
+        support_cases:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryCaseLink" }
+    ScheduleInput:
+      type: object
+      required: [service_date]
+      additionalProperties: false
+      properties:
+        service_date: { type: string, format: date }
+        window_id: { type: string }
+        zone_id: { type: string }
+        reason: { type: string }
+        version: { type: integer }
+      description: "A zone other than the coverage rule's is a manual assignment and needs a reason."
+    AddressCorrectionInput:
+      type: object
+      required: [address, reason]
+      additionalProperties: false
+      properties:
+        address: { $ref: "#/components/schemas/DeliveryAddress" }
+        reason: { type: string }
+        version: { type: integer }
+    StatusUpdateInput:
+      type: object
+      required: [status, idempotency_key]
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [in_transit, arriving, note] }
+        source: { type: string, enum: [staff, partner] }
+        occurred_at: { type: string, format: date-time }
+        location: { type: string }
+        location_verified: { type: boolean }
+        notes: { type: string }
+        partner_reference: { type: string }
+        idempotency_key: { type: string }
+        version: { type: integer }
+    ProofInput:
+      type: object
+      required: [method, idempotency_key]
+      additionalProperties: false
+      properties:
+        method:
+          type: string
+          enum: [confirmation_code, recipient_acknowledgment, staff_confirmation, partner_confirmation, photo]
+        code: { type: string }
+        recipient_name: { type: string }
+        partner_reference: { type: string }
+        notes: { type: string }
+        idempotency_key: { type: string }
+    OutcomeInput:
+      type: object
+      required: [idempotency_key]
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+        notes: { type: string }
+        source: { type: string }
+        occurred_at: { type: string, format: date-time }
+        idempotency_key: { type: string }
+        version: { type: integer }
+    ReturnInput:
+      type: object
+      required: [reason, condition]
+      additionalProperties: false
+      properties:
+        reason: { type: string }
+        condition: { type: string, enum: [intact, damaged, temperature_concern, unknown] }
+        returned_at: { type: string, format: date-time }
+    ReturnReviewInput:
+      type: object
+      required: [disposition, note]
+      additionalProperties: false
+      properties:
+        disposition: { type: string, enum: [discarded, other_approved] }
+        note: { type: string }
+    CorrectionInput:
+      type: object
+      required: [to, reason]
+      additionalProperties: false
+      properties:
+        to: { type: string, enum: [delivery_failed, in_transit] }
+        reason: { type: string }
+    RescheduleRequestInput:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        preferred_date: { type: string, format: date }
+        reason: { type: string }
+    RescheduleDecisionInput:
+      type: object
+      required: [decision]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [approve, decline] }
+        new_date: { type: string, format: date }
+        window_id: { type: string }
+        note: { type: string }
+    CaseLinkInput:
+      type: object
+      required: [case_id]
+      additionalProperties: false
+      properties:
+        case_id: { type: string, format: uuid }
+    DeliveryExceptionEvent:
+      type: object
+      required: [type, body, actor_name, created_at]
+      properties:
+        type: { type: string }
+        body: { type: [string, "null"] }
+        actor_name: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+    DeliveryException:
+      type: object
+      required: [id, number, stage, type, severity, status, blocking, owner_user_id, owner_name, obligation_id, delivery_id, delivery_number, order_id, order_number, customer_id, batch_id, run_id, summary, notes, next_action, resolution, created_at, updated_at, resolved_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        stage: { type: string, enum: [fulfillment, delivery] }
+        type:
+          type: string
+          enum: [eligibility, missing_package, incorrect_package, kit_discrepancy, batch_problem, address_problem, capacity_shortage, partner_cancellation, late_handoff, handoff_dispute, delivery_failure, missing_proof, damaged_package, customer_complaint, other]
+        severity: { type: string, enum: [low, medium, high, critical] }
+        status: { type: string, enum: [open, in_progress, resolved, closed] }
+        blocking: { type: boolean }
+        owner_user_id: { type: [string, "null"], format: uuid }
+        owner_name: { type: [string, "null"] }
+        obligation_id: { type: [string, "null"], format: uuid }
+        delivery_id: { type: [string, "null"], format: uuid }
+        delivery_number: { type: [string, "null"] }
+        order_id: { type: [string, "null"], format: uuid }
+        order_number: { type: [string, "null"] }
+        customer_id: { type: [string, "null"], format: uuid }
+        batch_id: { type: [string, "null"], format: uuid }
+        run_id: { type: [string, "null"], format: uuid }
+        summary: { type: string }
+        notes: { type: string }
+        next_action: { type: string, enum: [none, reattempt, reschedule, return, escalate, refund_review] }
+        resolution: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        resolved_at: { type: [string, "null"], format: date-time }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryExceptionEvent" }
+    DeliveryExceptionInput:
+      type: object
+      required: [type, severity, summary]
+      additionalProperties: false
+      properties:
+        stage: { type: string }
+        type:
+          type: string
+          enum: [eligibility, missing_package, incorrect_package, kit_discrepancy, batch_problem, address_problem, capacity_shortage, partner_cancellation, late_handoff, handoff_dispute, delivery_failure, missing_proof, damaged_package, customer_complaint, other]
+        severity: { type: string, enum: [low, medium, high, critical] }
+        blocking: { type: boolean }
+        summary: { type: string }
+        notes: { type: string }
+        next_action: { type: string, enum: [none, reattempt, reschedule, return, escalate, refund_review] }
+        owner_user_id: { type: string }
+        obligation_id: { type: string }
+        delivery_id: { type: string }
+        order_id: { type: string }
+        customer_id: { type: string }
+        batch_id: { type: string }
+        run_id: { type: string }
+    DeliveryExceptionUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [open, in_progress, resolved, closed] }
+        owner_user_id: { type: string }
+        next_action: { type: string, enum: [none, reattempt, reschedule, return, escalate, refund_review] }
+        note: { type: string }
+        resolution: { type: string }
+      description: Resolving needs a resolution. Resolving the last blocking exception of a fulfillment resumes it.
+    DispatchStop:
+      type: object
+      required: [id, sequence, delivery_id, delivery_number, delivery_status, order_number, recipient, address_line, region, window_label, package_count, status, capacity_override, partner_override]
+      properties:
+        id: { type: string, format: uuid }
+        sequence: { type: integer }
+        delivery_id: { type: string, format: uuid }
+        delivery_number: { type: string }
+        delivery_status: { type: string }
+        order_number: { type: string }
+        recipient: { type: string }
+        address_line: { type: string }
+        region: { type: string }
+        window_label: { type: [string, "null"] }
+        package_count: { type: integer }
+        status: { type: string, enum: [active, removed, done] }
+        capacity_override: { type: [string, "null"] }
+        partner_override: { type: [string, "null"] }
+    ManifestStop:
+      type: object
+      required: [sequence, delivery, order, recipient, phone, address, region, instructions, window, packages]
+      properties:
+        sequence: { type: integer }
+        delivery: { type: string }
+        order: { type: string }
+        recipient: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        region: { type: string }
+        instructions: { type: string }
+        window: { type: string }
+        packages:
+          type: array
+          items: { $ref: "#/components/schemas/PackageRef" }
+    ManifestContent:
+      type: object
+      required: [run_number, service_date, partner, courier, zone, stops, handling, generated_at]
+      properties:
+        run_number: { type: string }
+        service_date: { type: string, format: date }
+        partner: { type: string }
+        courier: { type: [string, "null"] }
+        zone: { type: [string, "null"] }
+        stops:
+          type: array
+          items: { $ref: "#/components/schemas/ManifestStop" }
+        handling: { type: string }
+        generated_at: { type: string, format: date-time }
+    DispatchManifest:
+      type: object
+      required: [id, revision, status, content_hash, stop_count, package_count, generated_at, content]
+      properties:
+        id: { type: string, format: uuid }
+        revision: { type: integer }
+        status: { type: string, enum: [current, superseded] }
+        content_hash: { type: string }
+        stop_count: { type: integer }
+        package_count: { type: integer }
+        generated_at: { type: string, format: date-time }
+        content: { $ref: "#/components/schemas/ManifestContent" }
+      description: "A frozen run sheet: only what a courier needs, no email, amounts or account details."
+    Handoff:
+      type: object
+      required: [id, from_party, to_party, handed_at, location, accepted_count, rejected_count, missing_count, disputed, evidence_ref, notes, actor_name, recorded_at]
+      properties:
+        id: { type: string, format: uuid }
+        from_party: { type: string }
+        to_party: { type: string }
+        handed_at: { type: string, format: date-time }
+        location: { type: [string, "null"] }
+        accepted_count: { type: integer }
+        rejected_count: { type: integer }
+        missing_count: { type: integer }
+        disputed: { type: boolean }
+        evidence_ref: { type: string }
+        notes: { type: string }
+        actor_name: { type: [string, "null"] }
+        recorded_at: { type: string, format: date-time }
+    DispatchRun:
+      type: object
+      required: [id, number, service_date, partner_id, partner_name, partner_mode, courier_id, courier_name, zone_id, zone_code, status, version, notes, stop_count, package_count, created_at, finalized_at, released_at, completed_at]
+      properties:
+        id: { type: string, format: uuid }
+        number: { type: string }
+        service_date: { type: string, format: date }
+        partner_id: { type: string, format: uuid }
+        partner_name: { type: string }
+        partner_mode: { type: string }
+        courier_id: { type: [string, "null"], format: uuid }
+        courier_name: { type: [string, "null"] }
+        zone_id: { type: [string, "null"], format: uuid }
+        zone_code: { type: [string, "null"] }
+        status: { type: string, enum: [draft, finalized, released, completed, reconciled, cancelled] }
+        version: { type: integer }
+        notes: { type: string }
+        stop_count: { type: integer }
+        package_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        finalized_at: { type: [string, "null"], format: date-time }
+        released_at: { type: [string, "null"], format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        stops:
+          type: array
+          items: { $ref: "#/components/schemas/DispatchStop" }
+        manifest:
+          oneOf: [{ $ref: "#/components/schemas/DispatchManifest" }, { type: "null" }]
+        handoffs:
+          type: array
+          items: { $ref: "#/components/schemas/Handoff" }
+    DispatchRunInput:
+      type: object
+      required: [service_date, partner_id]
+      additionalProperties: false
+      properties:
+        service_date: { type: string, format: date }
+        partner_id: { type: string, format: uuid }
+        courier_id: { type: string }
+        zone_id: { type: string }
+        notes: { type: string }
+        partner_override: { type: string }
+    StopInput:
+      type: object
+      required: [delivery_id]
+      additionalProperties: false
+      properties:
+        delivery_id: { type: string, format: uuid }
+        capacity_override: { type: string }
+        partner_override: { type: string }
+      description: Beyond known (or unknown) capacity needs capacity_override and delivery.dispatch.
+    SequenceInput:
+      type: object
+      required: [stop_ids]
+      additionalProperties: false
+      properties:
+        stop_ids:
+          type: array
+          items: { type: string, format: uuid }
+    HandoffInput:
+      type: object
+      required: [to_party, packages, idempotency_key]
+      additionalProperties: false
+      properties:
+        from_party: { type: string }
+        to_party: { type: string }
+        handed_at: { type: string, format: date-time }
+        location: { type: string }
+        location_verified: { type: boolean }
+        packages:
+          type: array
+          items:
+            type: object
+            required: [package_id, outcome]
+            additionalProperties: false
+            properties:
+              package_id: { type: string, format: uuid }
+              outcome: { type: string, enum: [accepted, rejected, missing] }
+              note: { type: string }
+        evidence_ref: { type: string }
+        notes: { type: string }
+        idempotency_key: { type: string }
+    ExplanationInput:
+      type: object
+      additionalProperties: false
+      properties:
+        explanation: { type: string }
+    DeliveryDiscrepancy:
+      type: object
+      required: [kind, detail]
+      properties:
+        kind: { type: string }
+        delivery_id: { type: string }
+        delivery: { type: string }
+        detail: { type: string }
+    DeliveryReconciliation:
+      type: object
+      required: [run_id, run_number, run_status, status, summary, discrepancies, explanation, closed_at]
+      properties:
+        run_id: { type: string, format: uuid }
+        run_number: { type: string }
+        run_status: { type: string }
+        status: { type: string, enum: [open, reconciled] }
+        summary:
+          type: object
+          required: [planned_deliveries, planned_packages, handed_over_packages, delivered, delivered_packages, failed, returned, returned_packages, still_out, missing_proof, open_exceptions, returns_awaiting_review]
+          properties:
+            planned_deliveries: { type: integer }
+            planned_packages: { type: integer }
+            handed_over_packages: { type: integer }
+            delivered: { type: integer }
+            delivered_packages: { type: integer }
+            failed: { type: integer }
+            returned: { type: integer }
+            returned_packages: { type: integer }
+            still_out: { type: integer }
+            missing_proof: { type: integer }
+            open_exceptions: { type: integer }
+            returns_awaiting_review: { type: integer }
+        discrepancies:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryDiscrepancy" }
+        explanation: { type: [string, "null"] }
+        closed_at: { type: [string, "null"], format: date-time }
+    DeliveryOverview:
+      type: object
+      required: [date, due_today, awaiting_verification, ready_for_dispatch, unscheduled, unassigned, in_transit, delivered_today, failed_open, delayed, missing_proof, open_exceptions, returns_to_review, reschedule_requests, blockers, consumer_failed_jobs]
+      properties:
+        date: { type: string, format: date }
+        due_today: { type: integer }
+        awaiting_verification: { type: integer }
+        ready_for_dispatch: { type: integer }
+        unscheduled: { type: integer }
+        unassigned: { type: integer }
+        in_transit: { type: integer }
+        delivered_today: { type: integer }
+        failed_open: { type: integer }
+        delayed: { type: integer }
+        missing_proof: { type: integer }
+        open_exceptions: { type: integer }
+        returns_to_review: { type: integer }
+        reschedule_requests: { type: integer }
+        blockers:
+          type: array
+          items: { type: string }
+        consumer_failed_jobs: { type: integer }
+    DeliveryBreakdown:
+      type: object
+      required: [key, label, deliveries, delivered, first_attempt_delivered, failed_attempts, on_time_measurable, on_time, on_time_rate]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        deliveries: { type: integer }
+        delivered: { type: integer }
+        first_attempt_delivered: { type: integer }
+        failed_attempts: { type: integer }
+        on_time_measurable: { type: integer }
+        on_time: { type: integer }
+        on_time_rate: { type: [number, "null"] }
+    DeliveryReport:
+      type: object
+      required: [from, to, time_zone, totals, by_partner, by_zone, costs, definitions]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        time_zone: { type: string }
+        totals: { type: object, additionalProperties: true }
+        by_partner:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryBreakdown" }
+        by_zone:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryBreakdown" }
+        costs:
+          type: array
+          items:
+            type: object
+            required: [kind, currency, amount_minor, records]
+            properties:
+              kind: { type: string }
+              currency: { type: string }
+              amount_minor: { type: integer }
+              records: { type: integer }
+        definitions:
+          type: object
+          additionalProperties: { type: string }
+    DeliveryMilestone:
+      type: object
+      required: [key, label, done, at]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        done: { type: boolean }
+        at: { type: [string, "null"], format: date-time }
+    CustomerDelivery:
+      type: object
+      required: [order_id, stage, headline, detail, service_date, window, address, confirmation_code, timeline, issue, can_reschedule, reschedule_policy, open_request, history, live_tracking]
+      properties:
+        order_id: { type: string, format: uuid }
+        stage: { type: string, enum: [preparing, packed, scheduled, out_for_delivery, delivered, issue, cancelled] }
+        headline: { type: string }
+        detail: { type: string }
+        service_date: { type: [string, "null"], format: date }
+        window: { type: [string, "null"] }
+        address: { type: object, additionalProperties: true }
+        confirmation_code: { type: [string, "null"] }
+        code_explanation: { type: string }
+        timeline:
+          type: array
+          items: { $ref: "#/components/schemas/DeliveryMilestone" }
+        issue: { type: [string, "null"] }
+        can_reschedule: { type: boolean }
+        reschedule_policy: { type: string }
+        open_request:
+          oneOf: [{ $ref: "#/components/schemas/RescheduleRequest" }, { type: "null" }]
+        history:
+          type: array
+          items:
+            type: object
+            required: [attempt, outcome, at]
+            properties:
+              attempt: { type: integer }
+              outcome: { type: string }
+              at: { type: string, format: date-time }
+        live_tracking: { type: boolean }
+      description: "Milestones from real records in plain words. No partner, courier, run or internal status names."
+    DeliverySupportInput:
+      type: object
+      required: [message]
+      additionalProperties: false
+      properties:
+        message: { type: string }
+    DeliverySupportResult:
+      type: object
+      required: [case_number, status]
+      properties:
+        case_number: { type: integer }
+        status: { type: string, enum: [received] }

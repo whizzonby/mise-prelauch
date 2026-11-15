@@ -24,6 +24,7 @@ import (
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
 	"mise.tt/api/internal/platform/ratelimit"
+	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
@@ -85,6 +86,8 @@ type harness struct {
 	clock   *testClock
 	// The Sprint 6 services, for tests that drive the event consumer.
 	sc *server.SupplyChain
+	// The Sprint 7 services, for tests that drive the readiness consumer.
+	ff *server.Fulfilment
 }
 
 // testClock is the time the commerce services read. Tests move it forward
@@ -128,7 +131,8 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	}
 	// Roles and permissions are reference data seeded by migrations; they stay.
 	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts, domain_events,
-		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria RESTART IDENTITY CASCADE`); err != nil {
+		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria,
+		delivery_counters, delivery_service_zones, delivery_partners RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	// Supply-chain policies start unset, and event consumers start at the beginning.
@@ -138,6 +142,10 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		`UPDATE procurement_settings SET approval_limit_minor = NULL, receiving_tolerance_percent = NULL, currencies = '{TTD}',
 			allow_unapproved_suppliers = false, unapproved_policy_ref = ''`,
 		`UPDATE event_consumer_offsets SET last_event_id = 0`,
+		// Delivery policies start unconfigured, as they ship.
+		`UPDATE delivery_settings SET proof_methods = '{}', proof_policy_ref = '', reschedule_cutoff_hours = NULL,
+			failure_reasons = ARRAY['recipient_unavailable', 'address_not_found', 'refused', 'damaged', 'partner_unable', 'operational_delay', 'other'],
+			allow_unapproved_partners = false, unapproved_partner_policy_ref = '', label_certified = false, customer_emails_approved = false`,
 	} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatalf("reset supply settings: %v", err)
@@ -201,12 +209,16 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	sc := server.NewSupplyChain(cfg, pool, com, bo, prod)
 	sc.Procurement.SettleDelay = 0
 	runner.Register(procurement.JobPlanReleased, sc.Procurement.HandlePlanReleased)
+	ff := server.NewFulfilment(cfg, pool, com, bo, prod)
+	ff.Fulfillment.SettleDelay = 0
+	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
+	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
 
 	handler, routes, err := server.BuildWith(cfg, pool, limits, ids, com)
 	if err != nil {
 		t.Fatalf("build server: %v", err)
 	}
-	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo, sc: sc}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo, sc: sc, ff: ff}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.

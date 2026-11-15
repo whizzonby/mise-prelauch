@@ -95,6 +95,31 @@ const (
 	PermInventoryConfigure         Permission = "inventory.configure"
 	PermTraceabilityRead           Permission = "traceability.read"
 	PermSupplierReportsRead        Permission = "supplier_reports.read"
+
+	// Sprint 7: fulfillment and delivery.
+	PermFulfillmentRead        Permission = "fulfillment.read"
+	PermFulfillmentVerify      Permission = "fulfillment.verify"
+	PermFulfillmentRelease     Permission = "fulfillment.release"
+	PermDeliveryRead           Permission = "delivery.read"
+	PermDeliveryReadAssigned   Permission = "delivery.read_assigned"
+	PermDeliveryPlan           Permission = "delivery.plan"
+	PermDeliveryAssign         Permission = "delivery.assign"
+	PermDeliveryDispatch       Permission = "delivery.dispatch"
+	PermDeliveryUpdateStatus   Permission = "delivery.update_status"
+	PermDeliveryReschedule     Permission = "delivery.reschedule"
+	PermDeliveryConfirm        Permission = "delivery.confirm"
+	PermDeliveryReconcile      Permission = "delivery.reconcile"
+	PermDeliveryPartnersRead   Permission = "delivery_partners.read"
+	PermDeliveryPartnersManage Permission = "delivery_partners.manage"
+	PermDeliveryPartnersApprove Permission = "delivery_partners.approve"
+	PermDeliveryZonesRead      Permission = "delivery_zones.read"
+	PermDeliveryZonesManage    Permission = "delivery_zones.manage"
+	PermDeliveryProofRead      Permission = "delivery_proof.read"
+	PermDeliveryProofCreate    Permission = "delivery_proof.create"
+	PermDeliveryExceptionsRead Permission = "delivery_exceptions.read"
+	PermDeliveryExceptionsManage Permission = "delivery_exceptions.manage"
+	PermDeliveryReportsRead    Permission = "delivery_reports.read"
+	PermDeliverySettingsManage Permission = "delivery_settings.manage"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -116,6 +141,11 @@ var AllPermissions = []Permission{
 	PermPurchaseOrdersCreate, PermPurchaseOrdersApprove, PermPurchaseOrdersApproveLimit, PermPurchaseOrdersIssue,
 	PermReceivingRead, PermReceivingManage, PermReceivingInspect, PermInventoryRead, PermInventoryReserve, PermInventoryIssue,
 	PermInventoryAdjust, PermInventoryCount, PermInventoryConfigure, PermTraceabilityRead, PermSupplierReportsRead,
+	PermFulfillmentRead, PermFulfillmentVerify, PermFulfillmentRelease, PermDeliveryRead, PermDeliveryReadAssigned, PermDeliveryPlan,
+	PermDeliveryAssign, PermDeliveryDispatch, PermDeliveryUpdateStatus, PermDeliveryReschedule, PermDeliveryConfirm, PermDeliveryReconcile,
+	PermDeliveryPartnersRead, PermDeliveryPartnersManage, PermDeliveryPartnersApprove, PermDeliveryZonesRead, PermDeliveryZonesManage,
+	PermDeliveryProofRead, PermDeliveryProofCreate, PermDeliveryExceptionsRead, PermDeliveryExceptionsManage, PermDeliveryReportsRead,
+	PermDeliverySettingsManage,
 }
 
 // RoleCustomer is the role every registered customer holds.

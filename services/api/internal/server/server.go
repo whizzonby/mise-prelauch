@@ -24,6 +24,7 @@ import (
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
 	"mise.tt/api/internal/identity"
+	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/inventory"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/menus"
@@ -373,6 +374,10 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&suppliers.Handler{S: sc.Suppliers, Identity: ids}).Routes(mux)
 	(&procurement.Handler{S: sc.Procurement, Identity: ids}).Routes(mux)
 	(&inventory.Handler{S: sc.Inventory, Identity: ids}).Routes(mux)
+	ff := NewFulfilment(cfg, pool, com, bo, prod)
+	(&fulfillment.Handler{S: ff.Fulfillment, Identity: ids}).Routes(mux)
+	(&delivery.Handler{S: ff.Delivery, Identity: ids}).Routes(mux)
+	(&delivery.CustomerHandler{S: ff.Delivery, Identity: ids, Customers: customerService, Orders: com.Orders}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

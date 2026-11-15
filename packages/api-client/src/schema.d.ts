@@ -4779,6 +4779,1020 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/fulfillment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The queue; exceptions first. Needs fulfillment.read. */
+        get: operations["adminFulfillments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Evaluates ready orders that have no fulfillment (a missed event). Needs fulfillment.release. */
+        post: operations["adminSyncFulfillment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/consumer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The readiness consumer's offset and failed jobs. Needs fulfillment.read. */
+        get: operations["adminFulfillmentConsumer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/batches/{id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Raises a blocking exception that stops verification and release of every order with kits from the batch. Production records are not changed. Needs fulfillment.verify. */
+        post: operations["adminFlagBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs fulfillment.read. */
+        get: operations["adminFulfillment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Same idempotency key twice returns the current state. Needs fulfillment.verify. */
+        post: operations["adminVerifyItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Re-checks holds, batch flags, eligibility and blocking exceptions, then creates the delivery. Needs fulfillment.release. */
+        post: operations["adminReleaseFulfillment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/{id}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Not certified for live use until delivery settings say so. Needs fulfillment.read. */
+        get: operations["adminFulfillmentLabels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fulfillment/{id}/trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs fulfillment.read. */
+        get: operations["adminFulfillmentTrace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With the operational blockers. Needs admin.access (any staff, because couriers need the proof policy). */
+        get: operations["adminDeliverySettings"];
+        /** @description Needs delivery_settings.manage. */
+        put: operations["adminSaveDeliverySettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_zones.read. */
+        get: operations["adminDeliveryZones"];
+        put?: never;
+        /** @description A region belongs to at most one zone. Needs delivery_zones.manage. */
+        post: operations["adminCreateDeliveryZone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/zones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs delivery_zones.manage. */
+        patch: operations["adminUpdateDeliveryZone"];
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every customer-facing region and the zone covering it. Needs delivery_zones.read. */
+        get: operations["adminDeliveryCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_zones.read. */
+        get: operations["adminDeliveryCalendar"];
+        /** @description An approved delivery date or a closure, for all zones or one. Needs delivery_zones.manage. */
+        put: operations["adminSaveServiceDay"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description No row means capacity is unknown, never unlimited. Needs delivery_zones.read. */
+        get: operations["adminDeliveryCapacity"];
+        /** @description Cannot go below what is assigned. Needs delivery_zones.manage. */
+        put: operations["adminSetDeliveryCapacity"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_exceptions.read. */
+        get: operations["adminDeliveryExceptions"];
+        put?: never;
+        /** @description A blocking exception on a fulfillment interrupts it. Needs delivery_exceptions.manage. */
+        post: operations["adminRaiseDeliveryException"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/exceptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_exceptions.read. */
+        get: operations["adminDeliveryException"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs delivery_exceptions.manage. */
+        patch: operations["adminUpdateDeliveryException"];
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Counts from records; blockers listed. Needs delivery_reports.read. */
+        get: operations["adminDeliveryOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every figure defined; on-time only where a date was confirmed. Needs delivery_reports.read. */
+        get: operations["adminDeliveryReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_partners.read. */
+        get: operations["adminDeliveryPartners"];
+        put?: never;
+        /** @description Starts as draft. Needs delivery_partners.manage. */
+        post: operations["adminCreateDeliveryPartner"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/partners/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_partners.read. */
+        get: operations["adminDeliveryPartner"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description An approved partner whose agreement is no longer signed is suspended. Needs delivery_partners.manage. */
+        patch: operations["adminUpdateDeliveryPartner"];
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/partners/{id}/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Withdrawing a criterion suspends an approved partner. Needs delivery_partners.manage. */
+        put: operations["adminRecordPartnerCriterion"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/partners/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Approval needs a signed agreement and every criterion met. Needs delivery_partners.approve. */
+        post: operations["adminSetPartnerStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/couriers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_partners.read. */
+        get: operations["adminCouriers"];
+        put?: never;
+        /** @description A linked login must hold the courier role. Needs delivery_partners.manage. */
+        post: operations["adminCreateCourier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/couriers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs delivery_partners.manage. */
+        patch: operations["adminUpdateCourier"];
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_partners.read. */
+        get: operations["adminDeliveryCosts"];
+        put?: never;
+        /** @description Factual records only; a contracted cost needs its rate reference. Needs delivery_partners.manage. */
+        post: operations["adminRecordDeliveryCost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery.read or delivery.read_assigned (couriers: only their own runs). */
+        get: operations["adminDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Proofs need delivery_proof.read. Needs delivery.read or delivery.read_assigned (couriers: only their own runs). */
+        get: operations["adminDelivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description An approved service day (and approved window) for the zone. Needs delivery.plan. */
+        post: operations["adminScheduleDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Before dispatch only; the old address stays in the history. Needs delivery.plan. */
+        put: operations["adminCorrectDeliveryAddress"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description In transit, arriving or a note. Same key twice is one event. Needs delivery.update_status (couriers: own runs). */
+        post: operations["adminRecordDeliveryStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Accepted only for an approved method whose check passes; a wrong code is kept as rejected. Needs delivery_proof.create. */
+        post: operations["adminRecordProof"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs accepted proof for the current attempt. Needs delivery.confirm. */
+        post: operations["adminCompleteDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A configured reason; raises an exception. Needs delivery.confirm. */
+        post: operations["adminFailDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/reattempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A new attempt needs a new handoff. Needs delivery.reschedule. */
+        post: operations["adminReattemptDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Packages are quarantined for review, never returned to stock. Needs delivery_exceptions.manage. */
+        post: operations["adminRecordDeliveryReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Before pickup. The order and payment are unchanged. Needs delivery.dispatch. */
+        post: operations["adminCancelDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/correct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The only way to undo a recorded outcome; explicit and audited. Needs delivery_settings.manage. */
+        post: operations["adminCorrectDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/reschedule-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs delivery.reschedule. */
+        post: operations["adminRequestReschedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/deliveries/{id}/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Links a support case of the same customer. Needs delivery_exceptions.manage. */
+        post: operations["adminLinkDeliveryCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/reschedule-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Open requests. Needs delivery.read. */
+        get: operations["adminRescheduleRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/reschedule-requests/{id}/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Checks the calendar and known capacity. Needs delivery.reschedule. */
+        post: operations["adminDecideReschedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery_exceptions.read. */
+        get: operations["adminDeliveryReturns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/returns/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Discarded, or the approved procedure followed. Needs delivery_exceptions.manage. */
+        post: operations["adminReviewReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery.read or delivery.read_assigned (couriers: only their own runs). */
+        get: operations["adminDispatchRuns"];
+        put?: never;
+        /** @description Approved partners only, unless the exception policy allows it with a reason. Needs delivery.assign. */
+        post: operations["adminCreateDispatchRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery.read or delivery.read_assigned (couriers: only their own runs). */
+        get: operations["adminDispatchRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description JSON, or ?format=csv. Never cached; every download audited. Needs delivery.read or delivery.read_assigned (couriers: only their own runs). */
+        get: operations["adminDispatchManifest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/stops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Checks partner approval and coverage, the schedule and capacity under row locks. Needs delivery.assign. */
+        post: operations["adminAddStop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/stops/{stop}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs delivery.assign. */
+        post: operations["adminRemoveStop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/sequence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Manual order; there is no route optimiser. Needs delivery.assign. */
+        put: operations["adminSequenceStops"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Freezes the manifest. Needs delivery.dispatch. */
+        post: operations["adminFinalizeRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The manifest is superseded, not deleted. Needs delivery.dispatch. */
+        post: operations["adminReopenRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Ready for pickup; nothing is in custody until a handoff. Needs delivery.dispatch. */
+        post: operations["adminReleaseRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Per package; a rejected or missing package raises a blocking exception. Needs delivery.dispatch. */
+        post: operations["adminRecordHandoff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs delivery.read. */
+        get: operations["adminRunReconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/delivery/dispatch-runs/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Refused while any discrepancy remains. Needs delivery.reconcile. */
+        post: operations["adminReconcileRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/{id}/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Your order's delivery: milestones, confirmed date and window, address, and your code while it is out. */
+        get: operations["myOrderDelivery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/{id}/delivery/support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Opens a support case linked to the delivery. */
+        post: operations["myDeliverySupport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/orders/{id}/delivery/reschedule-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A request, not a promise: staff confirm a new date. */
+        post: operations["myRescheduleRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4930,7 +5944,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -8978,6 +9992,1075 @@ export interface components {
             /** @enum {string} */
             origin?: "price_list" | "quotation" | "verbal" | "other";
             note?: string;
+        };
+        FulfillmentItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            quantity: number;
+            /** Format: uuid */
+            batch_id: string;
+            batch_code: string;
+            /** Format: uuid */
+            recipe_version_id: string;
+            recipe_version: number;
+            /** @enum {string} */
+            status: "pending" | "verified" | "discrepancy";
+            verified_quantity: number | null;
+        };
+        FulfillmentPackage: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            sequence: number;
+            /** @enum {string} */
+            verification_status: "pending" | "verified" | "discrepancy";
+            /** Format: date-time */
+            verified_at: string | null;
+            /** @enum {string} */
+            handoff_status: "pending" | "handed_over" | "returned" | "missing";
+            items: components["schemas"]["FulfillmentItem"][];
+        };
+        FulfillmentHistory: {
+            from: string | null;
+            to: string;
+            reason: string | null;
+            actor_name: string | null;
+            /** Format: date-time */
+            at: string;
+        };
+        FulfillmentCheck: {
+            /** Format: uuid */
+            item_id: string;
+            counted_quantity: number;
+            scanned_batch_code: string;
+            /** @enum {string} */
+            result: "verified" | "discrepancy";
+            discrepancy: string | null;
+            actor_name: string | null;
+            /** Format: date-time */
+            at: string;
+        };
+        Fulfillment: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            order_id: string;
+            order_number: string;
+            /** Format: uuid */
+            customer_id: string;
+            customer_name: string;
+            /** Format: date */
+            week: string;
+            /** Format: uuid */
+            plan_id: string | null;
+            /** @enum {string} */
+            status: "ready_for_verification" | "verification_in_progress" | "verified" | "ready_for_dispatch" | "handed_over" | "fulfilled" | "exception" | "cancelled";
+            resume_status: string | null;
+            version: number;
+            kits_required: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            verified_at: string | null;
+            /** Format: date-time */
+            released_at: string | null;
+            /** Format: date-time */
+            handed_over_at: string | null;
+            /** Format: date-time */
+            fulfilled_at: string | null;
+            /** Format: uuid */
+            delivery_id: string | null;
+            delivery_number: string | null;
+            region: string;
+            open_blocking_exceptions: number;
+            packages?: components["schemas"]["FulfillmentPackage"][];
+            history?: components["schemas"]["FulfillmentHistory"][];
+            verifications?: components["schemas"]["FulfillmentCheck"][];
+        };
+        /** @description One item checked at the packing table. Any mismatch is recorded as a discrepancy, never as verified. */
+        VerifyInput: {
+            /** Format: uuid */
+            item_id: string;
+            counted_quantity: number;
+            scanned_batch_code: string;
+            recipe_confirmed?: boolean;
+            packaging_ok?: boolean;
+            label_ok?: boolean;
+            discrepancy?: string;
+            idempotency_key: string;
+        };
+        VersionInput: {
+            version?: number;
+        };
+        FulfillmentOutcome: {
+            /** Format: uuid */
+            order_id: string;
+            /** @enum {string} */
+            result: "created" | "exception" | "cancelled" | "exists" | "not_ready";
+            detail?: string;
+        };
+        ConsumerStatus: {
+            last_event_id: number;
+            /** Format: date-time */
+            updated_at: string;
+            waiting: number;
+            failed: {
+                job_id: number;
+                payload: string;
+                error: string;
+                attempts: number;
+                /** Format: date-time */
+                failed_at: string;
+            }[];
+        };
+        PackageLabel: {
+            package_code: string;
+            scan_code: string;
+            order_number: string;
+            recipient: string;
+            region: string;
+            zone_code: string | null;
+            /** Format: date */
+            delivery_date: string | null;
+            kits: number;
+            contents: string[];
+            handling: string;
+            certified: boolean;
+            notice?: string;
+        };
+        FulfillmentTraceLot: {
+            /** Format: uuid */
+            lot_id: string;
+            lot_code: string;
+            ingredient: string;
+            supplier_name: string;
+        };
+        FulfillmentTraceItem: {
+            package_code: string;
+            meal_name: string;
+            quantity: number;
+            /** Format: uuid */
+            batch_id: string;
+            batch_code: string;
+            recipe_version: number;
+            lots: components["schemas"]["FulfillmentTraceLot"][];
+        };
+        /** @description Batch-level: package → batch → ingredient lots. Kit-level lot allocation is not recorded. */
+        FulfillmentTrace: {
+            order_number: string;
+            /** @enum {string} */
+            level: "batch";
+            items: components["schemas"]["FulfillmentTraceItem"][];
+            delivery: {
+                number: string;
+                status: string;
+                proof_method: string | null;
+                /** Format: date-time */
+                delivered_at: string | null;
+            } | null;
+        };
+        DeliverySettings: {
+            proof_methods: string[];
+            proof_policy_ref: string;
+            reschedule_cutoff_hours: number | null;
+            failure_reasons: string[];
+            allow_unapproved_partners: boolean;
+            unapproved_partner_policy_ref: string;
+            label_certified: boolean;
+            customer_emails_approved: boolean;
+            /** Format: date-time */
+            updated_at: string;
+            blockers: string[];
+        };
+        /** @description Fields left out keep their value. Photo proof cannot be enabled (no secure evidence storage). */
+        DeliverySettingsInput: {
+            proof_methods?: string[];
+            proof_policy_ref?: string;
+            reschedule_cutoff_hours?: number;
+            clear_reschedule_policy?: boolean;
+            failure_reasons?: string[];
+            allow_unapproved_partners?: boolean;
+            unapproved_partner_policy_ref?: string;
+            label_certified?: boolean;
+            customer_emails_approved?: boolean;
+        };
+        DeliveryRegion: {
+            country: string;
+            region: string;
+            status: string;
+        };
+        DeliveryZone: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** @enum {string} */
+            status: "draft" | "active" | "inactive";
+            fee_policy_ref: string;
+            notes: string;
+            regions: components["schemas"]["DeliveryRegion"][];
+            partner_count: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DeliveryZoneInput: {
+            code: string;
+            name: string;
+            status?: string;
+            fee_policy_ref?: string;
+            notes?: string;
+            regions?: string[];
+        };
+        RegionCoverage: {
+            country: string;
+            region: string;
+            status: string;
+            /** Format: uuid */
+            zone_id: string | null;
+            zone_code: string | null;
+        };
+        DeliveryWindow: {
+            /** Format: uuid */
+            id: string;
+            label: string;
+            starts_at: string;
+            ends_at: string;
+            /** @enum {string} */
+            status: "draft" | "approved";
+        };
+        ServiceDay: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            zone_id: string | null;
+            zone_code: string | null;
+            /** @enum {string} */
+            status: "open" | "closed";
+            /** Format: date-time */
+            cutoff_at: string | null;
+            notes: string;
+            windows: components["schemas"]["DeliveryWindow"][];
+        };
+        ServiceDayInput: {
+            /** Format: date */
+            date: string;
+            zone_id?: string;
+            /** @enum {string} */
+            status: "open" | "closed";
+            /** Format: date-time */
+            cutoff_at?: string;
+            notes?: string;
+            windows?: {
+                label: string;
+                starts_at: string;
+                ends_at: string;
+                status?: string;
+            }[];
+        };
+        DeliveryCapacity: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            zone_id: string | null;
+            zone_code: string | null;
+            /** Format: uuid */
+            window_id: string | null;
+            window_label: string | null;
+            /** Format: uuid */
+            partner_id: string | null;
+            partner_name: string | null;
+            /** Format: uuid */
+            courier_id: string | null;
+            courier_name: string | null;
+            capacity: number;
+            assigned: number;
+            remaining: number;
+            notes: string;
+        };
+        DeliveryCapacityInput: {
+            /** Format: date */
+            date: string;
+            zone_id?: string;
+            window_id?: string;
+            partner_id?: string;
+            courier_id?: string;
+            capacity: number;
+            notes?: string;
+        };
+        PartnerCriterion: {
+            criterion: string;
+            met: boolean | null;
+            evidence: string;
+            /** Format: date-time */
+            recorded_at: string | null;
+        };
+        PartnerStatusEvent: {
+            from: string | null;
+            to: string;
+            reason: string | null;
+            actor_name: string | null;
+            /** Format: date-time */
+            at: string;
+        };
+        DeliveryPartner: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            contact_name: string;
+            phone: string;
+            email: string;
+            escalation_contact: string;
+            /** @enum {string} */
+            integration_mode: "manual" | "file" | "api" | "internal_fleet";
+            /** @enum {string} */
+            agreement_status: "none" | "negotiating" | "signed" | "expired" | "terminated";
+            agreement_ref: string;
+            /** @enum {string} */
+            status: "draft" | "pending_approval" | "approved" | "suspended" | "retired";
+            capabilities: string[];
+            supported_windows: string;
+            capacity_note: string;
+            billing_reference: string;
+            notes: string;
+            demo: boolean;
+            version: number;
+            /** Format: date-time */
+            approved_at: string | null;
+            zone_ids: string[];
+            courier_count: number;
+            assignable: boolean;
+            adapter_supports: string[];
+            criteria?: components["schemas"]["PartnerCriterion"][];
+            history?: components["schemas"]["PartnerStatusEvent"][];
+        };
+        DeliveryPartnerInput: {
+            name: string;
+            contact_name?: string;
+            phone?: string;
+            email?: string;
+            escalation_contact?: string;
+            integration_mode?: string;
+            agreement_status?: string;
+            agreement_ref?: string;
+            capabilities?: string[];
+            supported_windows?: string;
+            capacity_note?: string;
+            billing_reference?: string;
+            notes?: string;
+            zone_ids?: string[];
+            version?: number;
+        };
+        PartnerCriterionInput: {
+            criterion: string;
+            met: boolean;
+            evidence?: string;
+        };
+        PartnerStatusInput: {
+            /** @enum {string} */
+            status: "draft" | "pending_approval" | "approved" | "suspended" | "retired";
+            reason: string;
+        };
+        Courier: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            partner_id: string;
+            partner_name: string;
+            name: string;
+            phone: string;
+            /** Format: uuid */
+            user_id: string | null;
+            user_email: string | null;
+            zone_ids: string[];
+            /** @enum {string} */
+            status: "active" | "inactive";
+            notes: string;
+            demo: boolean;
+            runs: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CourierInput: {
+            /** Format: uuid */
+            partner_id: string;
+            name: string;
+            phone?: string;
+            user_email?: string;
+            zone_ids?: string[];
+            status?: string;
+            notes?: string;
+        };
+        DeliveryCost: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            partner_id: string;
+            partner_name: string;
+            /** Format: uuid */
+            delivery_id: string | null;
+            delivery_number: string | null;
+            /** Format: uuid */
+            run_id: string | null;
+            run_number: string | null;
+            /** @enum {string} */
+            kind: "estimated" | "contracted" | "actual" | "adjustment";
+            amount_minor: number;
+            currency: string;
+            rate_reference: string;
+            /** @enum {string} */
+            status: "recorded" | "disputed" | "approved";
+            notes: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        DeliveryCostInput: {
+            /** Format: uuid */
+            partner_id: string;
+            delivery_id?: string;
+            run_id?: string;
+            kind: string;
+            amount_minor: number;
+            currency?: string;
+            rate_reference?: string;
+            notes?: string;
+        };
+        DeliveryAddress: {
+            recipient_name: string;
+            phone?: string | null;
+            line1: string;
+            line2?: string | null;
+            area?: string | null;
+            city: string;
+            region: string;
+            region_label?: string;
+            country?: string;
+            instructions?: string | null;
+        };
+        PackageRef: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            contents: string;
+            kits: number;
+        };
+        /** @description Append-only. A location appears only when it was verified. Milestones, not live GPS. */
+        TrackingEvent: {
+            id: number;
+            type: string;
+            from: string | null;
+            to: string | null;
+            attempt: number;
+            /** @enum {string} */
+            source: "staff" | "partner" | "customer" | "system";
+            actor_name: string | null;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            recorded_at: string;
+            location: string | null;
+            notes: string | null;
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        DeliveryProof: {
+            /** Format: uuid */
+            id: string;
+            attempt: number;
+            /** @enum {string} */
+            method: "confirmation_code" | "recipient_acknowledgment" | "staff_confirmation" | "partner_confirmation" | "photo";
+            /** @enum {string} */
+            status: "accepted" | "rejected";
+            recipient_name: string | null;
+            partner_reference: string | null;
+            notes: string | null;
+            rejection_reason: string | null;
+            recorded_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        RescheduleRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            requested_by: "customer" | "staff";
+            /** Format: date */
+            preferred_date: string | null;
+            reason: string;
+            /** @enum {string} */
+            status: "requested" | "approved" | "declined" | "withdrawn";
+            /** Format: date */
+            new_date: string | null;
+            decision_note: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decided_at: string | null;
+        };
+        PendingReschedule: {
+            /** Format: uuid */
+            id: string;
+            requested_by: string;
+            /** Format: date */
+            preferred_date: string | null;
+            reason: string;
+            status: string;
+            /** Format: date */
+            new_date: string | null;
+            decision_note: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decided_at: string | null;
+            /** Format: uuid */
+            delivery_id: string;
+            delivery_number: string;
+            delivery_status: string;
+            /** Format: date */
+            service_date: string | null;
+        };
+        DeliveryReturn: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            delivery_id: string;
+            delivery_number: string;
+            order_number: string;
+            attempt: number;
+            reason: string;
+            /** Format: date-time */
+            returned_at: string;
+            received_by: string | null;
+            /** @enum {string} */
+            condition: "intact" | "damaged" | "temperature_concern" | "unknown";
+            /** @enum {string} */
+            disposition: "quarantined" | "discarded" | "other_approved";
+            disposition_note: string | null;
+            /** @enum {string} */
+            status: "awaiting_review" | "reviewed";
+            /** Format: date-time */
+            reviewed_at: string | null;
+            packages: string[];
+        };
+        /** @description Sent only when the mail provider accepted it. */
+        DeliveryNotification: {
+            kind: string;
+            channel: string;
+            /** @enum {string} */
+            status: "queued" | "sent" | "failed" | "skipped";
+            reason: string | null;
+            attempts: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DeliveryCaseLink: {
+            /** Format: uuid */
+            case_id: string;
+            number: number;
+            subject: string;
+            status: string;
+            /** Format: date-time */
+            linked_at: string;
+        };
+        Delivery: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: uuid */
+            obligation_id: string;
+            /** Format: uuid */
+            order_id: string;
+            order_number: string;
+            /** Format: uuid */
+            customer_id: string;
+            customer_name: string;
+            /** @enum {string} */
+            status: "pending_assignment" | "assigned" | "ready_for_pickup" | "picked_up" | "in_transit" | "arriving" | "delivered" | "delivery_failed" | "returned" | "cancelled";
+            version: number;
+            attempt: number;
+            /** Format: uuid */
+            zone_id: string | null;
+            zone_code: string | null;
+            /** @enum {string} */
+            zone_source: "none" | "coverage_rule" | "manual";
+            /** Format: date */
+            service_date: string | null;
+            /** Format: uuid */
+            window_id: string | null;
+            window_label: string | null;
+            /** Format: date-time */
+            schedule_confirmed_at: string | null;
+            address: components["schemas"]["DeliveryAddress"];
+            /** @enum {string} */
+            address_validation: "serviceable" | "unzoned" | "not_serviceable" | "unknown";
+            package_count: number;
+            /** Format: uuid */
+            run_id: string | null;
+            run_number: string | null;
+            partner_name: string | null;
+            stop_sequence: number | null;
+            /** Format: date-time */
+            delivered_at: string | null;
+            /** Format: date-time */
+            failed_at: string | null;
+            open_exceptions: number;
+            blocking_exceptions: number;
+            has_proof: boolean;
+            /** Format: date-time */
+            created_at: string;
+            packages?: components["schemas"]["PackageRef"][];
+            events?: components["schemas"]["TrackingEvent"][];
+            proofs?: components["schemas"]["DeliveryProof"][];
+            reschedule_requests?: components["schemas"]["RescheduleRequest"][];
+            returns?: components["schemas"]["DeliveryReturn"][];
+            notifications?: components["schemas"]["DeliveryNotification"][];
+            support_cases?: components["schemas"]["DeliveryCaseLink"][];
+        };
+        /** @description A zone other than the coverage rule's is a manual assignment and needs a reason. */
+        ScheduleInput: {
+            /** Format: date */
+            service_date: string;
+            window_id?: string;
+            zone_id?: string;
+            reason?: string;
+            version?: number;
+        };
+        AddressCorrectionInput: {
+            address: components["schemas"]["DeliveryAddress"];
+            reason: string;
+            version?: number;
+        };
+        StatusUpdateInput: {
+            /** @enum {string} */
+            status: "in_transit" | "arriving" | "note";
+            /** @enum {string} */
+            source?: "staff" | "partner";
+            /** Format: date-time */
+            occurred_at?: string;
+            location?: string;
+            location_verified?: boolean;
+            notes?: string;
+            partner_reference?: string;
+            idempotency_key: string;
+            version?: number;
+        };
+        ProofInput: {
+            /** @enum {string} */
+            method: "confirmation_code" | "recipient_acknowledgment" | "staff_confirmation" | "partner_confirmation" | "photo";
+            code?: string;
+            recipient_name?: string;
+            partner_reference?: string;
+            notes?: string;
+            idempotency_key: string;
+        };
+        OutcomeInput: {
+            reason?: string;
+            notes?: string;
+            source?: string;
+            /** Format: date-time */
+            occurred_at?: string;
+            idempotency_key: string;
+            version?: number;
+        };
+        ReturnInput: {
+            reason: string;
+            /** @enum {string} */
+            condition: "intact" | "damaged" | "temperature_concern" | "unknown";
+            /** Format: date-time */
+            returned_at?: string;
+        };
+        ReturnReviewInput: {
+            /** @enum {string} */
+            disposition: "discarded" | "other_approved";
+            note: string;
+        };
+        CorrectionInput: {
+            /** @enum {string} */
+            to: "delivery_failed" | "in_transit";
+            reason: string;
+        };
+        RescheduleRequestInput: {
+            /** Format: date */
+            preferred_date?: string;
+            reason: string;
+        };
+        RescheduleDecisionInput: {
+            /** @enum {string} */
+            decision: "approve" | "decline";
+            /** Format: date */
+            new_date?: string;
+            window_id?: string;
+            note?: string;
+        };
+        CaseLinkInput: {
+            /** Format: uuid */
+            case_id: string;
+        };
+        DeliveryExceptionEvent: {
+            type: string;
+            body: string | null;
+            actor_name: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        DeliveryException: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** @enum {string} */
+            stage: "fulfillment" | "delivery";
+            /** @enum {string} */
+            type: "eligibility" | "missing_package" | "incorrect_package" | "kit_discrepancy" | "batch_problem" | "address_problem" | "capacity_shortage" | "partner_cancellation" | "late_handoff" | "handoff_dispute" | "delivery_failure" | "missing_proof" | "damaged_package" | "customer_complaint" | "other";
+            /** @enum {string} */
+            severity: "low" | "medium" | "high" | "critical";
+            /** @enum {string} */
+            status: "open" | "in_progress" | "resolved" | "closed";
+            blocking: boolean;
+            /** Format: uuid */
+            owner_user_id: string | null;
+            owner_name: string | null;
+            /** Format: uuid */
+            obligation_id: string | null;
+            /** Format: uuid */
+            delivery_id: string | null;
+            delivery_number: string | null;
+            /** Format: uuid */
+            order_id: string | null;
+            order_number: string | null;
+            /** Format: uuid */
+            customer_id: string | null;
+            /** Format: uuid */
+            batch_id: string | null;
+            /** Format: uuid */
+            run_id: string | null;
+            summary: string;
+            notes: string;
+            /** @enum {string} */
+            next_action: "none" | "reattempt" | "reschedule" | "return" | "escalate" | "refund_review";
+            resolution: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            events?: components["schemas"]["DeliveryExceptionEvent"][];
+        };
+        DeliveryExceptionInput: {
+            stage?: string;
+            /** @enum {string} */
+            type: "eligibility" | "missing_package" | "incorrect_package" | "kit_discrepancy" | "batch_problem" | "address_problem" | "capacity_shortage" | "partner_cancellation" | "late_handoff" | "handoff_dispute" | "delivery_failure" | "missing_proof" | "damaged_package" | "customer_complaint" | "other";
+            /** @enum {string} */
+            severity: "low" | "medium" | "high" | "critical";
+            blocking?: boolean;
+            summary: string;
+            notes?: string;
+            /** @enum {string} */
+            next_action?: "none" | "reattempt" | "reschedule" | "return" | "escalate" | "refund_review";
+            owner_user_id?: string;
+            obligation_id?: string;
+            delivery_id?: string;
+            order_id?: string;
+            customer_id?: string;
+            batch_id?: string;
+            run_id?: string;
+        };
+        /** @description Resolving needs a resolution. Resolving the last blocking exception of a fulfillment resumes it. */
+        DeliveryExceptionUpdate: {
+            /** @enum {string} */
+            status?: "open" | "in_progress" | "resolved" | "closed";
+            owner_user_id?: string;
+            /** @enum {string} */
+            next_action?: "none" | "reattempt" | "reschedule" | "return" | "escalate" | "refund_review";
+            note?: string;
+            resolution?: string;
+        };
+        DispatchStop: {
+            /** Format: uuid */
+            id: string;
+            sequence: number;
+            /** Format: uuid */
+            delivery_id: string;
+            delivery_number: string;
+            delivery_status: string;
+            order_number: string;
+            recipient: string;
+            address_line: string;
+            region: string;
+            window_label: string | null;
+            package_count: number;
+            /** @enum {string} */
+            status: "active" | "removed" | "done";
+            capacity_override: string | null;
+            partner_override: string | null;
+        };
+        ManifestStop: {
+            sequence: number;
+            delivery: string;
+            order: string;
+            recipient: string;
+            phone: string;
+            address: string;
+            region: string;
+            instructions: string;
+            window: string;
+            packages: components["schemas"]["PackageRef"][];
+        };
+        ManifestContent: {
+            run_number: string;
+            /** Format: date */
+            service_date: string;
+            partner: string;
+            courier: string | null;
+            zone: string | null;
+            stops: components["schemas"]["ManifestStop"][];
+            handling: string;
+            /** Format: date-time */
+            generated_at: string;
+        };
+        /** @description A frozen run sheet: only what a courier needs, no email, amounts or account details. */
+        DispatchManifest: {
+            /** Format: uuid */
+            id: string;
+            revision: number;
+            /** @enum {string} */
+            status: "current" | "superseded";
+            content_hash: string;
+            stop_count: number;
+            package_count: number;
+            /** Format: date-time */
+            generated_at: string;
+            content: components["schemas"]["ManifestContent"];
+        };
+        Handoff: {
+            /** Format: uuid */
+            id: string;
+            from_party: string;
+            to_party: string;
+            /** Format: date-time */
+            handed_at: string;
+            location: string | null;
+            accepted_count: number;
+            rejected_count: number;
+            missing_count: number;
+            disputed: boolean;
+            evidence_ref: string;
+            notes: string;
+            actor_name: string | null;
+            /** Format: date-time */
+            recorded_at: string;
+        };
+        DispatchRun: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            /** Format: date */
+            service_date: string;
+            /** Format: uuid */
+            partner_id: string;
+            partner_name: string;
+            partner_mode: string;
+            /** Format: uuid */
+            courier_id: string | null;
+            courier_name: string | null;
+            /** Format: uuid */
+            zone_id: string | null;
+            zone_code: string | null;
+            /** @enum {string} */
+            status: "draft" | "finalized" | "released" | "completed" | "reconciled" | "cancelled";
+            version: number;
+            notes: string;
+            stop_count: number;
+            package_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            finalized_at: string | null;
+            /** Format: date-time */
+            released_at: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            stops?: components["schemas"]["DispatchStop"][];
+            manifest?: components["schemas"]["DispatchManifest"] | null;
+            handoffs?: components["schemas"]["Handoff"][];
+        };
+        DispatchRunInput: {
+            /** Format: date */
+            service_date: string;
+            /** Format: uuid */
+            partner_id: string;
+            courier_id?: string;
+            zone_id?: string;
+            notes?: string;
+            partner_override?: string;
+        };
+        /** @description Beyond known (or unknown) capacity needs capacity_override and delivery.dispatch. */
+        StopInput: {
+            /** Format: uuid */
+            delivery_id: string;
+            capacity_override?: string;
+            partner_override?: string;
+        };
+        SequenceInput: {
+            stop_ids: string[];
+        };
+        HandoffInput: {
+            from_party?: string;
+            to_party: string;
+            /** Format: date-time */
+            handed_at?: string;
+            location?: string;
+            location_verified?: boolean;
+            packages: {
+                /** Format: uuid */
+                package_id: string;
+                /** @enum {string} */
+                outcome: "accepted" | "rejected" | "missing";
+                note?: string;
+            }[];
+            evidence_ref?: string;
+            notes?: string;
+            idempotency_key: string;
+        };
+        ExplanationInput: {
+            explanation?: string;
+        };
+        DeliveryDiscrepancy: {
+            kind: string;
+            delivery_id?: string;
+            delivery?: string;
+            detail: string;
+        };
+        DeliveryReconciliation: {
+            /** Format: uuid */
+            run_id: string;
+            run_number: string;
+            run_status: string;
+            /** @enum {string} */
+            status: "open" | "reconciled";
+            summary: {
+                planned_deliveries: number;
+                planned_packages: number;
+                handed_over_packages: number;
+                delivered: number;
+                delivered_packages: number;
+                failed: number;
+                returned: number;
+                returned_packages: number;
+                still_out: number;
+                missing_proof: number;
+                open_exceptions: number;
+                returns_awaiting_review: number;
+            };
+            discrepancies: components["schemas"]["DeliveryDiscrepancy"][];
+            explanation: string | null;
+            /** Format: date-time */
+            closed_at: string | null;
+        };
+        DeliveryOverview: {
+            /** Format: date */
+            date: string;
+            due_today: number;
+            awaiting_verification: number;
+            ready_for_dispatch: number;
+            unscheduled: number;
+            unassigned: number;
+            in_transit: number;
+            delivered_today: number;
+            failed_open: number;
+            delayed: number;
+            missing_proof: number;
+            open_exceptions: number;
+            returns_to_review: number;
+            reschedule_requests: number;
+            blockers: string[];
+            consumer_failed_jobs: number;
+        };
+        DeliveryBreakdown: {
+            key: string;
+            label: string;
+            deliveries: number;
+            delivered: number;
+            first_attempt_delivered: number;
+            failed_attempts: number;
+            on_time_measurable: number;
+            on_time: number;
+            on_time_rate: number | null;
+        };
+        DeliveryReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            time_zone: string;
+            totals: {
+                [key: string]: unknown;
+            };
+            by_partner: components["schemas"]["DeliveryBreakdown"][];
+            by_zone: components["schemas"]["DeliveryBreakdown"][];
+            costs: {
+                kind: string;
+                currency: string;
+                amount_minor: number;
+                records: number;
+            }[];
+            definitions: {
+                [key: string]: string;
+            };
+        };
+        DeliveryMilestone: {
+            key: string;
+            label: string;
+            done: boolean;
+            /** Format: date-time */
+            at: string | null;
+        };
+        /** @description Milestones from real records in plain words. No partner, courier, run or internal status names. */
+        CustomerDelivery: {
+            /** Format: uuid */
+            order_id: string;
+            /** @enum {string} */
+            stage: "preparing" | "packed" | "scheduled" | "out_for_delivery" | "delivered" | "issue" | "cancelled";
+            headline: string;
+            detail: string;
+            /** Format: date */
+            service_date: string | null;
+            window: string | null;
+            address: {
+                [key: string]: unknown;
+            };
+            confirmation_code: string | null;
+            code_explanation?: string;
+            timeline: components["schemas"]["DeliveryMilestone"][];
+            issue: string | null;
+            can_reschedule: boolean;
+            reschedule_policy: string;
+            open_request: components["schemas"]["RescheduleRequest"] | null;
+            history: {
+                attempt: number;
+                outcome: string;
+                /** Format: date-time */
+                at: string;
+            }[];
+            live_tracking: boolean;
+        };
+        DeliverySupportInput: {
+            message: string;
+        };
+        DeliverySupportResult: {
+            case_number: number;
+            /** @enum {string} */
+            status: "received";
         };
     };
     responses: {
@@ -19197,6 +21280,2200 @@ export interface operations {
             };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminFulfillments: {
+        parameters: {
+            query?: {
+                status?: string;
+                week?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Fulfillment"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSyncFulfillment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Outcomes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["FulfillmentOutcome"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminFulfillmentConsumer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ConsumerStatus"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminFlagBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Raised. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            exception_id: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminFulfillment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fulfillment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Fulfillment"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminVerifyItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyInput"];
+            };
+        };
+        responses: {
+            /** @description Fulfillment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Fulfillment"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReleaseFulfillment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionInput"];
+            };
+        };
+        responses: {
+            /** @description Fulfillment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Fulfillment"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminFulfillmentLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["PackageLabel"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminFulfillmentTrace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Trace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FulfillmentTrace"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminDeliverySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliverySettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveDeliverySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliverySettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliverySettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryZones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryZone"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateDeliveryZone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryZoneInput"];
+            };
+        };
+        responses: {
+            /** @description Zone. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryZone"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateDeliveryZone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryZoneInput"];
+            };
+        };
+        responses: {
+            /** @description Zone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryZone"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryCoverage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["RegionCoverage"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryCalendar: {
+        parameters: {
+            query?: {
+                from?: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ServiceDay"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSaveServiceDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceDayInput"];
+            };
+        };
+        responses: {
+            /** @description Day. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ServiceDay"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryCapacity: {
+        parameters: {
+            query?: {
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryCapacity"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSetDeliveryCapacity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryCapacityInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryCapacity"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryExceptions: {
+        parameters: {
+            query?: {
+                status?: string;
+                stage?: string;
+                delivery_id?: string;
+                customer_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryException"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRaiseDeliveryException: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryExceptionInput"];
+            };
+        };
+        responses: {
+            /** @description Raised. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryException"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryException: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Exception. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryException"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateDeliveryException: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryExceptionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Exception. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryException"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryOverview: {
+        parameters: {
+            query?: {
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryOverview"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryReport"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryPartners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryPartner"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateDeliveryPartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryPartnerInput"];
+            };
+        };
+        responses: {
+            /** @description Partner. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryPartner"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryPartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Partner. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryPartner"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUpdateDeliveryPartner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryPartnerInput"];
+            };
+        };
+        responses: {
+            /** @description Partner. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryPartner"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordPartnerCriterion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerCriterionInput"];
+            };
+        };
+        responses: {
+            /** @description Partner. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryPartner"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSetPartnerStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerStatusInput"];
+            };
+        };
+        responses: {
+            /** @description Partner. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryPartner"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCouriers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Courier"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateCourier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourierInput"];
+            };
+        };
+        responses: {
+            /** @description Courier. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Courier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminUpdateCourier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourierInput"];
+            };
+        };
+        responses: {
+            /** @description Courier. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Courier"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryCosts: {
+        parameters: {
+            query?: {
+                run_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryCost"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRecordDeliveryCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryCostInput"];
+            };
+        };
+        responses: {
+            /** @description Cost. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryCost"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveries: {
+        parameters: {
+            query?: {
+                status?: string;
+                date?: string;
+                zone_id?: string;
+                customer_id?: string;
+                order_id?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["Delivery"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminScheduleDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCorrectDeliveryAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressCorrectionInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordDeliveryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordProof: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProofInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCompleteDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutcomeInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminFailDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutcomeInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReattemptDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordDeliveryReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCancelDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminCorrectDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRequestReschedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescheduleRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminLinkDeliveryCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseLinkInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRescheduleRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["PendingReschedule"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminDecideReschedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescheduleDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Delivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDeliveryReturns: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryReturn"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReviewReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnReviewInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DeliveryReturn"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDispatchRuns: {
+        parameters: {
+            query?: {
+                date?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DispatchRun"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateDispatchRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DispatchRunInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDispatchRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminDispatchManifest: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Manifest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchManifest"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAddStop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StopInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRemoveStop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stop: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSequenceStops: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SequenceInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminFinalizeRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReopenRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReleaseRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRecordHandoff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HandoffInput"];
+            };
+        };
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DispatchRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRunReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reconciliation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryReconciliation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminReconcileRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplanationInput"];
+            };
+        };
+        responses: {
+            /** @description Reconciliation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliveryReconciliation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    myOrderDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerDelivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    myDeliverySupport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliverySupportInput"];
+            };
+        };
+        responses: {
+            /** @description Received. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeliverySupportResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    myRescheduleRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescheduleRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Delivery. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CustomerDelivery"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
     };

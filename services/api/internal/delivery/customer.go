@@ -189,6 +189,13 @@ func (s *Service) DecideReschedule(ctx context.Context, actor, requestID string,
 		if r.ZoneID == nil {
 			return unprocessable("no_zone", "Assign a zone before rescheduling.")
 		}
+		st, err := s.settings(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if err := eligibleDate(st, r.OrderWeek, date); err != nil {
+			return err
+		}
 		open, why, err := serviceDayOpen(ctx, tx, date, r.ZoneID)
 		if err != nil {
 			return err

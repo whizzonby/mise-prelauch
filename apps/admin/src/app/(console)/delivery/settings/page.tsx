@@ -48,6 +48,19 @@ export default async function DeliverySettingsPage() {
             <Labelled label="Approved proof policy (document or decision)">
               <TextInput name="proof_policy_ref" defaultValue={s.proof_policy_ref} disabled={!manage} />
             </Labelled>
+            <fieldset className="grid gap-3 sm:grid-cols-3">
+              <legend className="type-body-sm mb-1 font-semibold sm:col-span-3">Which days may deliver an order&apos;s week</legend>
+              <Labelled label="First day" hint="Days after the week start (Monday = 0).">
+                <TextInput name="delivery_offset_min_days" type="number" min={0} max={27} defaultValue={s.delivery_offset_min_days ?? ""} disabled={!manage} />
+              </Labelled>
+              <Labelled label="Last day">
+                <TextInput name="delivery_offset_max_days" type="number" min={0} max={27} defaultValue={s.delivery_offset_max_days ?? ""} disabled={!manage} />
+              </Labelled>
+              <Labelled label="Approved decision">
+                <TextInput name="delivery_week_rule_ref" defaultValue={s.delivery_week_rule_ref} disabled={!manage} />
+              </Labelled>
+              <p className="type-caption text-muted sm:col-span-3">Empty: no rule, so nothing can be scheduled. Every scheduling, reschedule and assignment is checked against it.</p>
+            </fieldset>
             <Labelled label="Customer reschedule cutoff (hours before the date)" hint="Empty: no policy. Requests are collected; no date is promised.">
               <TextInput name="reschedule_cutoff_hours" type="number" min={0} max={336} defaultValue={s.reschedule_cutoff_hours ?? ""} disabled={!manage} />
             </Labelled>

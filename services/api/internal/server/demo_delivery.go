@@ -157,6 +157,12 @@ func SeedDemoDelivery(ctx context.Context, cfg config.Config, pool *pgxpool.Pool
 	if err != nil {
 		return nil, err
 	}
+	if st.DeliveryOffsetMinDays == nil {
+		lo, hi, ref := 0, 6, demoMark
+		if _, err := dl.PutSettings(ctx, actor, delivery.SettingsInput{DeliveryOffsetMinDays: &lo, DeliveryOffsetMaxDays: &hi, DeliveryWeekRuleRef: &ref}); err != nil {
+			return nil, err
+		}
+	}
 	if len(st.ProofMethods) == 0 {
 		methods := []string{"confirmation_code", "recipient_acknowledgment"}
 		ref := demoMark
@@ -179,6 +185,22 @@ func SeedDemoDelivery(ctx context.Context, cfg config.Config, pool *pgxpool.Pool
 	plan, err := api.do("GET", "/api/v1/admin/production/plans/"+planID, nil, staff["kitchen"])
 	if err != nil {
 		return nil, err
+	}
+	// Demo delivery days inside the plan's order week (the delivery-week
+	// rule allows nothing else): its Thursday and Saturday.
+	if week, ok := time.Parse("2006-01-02", str(plan["week"])); ok == nil {
+		for _, off := range []int{3, 5} {
+			d := week.AddDate(0, 0, off).Format("2006-01-02")
+			if _, err := dl.SaveServiceDay(ctx, actor, delivery.ServiceDayInput{Date: d, Status: "open", Notes: demoMark,
+				Windows: []delivery.WindowInput{{Label: "Demo window", StartsAt: "09:00", EndsAt: "17:00", Status: "approved"}}}); err != nil {
+				return nil, err
+			}
+			n := 30
+			if _, err := dl.SetCapacity(ctx, actor, delivery.CapacityInput{Date: d, Capacity: &n, Notes: demoMark}); err != nil {
+				return nil, err
+			}
+			out.ServiceDays = append(out.ServiceDays, d)
+		}
 	}
 	templates, err := api.do("GET", "/api/v1/admin/quality/templates", nil, staff["inspector"])
 	if err != nil {

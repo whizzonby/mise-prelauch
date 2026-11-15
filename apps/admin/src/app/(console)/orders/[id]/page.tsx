@@ -29,7 +29,14 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           {o.number}
         </Heading>
         <Tag tone={commerceTone(o.status)}>{humanize(o.status)}</Tag>
+        {o.delivery_outcome?.state === "disputed" ? <Tag tone="error">Delivery outcome disputed</Tag> : null}
       </div>
+      {o.delivery_outcome ? (
+        <p className="type-body-sm mt-3 max-w-[56rem] border-l-4 border-accent pl-3">
+          {o.delivery_outcome.state === "disputed" ? "Delivery corrected the delivered outcome: " : "Delivered outcome confirmed again: "}
+          {o.delivery_outcome.reason} The order status and payment history are kept as they were; this note is the commerce record of the correction.
+        </p>
+      ) : null}
       <p className="type-body-sm mt-2 text-muted">
         {o.plan_name} · {o.meals_count} meals · {money(o.total_minor, o.currency)} ·{" "}
         {can(admin, "subscriptions.read") ? (

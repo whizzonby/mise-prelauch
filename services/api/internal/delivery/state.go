@@ -55,6 +55,7 @@ type row struct {
 	WindowID     *string
 	PackageCount int
 	Address      json.RawMessage
+	OrderWeek    time.Time
 }
 
 func (s *Service) lock(ctx context.Context, tx pgx.Tx, id string) (*row, error) {
@@ -63,9 +64,9 @@ func (s *Service) lock(ctx context.Context, tx pgx.Tx, id string) (*row, error) 
 	}
 	var r row
 	err := tx.QueryRow(ctx, `SELECT id::text, number, obligation_id::text, order_id::text, customer_id::text, status, version, attempt,
-		zone_id::text, service_date, window_id::text, package_count, address FROM deliveries WHERE id = $1 FOR UPDATE`, id).
+		zone_id::text, service_date, window_id::text, package_count, address, order_week FROM deliveries WHERE id = $1 FOR UPDATE`, id).
 		Scan(&r.ID, &r.Number, &r.ObligationID, &r.OrderID, &r.CustomerID, &r.Status, &r.Version, &r.Attempt, &r.ZoneID, &r.ServiceDate,
-			&r.WindowID, &r.PackageCount, &r.Address)
+			&r.WindowID, &r.PackageCount, &r.Address, &r.OrderWeek)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, httpx.ErrNotFound
 	}

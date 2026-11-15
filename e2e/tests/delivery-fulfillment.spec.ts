@@ -74,26 +74,34 @@ async function noSideScroll(page: Page) {
   expect(overflow, "page scrolls sideways").toBeLessThanOrEqual(1);
 }
 
-type Fulfillment = { id: string; number: string; order_id: string; order_number: string; customer_id: string; status: string; version: number;
+type Fulfillment = { id: string; number: string; week: string; order_id: string; order_number: string; customer_id: string; status: string; version: number;
   packages: { items: { id: string; meal_name: string; quantity: number; batch_code: string }[] }[] };
 
 /** Fulfillments made by real readiness events, waiting to be verified. */
 async function readyFulfillments(request: APIRequestContext, token: string, n: number): Promise<Fulfillment[]> {
   const list = await call(request, token, "GET", "/fulfillment?status=ready_for_verification");
-  expect(list.items.length, "Not enough fulfillments to verify: run `misectl production seed-demo && misectl delivery seed-demo -ready` first.").toBeGreaterThanOrEqual(n);
-  return Promise.all(list.items.slice(0, n).map((f: { id: string }) => call(request, token, "GET", `/fulfillment/${f.id}`)));
+  // Only weeks with an open delivery day can be scheduled (the delivery-week rule).
+  const usable: { id: string }[] = [];
+  for (const f of list.items as { id: string; week: string }[]) {
+    const cal = await call(request, token, "GET", `/delivery/calendar?from=${f.week}&days=7`);
+    if (cal.items.some((d: { status: string }) => d.status === "open")) usable.push(f);
+    if (usable.length === n) break;
+  }
+  expect(usable.length, "Not enough fulfillments to verify: run `misectl production seed-demo && misectl delivery seed-demo -ready` first.").toBeGreaterThanOrEqual(n);
+  return Promise.all(usable.map((f) => call(request, token, "GET", `/fulfillment/${f.id}`)));
 }
 
-async function demoSetup(request: APIRequestContext, token: string) {
+/** The demo partner and policies, and an open demo day inside the order's week (the delivery-week rule allows nothing else). */
+async function demoSetup(request: APIRequestContext, token: string, week: string) {
   const partners = await call(request, token, "GET", "/delivery/partners");
   const partner = partners.items.find((p: { demo: boolean; status: string }) => p.demo && p.status === "approved");
   expect(partner, "No approved demo partner: run `misectl delivery seed-demo`.").toBeTruthy();
   const settings = await call(request, token, "GET", "/delivery/settings");
   expect(settings.proof_methods, "No proof policy: run `misectl delivery seed-demo`.").toContain("recipient_acknowledgment");
-  const today = new Date().toISOString().slice(0, 10);
-  const cal = await call(request, token, "GET", `/delivery/calendar?from=${today}&days=14`);
+  expect(settings.delivery_offset_min_days, "No delivery-week rule: run `misectl delivery seed-demo`.").not.toBeNull();
+  const cal = await call(request, token, "GET", `/delivery/calendar?from=${week}&days=7`);
   const day = cal.items.find((d: { status: string; windows: unknown[] }) => d.status === "open" && d.windows.length);
-  expect(day, "No demo service day: run `misectl delivery seed-demo`.").toBeTruthy();
+  expect(day, "No demo service day in the order's week: run `misectl delivery seed-demo -ready`.").toBeTruthy();
   return { partner, day };
 }
 
@@ -121,8 +129,8 @@ async function customerPage(browser: Browser, request: APIRequestContext, token:
 test("a verified order goes out, is handed over, tracked, proven delivered and shown to the customer", async ({ browser, request }) => {
   test.setTimeout(420_000);
   const token = await adminToken(request);
-  const { partner, day } = await demoSetup(request, token);
   const [f] = await readyFulfillments(request, token, 1);
+  const { partner, day } = await demoSetup(request, token, f!.week);
 
   // A packer on a phone checks every kit against the order.
   const packer = await staff(browser, request, "fulfillment_staff", "E2E Packer", phone);
@@ -231,8 +239,8 @@ test("a verified order goes out, is handed over, tracked, proven delivered and s
 test("a failed attempt raises an exception, comes back quarantined, and the run reconciles once resolved", async ({ browser, request }) => {
   test.setTimeout(300_000);
   const token = await adminToken(request);
-  const { partner, day } = await demoSetup(request, token);
   const [f] = await readyFulfillments(request, token, 1);
+  const { partner, day } = await demoSetup(request, token, f!.week);
   // Up to the handoff through the API (the UI path is the first test).
   for (const it of f!.packages.flatMap((p) => p.items)) {
     await call(request, token, "POST", `/fulfillment/${f!.id}/verify`, { item_id: it.id, counted_quantity: it.quantity, scanned_batch_code: it.batch_code,

@@ -208,6 +208,8 @@ type Order struct {
 	BillingCycleID      string          `json:"billing_cycle_id"`
 	PaymentID           *string         `json:"payment_id"`
 	SubscriptionCycleID string          `json:"subscription_cycle_id"`
+	// Set when delivery corrected a delivered outcome (see FlagDeliveryOutcome).
+	DeliveryOutcome *DeliveryOutcome `json:"delivery_outcome"`
 }
 
 func (s *Service) view(ctx context.Context, q db.Querier, o store.Order) (*Order, error) {
@@ -217,6 +219,11 @@ func (s *Service) view(ctx context.Context, q db.Querier, o store.Order) (*Order
 		Items: []Item{}, SubscriptionID: o.SubscriptionID, BillingCycleID: o.BillingCycleID, PaymentID: o.PaymentID,
 		SubscriptionCycleID: o.SubscriptionCycleID, DeliveryWindow: o.DeliveryWindow}
 	_ = json.Unmarshal(o.AddressSnapshot, &out.Address)
+	oc, err := latestOutcome(ctx, q, o.ID)
+	if err != nil {
+		return nil, err
+	}
+	out.DeliveryOutcome = oc
 	items, err := store.New(q).OrderItems(ctx, o.ID)
 	if err != nil {
 		return nil, err
@@ -254,6 +261,8 @@ type Summary struct {
 	Currency   string    `json:"currency"`
 	CreatedAt  time.Time `json:"created_at"`
 	CustomerID string    `json:"customer_id,omitempty"`
+	// "disputed" while a corrected delivered outcome is unresolved.
+	DeliveryOutcome *string `json:"delivery_outcome"`
 }
 
 func summary(o store.Order) Summary {
@@ -277,7 +286,7 @@ func (s *Service) ListForCustomer(ctx context.Context, customerID string, page, 
 	for _, r := range rows {
 		out = append(out, summary(r))
 	}
-	return out, nil
+	return out, s.outcomes(ctx, out)
 }
 
 // ---------------------------------------------------------------- staff
@@ -306,7 +315,7 @@ func (s *Service) List(ctx context.Context, f Filter) ([]Summary, error) {
 		v.CustomerID = r.CustomerID
 		out = append(out, v)
 	}
-	return out, nil
+	return out, s.outcomes(ctx, out)
 }
 
 func (s *Service) Get(ctx context.Context, id string) (*Order, error) {
@@ -520,4 +529,81 @@ func (s *Service) ReadyOrderIDs(ctx context.Context, q db.Querier) ([]string, er
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgx.RowTo[string])
+}
+
+// ---------------------------------------------------------------- delivery outcomes
+
+// DeliveryOutcome is the commerce record of a corrected delivery outcome.
+// An order's status and payment history are never rewritten: when delivery
+// corrects a "delivered" outcome, commerce records here that the outcome is
+// disputed, and records "confirmed" once a later attempt is delivered.
+type DeliveryOutcome struct {
+	State  string    `json:"state"` // disputed or confirmed
+	Reason string    `json:"reason"`
+	At     time.Time `json:"at"`
+}
+
+// FlagDeliveryOutcome appends an outcome entry in q's transaction. It is the
+// contract delivery uses; nothing else changes on the order.
+func (s *Service) FlagDeliveryOutcome(ctx context.Context, q db.Querier, orderID, state, reason, actor string) error {
+	if state != "disputed" && state != "confirmed" {
+		return errors.New("orders: outcome must be disputed or confirmed")
+	}
+	reason = strings.TrimSpace(reason)
+	if r := []rune(reason); len(r) > 1000 {
+		reason = string(r[:1000])
+	}
+	_, err := q.Exec(ctx, `INSERT INTO order_delivery_outcomes (order_id, state, reason, actor_user_id) VALUES ($1, $2, $3, $4)`,
+		orderID, state, reason, nilIfEmpty(actor))
+	return err
+}
+
+// OutcomeDisputed reports whether the order's latest outcome entry is a dispute.
+func (s *Service) OutcomeDisputed(ctx context.Context, q db.Querier, orderID string) (bool, error) {
+	o, err := latestOutcome(ctx, q, orderID)
+	return o != nil && o.State == "disputed", err
+}
+
+func latestOutcome(ctx context.Context, q db.Querier, orderID string) (*DeliveryOutcome, error) {
+	var o DeliveryOutcome
+	err := q.QueryRow(ctx, `SELECT state, reason, created_at FROM order_delivery_outcomes WHERE order_id = $1 ORDER BY id DESC LIMIT 1`,
+		orderID).Scan(&o.State, &o.Reason, &o.At)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+// outcomes fills each summary's latest outcome state in one query.
+func (s *Service) outcomes(ctx context.Context, list []Summary) error {
+	if len(list) == 0 {
+		return nil
+	}
+	ids := make([]string, len(list))
+	for i, o := range list {
+		ids[i] = o.ID
+	}
+	rows, err := s.pool.Query(ctx, `SELECT DISTINCT ON (order_id) order_id::text, state FROM order_delivery_outcomes
+		WHERE order_id = ANY($1::uuid[]) ORDER BY order_id, id DESC`, ids)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	states := map[string]string{}
+	for rows.Next() {
+		var id, st string
+		if err := rows.Scan(&id, &st); err != nil {
+			return err
+		}
+		states[id] = st
+	}
+	for i := range list {
+		if st, ok := states[list[i].ID]; ok {
+			list[i].DeliveryOutcome = &st
+		}
+	}
+	return rows.Err()
 }

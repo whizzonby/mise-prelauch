@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.7.0
+  version: 1.7.1
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -12243,6 +12243,7 @@ components:
         currency: { type: string }
         created_at: { type: string, format: date-time }
         customer_id: { type: string, format: uuid }
+        delivery_outcome: { type: [string, "null"], enum: [disputed, confirmed, null], description: Latest delivery outcome entry, if any. }
     Order:
       type: object
       required: [id, number, status, week, plan_name, meals_count, currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, address, delivery_window, created_at, items, subscription_id, billing_cycle_id, payment_id, subscription_cycle_id]
@@ -12282,6 +12283,16 @@ components:
         billing_cycle_id: { type: string, format: uuid }
         payment_id: { type: [string, "null"], format: uuid }
         subscription_cycle_id: { type: string, format: uuid }
+        delivery_outcome:
+          description: Set when delivery corrected a delivered outcome. The order's status and payment history are never rewritten; the latest entry says whether the delivered outcome is disputed or confirmed again.
+          oneOf:
+            - type: object
+              required: [state, reason, at]
+              properties:
+                state: { type: string, enum: [disputed, confirmed] }
+                reason: { type: string }
+                at: { type: string, format: date-time }
+            - type: "null"
     BillingCycle:
       type: object
       required: [id, subscription_id, subscription_cycle_id, kind, period_start, period_end, due_at, status, attempts, next_attempt_at, paid_at, void_reason, currency, subtotal_minor, discount_minor, delivery_fee_minor, tax_minor, total_minor, tax, discount]
@@ -15745,7 +15756,7 @@ components:
       description: "Batch-level: package \u2192 batch \u2192 ingredient lots. Kit-level lot allocation is not recorded."
     DeliverySettings:
       type: object
-      required: [proof_methods, proof_policy_ref, reschedule_cutoff_hours, failure_reasons, allow_unapproved_partners, unapproved_partner_policy_ref, label_certified, customer_emails_approved, updated_at, blockers]
+      required: [proof_methods, proof_policy_ref, reschedule_cutoff_hours, failure_reasons, allow_unapproved_partners, unapproved_partner_policy_ref, label_certified, customer_emails_approved, updated_at, blockers, delivery_offset_min_days, delivery_offset_max_days, delivery_week_rule_ref]
       properties:
         proof_methods:
           type: array
@@ -15759,6 +15770,9 @@ components:
         unapproved_partner_policy_ref: { type: string }
         label_certified: { type: boolean }
         customer_emails_approved: { type: boolean }
+        delivery_offset_min_days: { type: [integer, "null"], description: "First eligible delivery day, counted from the order's week start (Monday = 0). Null means no approved rule, so nothing can be scheduled." }
+        delivery_offset_max_days: { type: [integer, "null"] }
+        delivery_week_rule_ref: { type: string }
         updated_at: { type: string, format: date-time }
         blockers:
           type: array
@@ -15780,6 +15794,10 @@ components:
         unapproved_partner_policy_ref: { type: string }
         label_certified: { type: boolean }
         customer_emails_approved: { type: boolean }
+        delivery_offset_min_days: { type: integer }
+        delivery_offset_max_days: { type: integer }
+        delivery_week_rule_ref: { type: string }
+        clear_delivery_week_rule: { type: boolean }
       description: Fields left out keep their value. Photo proof cannot be enabled (no secure evidence storage).
     DeliveryRegion:
       type: object
@@ -16185,7 +16203,7 @@ components:
         linked_at: { type: string, format: date-time }
     Delivery:
       type: object
-      required: [id, number, obligation_id, order_id, order_number, customer_id, customer_name, status, version, attempt, zone_id, zone_code, zone_source, service_date, window_id, window_label, schedule_confirmed_at, address, address_validation, package_count, run_id, run_number, partner_name, stop_sequence, delivered_at, failed_at, open_exceptions, blocking_exceptions, has_proof, created_at]
+      required: [id, number, obligation_id, order_id, order_number, customer_id, customer_name, status, version, attempt, zone_id, zone_code, zone_source, service_date, window_id, window_label, schedule_confirmed_at, address, address_validation, package_count, run_id, run_number, partner_name, stop_sequence, delivered_at, failed_at, open_exceptions, blocking_exceptions, has_proof, created_at, order_week]
       properties:
         id: { type: string, format: uuid }
         number: { type: string }
@@ -16194,6 +16212,7 @@ components:
         order_number: { type: string }
         customer_id: { type: string, format: uuid }
         customer_name: { type: string }
+        order_week: { type: string, format: date }
         status:
           type: string
           enum: [pending_assignment, assigned, ready_for_pickup, picked_up, in_transit, arriving, delivered, delivery_failed, returned, cancelled]
@@ -16617,7 +16636,7 @@ components:
         closed_at: { type: [string, "null"], format: date-time }
     DeliveryOverview:
       type: object
-      required: [date, due_today, awaiting_verification, ready_for_dispatch, unscheduled, unassigned, in_transit, delivered_today, failed_open, delayed, missing_proof, open_exceptions, returns_to_review, reschedule_requests, blockers, consumer_failed_jobs]
+      required: [date, due_today, awaiting_verification, ready_for_dispatch, unscheduled, unassigned, in_transit, delivered_today, failed_open, delayed, missing_proof, open_exceptions, returns_to_review, reschedule_requests, blockers, consumer_failed_jobs, disputed_outcomes]
       properties:
         date: { type: string, format: date }
         due_today: { type: integer }
@@ -16637,6 +16656,7 @@ components:
           type: array
           items: { type: string }
         consumer_failed_jobs: { type: integer }
+        disputed_outcomes: { type: integer }
     DeliveryBreakdown:
       type: object
       required: [key, label, deliveries, delivered, first_attempt_delivered, failed_attempts, on_time_measurable, on_time, on_time_rate]

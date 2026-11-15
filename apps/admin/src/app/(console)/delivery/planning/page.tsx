@@ -85,7 +85,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Pro
                     <Link href={`/delivery/deliveries/${d.id}`} className="font-semibold underline underline-offset-4">
                       {d.number}
                     </Link>{" "}
-                    · {d.order_number} · {d.address.region_label} · {d.zone_code ?? <span className="text-error">no zone</span>}
+                    · {d.order_number} (week of {formatDay(d.order_week)}) · {d.address.region_label} · {d.zone_code ?? <span className="text-error">no zone</span>}
                     {d.blocking_exceptions ? <span className="text-error"> · blocked</span> : null}
                   </p>
                   {plan && date ? (

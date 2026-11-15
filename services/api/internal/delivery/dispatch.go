@@ -323,6 +323,14 @@ func (s *Service) AddStop(ctx context.Context, p *identity.Principal, runID stri
 		if d.ZoneID == nil {
 			return unprocessable("no_zone", "Delivery "+d.Number+" has no zone.")
 		}
+		// The rule is checked again here: it may have changed since scheduling.
+		st, err := s.settings(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if err := eligibleDate(st, d.OrderWeek, *d.ServiceDate); err != nil {
+			return err
+		}
 		if run.ZoneID != nil && *run.ZoneID != *d.ZoneID {
 			return unprocessable("wrong_zone", "Delivery "+d.Number+" is in another zone than this run.")
 		}

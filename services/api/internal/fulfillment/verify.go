@@ -241,7 +241,7 @@ func (s *Service) Release(ctx context.Context, actor, id string, version *int) (
 			return err
 		}
 		if _, err := s.Delivery.CreateFromRelease(ctx, tx, delivery.Release{ObligationID: id, OrderID: o.OrderID, OrderNumber: o.OrderNo,
-			CustomerID: o.CustomerID, Address: facts.Address, PackageCount: pkgs, Actor: actor}); err != nil {
+			CustomerID: o.CustomerID, Week: facts.Week, Address: facts.Address, PackageCount: pkgs, Actor: actor}); err != nil {
 			return err
 		}
 		if err := s.move(ctx, tx, o, "ready_for_dispatch", "Released to dispatch", actor, `, released_at = now()`); err != nil {
@@ -381,16 +381,22 @@ func (s *Service) Fulfilled(ctx context.Context, tx pgx.Tx, id, actor string) er
 
 func (s *Service) Interrupt(ctx context.Context, tx pgx.Tx, id, actor, why string) error {
 	o, err := s.lock(ctx, tx, id)
-	if err != nil || o.Status == "exception" || o.Status == "cancelled" {
+	if err != nil || o.Status == "exception" || o.Status == "cancelled" || o.Status == "fulfilled" {
 		return err
 	}
-	// A fulfilled obligation is interrupted only by an explicit, audited
-	// delivery correction; it resumes as handed over.
-	resume := o.Status
-	if resume == "fulfilled" {
-		resume = "handed_over"
+	return s.move(ctx, tx, o, "exception", why, actor, `, resume_status = $3`, o.Status)
+}
+
+// Reopen returns a fulfilled obligation to handed over after an audited
+// delivery correction (delivered → failed): the packages are treated as out
+// with the partner again, exactly like a failed attempt, so a new attempt
+// can be handed over and delivered.
+func (s *Service) Reopen(ctx context.Context, tx pgx.Tx, id, actor, why string) error {
+	o, err := s.lock(ctx, tx, id)
+	if err != nil || o.Status != "fulfilled" {
+		return err
 	}
-	return s.move(ctx, tx, o, "exception", why, actor, `, resume_status = $3, fulfilled_at = NULL`, resume)
+	return s.move(ctx, tx, o, "handed_over", why, actor, `, fulfilled_at = NULL`)
 }
 
 // Resume returns an obligation to the state its exception interrupted.

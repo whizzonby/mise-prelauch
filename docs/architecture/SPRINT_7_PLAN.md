@@ -213,3 +213,6 @@ sources, so analytics can tell staff-recorded data from partner-reported data.
   docs/screenshots/sprint-7, report docs/SPRINT_7_REPORT.md.
 
 Committed 15 Nov 2026 (internet time) as `815af31`; not pushed.
+
+- [x] Review fixes (15 Nov): delivery-week rule (P1) and the commerce outcome contract (P2), migration
+  00012, OpenAPI 1.7.1. Go 149/149, Vitest 43/43, Playwright 55/55. See report §22.

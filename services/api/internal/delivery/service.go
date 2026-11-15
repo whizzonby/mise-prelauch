@@ -33,6 +33,11 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 // Orders is what delivery asks of commerce.
 type Orders interface {
 	Advance(ctx context.Context, q db.Querier, orderIDs []string, from []string, to, reason, actor string) (int, error)
+	// The reconciliation contract for corrected outcomes: commerce records
+	// that a delivered outcome is disputed (or confirmed again) without
+	// rewriting the order's status or payment history.
+	FlagDeliveryOutcome(ctx context.Context, q db.Querier, orderID, state, reason, actor string) error
+	OutcomeDisputed(ctx context.Context, q db.Querier, orderID string) (bool, error)
 }
 
 // PackageRef is a fulfillment package as delivery sees it.
@@ -51,6 +56,8 @@ type Fulfillment interface {
 	HandedOver(ctx context.Context, tx pgx.Tx, obligationID, actor string) error
 	Fulfilled(ctx context.Context, tx pgx.Tx, obligationID, actor string) error
 	Interrupt(ctx context.Context, tx pgx.Tx, obligationID, actor, reason string) error
+	// Reopen undoes "fulfilled" after an audited delivery correction: back to handed over.
+	Reopen(ctx context.Context, tx pgx.Tx, obligationID, actor, reason string) error
 	Resume(ctx context.Context, tx pgx.Tx, obligationID, actor string) error
 	Cancel(ctx context.Context, tx pgx.Tx, obligationID, actor, reason string) error
 }

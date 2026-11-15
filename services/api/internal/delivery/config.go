@@ -26,7 +26,11 @@ type Settings struct {
 	UnapprovedPartnerPolicyRef string    `json:"unapproved_partner_policy_ref"`
 	LabelCertified             bool      `json:"label_certified"`
 	CustomerEmailsApproved     bool      `json:"customer_emails_approved"`
-	UpdatedAt                  time.Time `json:"updated_at"`
+	// Eligible delivery dates: order week start (Monday) + min..max days.
+	DeliveryOffsetMinDays *int      `json:"delivery_offset_min_days"`
+	DeliveryOffsetMaxDays *int      `json:"delivery_offset_max_days"`
+	DeliveryWeekRuleRef   string    `json:"delivery_week_rule_ref"`
+	UpdatedAt             time.Time `json:"updated_at"`
 	Blockers                   []string  `json:"blockers"`
 }
 
@@ -39,13 +43,18 @@ func (s *Service) Settings(ctx context.Context) (*Settings, error) { return s.se
 func (s *Service) settings(ctx context.Context, q db.Querier) (*Settings, error) {
 	var st Settings
 	err := q.QueryRow(ctx, `SELECT proof_methods, proof_policy_ref, reschedule_cutoff_hours, failure_reasons, allow_unapproved_partners,
-		unapproved_partner_policy_ref, label_certified, customer_emails_approved, updated_at FROM delivery_settings`).
+		unapproved_partner_policy_ref, label_certified, customer_emails_approved, delivery_offset_min_days, delivery_offset_max_days,
+		delivery_week_rule_ref, updated_at FROM delivery_settings`).
 		Scan(&st.ProofMethods, &st.ProofPolicyRef, &st.RescheduleCutoffHours, &st.FailureReasons, &st.AllowUnapprovedPartners,
-			&st.UnapprovedPartnerPolicyRef, &st.LabelCertified, &st.CustomerEmailsApproved, &st.UpdatedAt)
+			&st.UnapprovedPartnerPolicyRef, &st.LabelCertified, &st.CustomerEmailsApproved, &st.DeliveryOffsetMinDays, &st.DeliveryOffsetMaxDays,
+			&st.DeliveryWeekRuleRef, &st.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	st.Blockers = []string{}
+	if st.DeliveryOffsetMinDays == nil {
+		st.Blockers = append(st.Blockers, "No delivery-week rule is approved: no delivery can be scheduled (which days after an order's week start may deliver it).")
+	}
 	if len(st.ProofMethods) == 0 {
 		st.Blockers = append(st.Blockers, "No proof-of-delivery policy is configured: deliveries cannot be completed.")
 	}
@@ -79,6 +88,10 @@ type SettingsInput struct {
 	UnapprovedPartnerPolicyRef *string   `json:"unapproved_partner_policy_ref"`
 	LabelCertified             *bool     `json:"label_certified"`
 	CustomerEmailsApproved     *bool     `json:"customer_emails_approved"`
+	DeliveryOffsetMinDays      *int      `json:"delivery_offset_min_days"`
+	DeliveryOffsetMaxDays      *int      `json:"delivery_offset_max_days"`
+	DeliveryWeekRuleRef        *string   `json:"delivery_week_rule_ref"`
+	ClearDeliveryWeekRule      bool      `json:"clear_delivery_week_rule"`
 }
 
 func (s *Service) PutSettings(ctx context.Context, actor string, in SettingsInput) (*Settings, error) {
@@ -140,17 +153,38 @@ func (s *Service) PutSettings(ctx context.Context, actor string, in SettingsInpu
 		if in.CustomerEmailsApproved != nil {
 			next.CustomerEmailsApproved = *in.CustomerEmailsApproved
 		}
+		if in.DeliveryWeekRuleRef != nil {
+			next.DeliveryWeekRuleRef = strings.TrimSpace(*in.DeliveryWeekRuleRef)
+		}
+		if in.ClearDeliveryWeekRule {
+			next.DeliveryOffsetMinDays, next.DeliveryOffsetMaxDays, next.DeliveryWeekRuleRef = nil, nil, ""
+		} else if in.DeliveryOffsetMinDays != nil || in.DeliveryOffsetMaxDays != nil {
+			if in.DeliveryOffsetMinDays == nil || in.DeliveryOffsetMaxDays == nil {
+				return fieldErr("delivery_offset_min_days", "Give both the first and the last eligible day.")
+			}
+			lo, hi := *in.DeliveryOffsetMinDays, *in.DeliveryOffsetMaxDays
+			if lo < 0 || hi < lo || hi > 27 {
+				return fieldErr("delivery_offset_max_days", "Use days 0 to 27 after the order's week start, the first no later than the last.")
+			}
+			next.DeliveryOffsetMinDays, next.DeliveryOffsetMaxDays = &lo, &hi
+		}
+		if next.DeliveryOffsetMinDays != nil && runes(next.DeliveryWeekRuleRef) < 2 {
+			return fieldErr("delivery_week_rule_ref", "Name the approved decision that sets which days deliver an order's week.")
+		}
 		if _, err := tx.Exec(ctx, `UPDATE delivery_settings SET proof_methods = $1, proof_policy_ref = $2, reschedule_cutoff_hours = $3,
 			failure_reasons = $4, allow_unapproved_partners = $5, unapproved_partner_policy_ref = $6, label_certified = $7,
-			customer_emails_approved = $8, updated_by = $9, updated_at = now()`,
+			customer_emails_approved = $8, updated_by = $9, delivery_offset_min_days = $10, delivery_offset_max_days = $11,
+			delivery_week_rule_ref = $12, updated_at = now()`,
 			next.ProofMethods, next.ProofPolicyRef, next.RescheduleCutoffHours, next.FailureReasons, next.AllowUnapprovedPartners,
-			next.UnapprovedPartnerPolicyRef, next.LabelCertified, next.CustomerEmailsApproved, nilIfEmpty(actor)); err != nil {
+			next.UnapprovedPartnerPolicyRef, next.LabelCertified, next.CustomerEmailsApproved, nilIfEmpty(actor),
+			next.DeliveryOffsetMinDays, next.DeliveryOffsetMaxDays, next.DeliveryWeekRuleRef); err != nil {
 			return err
 		}
 		return record(ctx, tx, actor, "delivery.settings_updated", "delivery_settings", "", map[string]any{
 			"proof_methods": next.ProofMethods, "reschedule_cutoff_hours": next.RescheduleCutoffHours,
 			"allow_unapproved_partners": next.AllowUnapprovedPartners, "label_certified": next.LabelCertified,
-			"customer_emails_approved": next.CustomerEmailsApproved})
+			"customer_emails_approved": next.CustomerEmailsApproved, "delivery_offset_min_days": next.DeliveryOffsetMinDays,
+			"delivery_offset_max_days": next.DeliveryOffsetMaxDays, "delivery_week_rule_ref": next.DeliveryWeekRuleRef})
 	})
 	if err != nil {
 		return nil, err
@@ -675,4 +709,21 @@ func checkCapacity(ctx context.Context, tx pgx.Tx, date time.Time, zoneID, windo
 		}
 	}
 	return len(scopes) > 0, "", nil
+}
+
+// eligibleDate applies the approved delivery-week rule: an order of the week
+// starting week may be delivered from week+min to week+max days. Without an
+// approved rule nothing can be scheduled: delivery days are a business
+// decision that is never assumed.
+func eligibleDate(st *Settings, week, date time.Time) error {
+	if st.DeliveryOffsetMinDays == nil || st.DeliveryOffsetMaxDays == nil {
+		return unprocessable("delivery_week_rule_missing",
+			"No delivery-week rule is approved, so deliveries cannot be scheduled. Set it in delivery settings once the business decides it.")
+	}
+	first, last := week.AddDate(0, 0, *st.DeliveryOffsetMinDays), week.AddDate(0, 0, *st.DeliveryOffsetMaxDays)
+	if date.Before(first) || date.After(last) {
+		return unprocessable("outside_delivery_week", "This order (week of "+week.Format(day)+") can only be delivered from "+
+			first.Format(day)+" to "+last.Format(day)+" under rule "+st.DeliveryWeekRuleRef+".")
+	}
+	return nil
 }

@@ -23,6 +23,7 @@ type Delivery struct {
 	OrderNumber         string          `json:"order_number"`
 	CustomerID          string          `json:"customer_id"`
 	CustomerName        string          `json:"customer_name"`
+	OrderWeek           string          `json:"order_week"`
 	Status              string          `json:"status"`
 	Version             int             `json:"version"`
 	Attempt             int             `json:"attempt"`
@@ -56,7 +57,7 @@ type Delivery struct {
 }
 
 const deliveryCols = `d.id::text, d.number, d.obligation_id::text, d.order_id::text, o.number, d.customer_id::text,
-	trim(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), d.status, d.version, d.attempt, d.zone_id::text, z.code, d.zone_source,
+	trim(COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '')), d.order_week::text, d.status, d.version, d.attempt, d.zone_id::text, z.code, d.zone_source,
 	d.service_date::text, d.window_id::text, w.label, d.schedule_confirmed_at, d.address, d.address_validation, d.package_count,
 	r.id::text, r.number, p.name, st.sequence::int, d.delivered_at, d.failed_at,
 	(SELECT count(*) FROM delivery_exceptions e WHERE e.delivery_id = d.id AND e.status IN ('open', 'in_progress'))::int,
@@ -71,7 +72,7 @@ const deliveryFrom = ` FROM deliveries d JOIN orders o ON o.id = d.order_id JOIN
 
 func scanDelivery(row pgx.Row) (*Delivery, error) {
 	var d Delivery
-	err := row.Scan(&d.ID, &d.Number, &d.ObligationID, &d.OrderID, &d.OrderNumber, &d.CustomerID, &d.CustomerName, &d.Status, &d.Version,
+	err := row.Scan(&d.ID, &d.Number, &d.ObligationID, &d.OrderID, &d.OrderNumber, &d.CustomerID, &d.CustomerName, &d.OrderWeek, &d.Status, &d.Version,
 		&d.Attempt, &d.ZoneID, &d.ZoneCode, &d.ZoneSource, &d.ServiceDate, &d.WindowID, &d.WindowLabel, &d.ScheduleConfirmedAt, &d.Address,
 		&d.AddressValidation, &d.PackageCount, &d.RunID, &d.RunNumber, &d.PartnerName, &d.Stop, &d.DeliveredAt, &d.FailedAt, &d.OpenExceptions,
 		&d.BlockingExceptions, &d.HasProof, &d.CreatedAt)
@@ -311,6 +312,13 @@ func (s *Service) Schedule(ctx context.Context, actor, id string, in ScheduleInp
 		}
 		if validation == "not_serviceable" {
 			return unprocessable("not_serviceable", "Mise does not deliver to this address's region. Resolve the address exception first.")
+		}
+		st, err := s.settings(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if err := eligibleDate(st, r.OrderWeek, date); err != nil {
+			return err
 		}
 		open, why, err := serviceDayOpen(ctx, tx, date, zone)
 		if err != nil {

@@ -45,6 +45,7 @@ export default async function DeliveryOverviewPage({ searchParams }: { searchPar
           <CountTile label="Delivered, no proof" value={o.missing_proof} tone="bad" />
           <CountTile label="Open exceptions" value={o.open_exceptions} href="/delivery/exceptions" tone="bad" />
           <CountTile label="Returns to review" value={o.returns_to_review} href="/delivery/returns" tone="warn" />
+          <CountTile label="Disputed outcomes" value={o.disputed_outcomes} href="/delivery/exceptions" tone="bad" />
         </div>
         <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-2">
           {due ? (

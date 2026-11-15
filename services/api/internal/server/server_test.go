@@ -145,7 +145,8 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		// Delivery policies start unconfigured, as they ship.
 		`UPDATE delivery_settings SET proof_methods = '{}', proof_policy_ref = '', reschedule_cutoff_hours = NULL,
 			failure_reasons = ARRAY['recipient_unavailable', 'address_not_found', 'refused', 'damaged', 'partner_unable', 'operational_delay', 'other'],
-			allow_unapproved_partners = false, unapproved_partner_policy_ref = '', label_certified = false, customer_emails_approved = false`,
+			allow_unapproved_partners = false, unapproved_partner_policy_ref = '', label_certified = false, customer_emails_approved = false,
+			delivery_offset_min_days = NULL, delivery_offset_max_days = NULL, delivery_week_rule_ref = ''`,
 	} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatalf("reset supply settings: %v", err)

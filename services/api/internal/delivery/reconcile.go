@@ -321,6 +321,7 @@ type Overview struct {
 	RescheduleRequests int      `json:"reschedule_requests"`
 	Blockers           []string `json:"blockers"`
 	ConsumerFailed     int      `json:"consumer_failed_jobs"`
+	DisputedOutcomes   int      `json:"disputed_outcomes"`
 }
 
 // OverviewFor counts real records for a date. "Delayed": a delivery whose
@@ -351,9 +352,11 @@ func (s *Service) OverviewFor(ctx context.Context, date string) (*Overview, erro
 		(SELECT count(*) FROM delivery_exceptions WHERE status IN ('open', 'in_progress')),
 		(SELECT count(*) FROM delivery_returns WHERE status = 'awaiting_review'),
 		(SELECT count(*) FROM delivery_reschedule_requests WHERE status = 'requested'),
-		(SELECT count(*) FROM jobs WHERE kind = 'fulfillment.batch_ready' AND status = 'failed')`, d, s.Location.String()).
+		(SELECT count(*) FROM jobs WHERE kind = 'fulfillment.batch_ready' AND status = 'failed'),
+		(SELECT count(*) FROM (SELECT DISTINCT ON (order_id) state FROM order_delivery_outcomes ORDER BY order_id, id DESC) x WHERE state = 'disputed')`,
+		d, s.Location.String()).
 		Scan(&o.DueToday, &o.AwaitingVerify, &o.ReadyForDispatch, &o.Unscheduled, &o.Unassigned, &o.InTransit, &o.DeliveredToday, &o.FailedOpen,
-			&o.Delayed, &o.MissingProof, &o.OpenExceptions, &o.ReturnsToReview, &o.RescheduleRequests, &o.ConsumerFailed)
+			&o.Delayed, &o.MissingProof, &o.OpenExceptions, &o.ReturnsToReview, &o.RescheduleRequests, &o.ConsumerFailed, &o.DisputedOutcomes)
 	if err != nil {
 		return nil, err
 	}
@@ -432,10 +435,12 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 		"proof_completeness":      "Delivered deliveries that have accepted proof (should always be all of them).",
 		"unresolved_exceptions":   "Exceptions on these deliveries still open or in progress.",
 		"costs":                   "Recorded partner cost records by kind; estimated, contracted and actual are never mixed.",
+		"corrected_outcomes":      "Deliveries whose recorded outcome was corrected (an explicit, audited correction). They are counted under their corrected status above.",
+		"disputed_outcomes":       "Of these deliveries, orders whose delivered outcome commerce currently records as disputed (corrected and not yet delivered again).",
 	}}
 	base := `FROM deliveries d LEFT JOIN delivery_windows w ON w.id = d.window_id
 		WHERE d.schedule_confirmed_at IS NOT NULL AND d.service_date BETWEEN $1 AND $2 AND d.status <> 'cancelled'`
-	var deliveries, delivered, first, reattempts, returned, failedAttempts, measurable, onTime, withProof, openExc int
+	var deliveries, delivered, first, reattempts, returned, failedAttempts, measurable, onTime, withProof, openExc, corrected, disputed int
 	if err := s.pool.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE d.status = 'delivered'),
 		count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1), count(*) FILTER (WHERE d.attempt > 1),
 		count(*) FILTER (WHERE d.status = 'returned'),
@@ -445,8 +450,10 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 			AND (w.id IS NULL OR (d.delivered_at AT TIME ZONE $3)::time BETWEEN w.starts_at AND w.ends_at)),
 		count(*) FILTER (WHERE d.status = 'delivered' AND EXISTS (SELECT 1 FROM delivery_proofs p WHERE p.delivery_id = d.id
 			AND p.attempt = d.attempt AND p.status = 'accepted')),
-		COALESCE(sum((SELECT count(*) FROM delivery_exceptions e WHERE e.delivery_id = d.id AND e.status IN ('open', 'in_progress'))), 0)::int `+base, f, t, tz).
-		Scan(&deliveries, &delivered, &first, &reattempts, &returned, &failedAttempts, &measurable, &onTime, &withProof, &openExc); err != nil {
+		COALESCE(sum((SELECT count(*) FROM delivery_exceptions e WHERE e.delivery_id = d.id AND e.status IN ('open', 'in_progress'))), 0)::int,
+		count(*) FILTER (WHERE EXISTS (SELECT 1 FROM delivery_tracking_events t WHERE t.delivery_id = d.id AND t.type = 'correction')),
+		count(*) FILTER (WHERE (SELECT x.state FROM order_delivery_outcomes x WHERE x.order_id = d.order_id ORDER BY x.id DESC LIMIT 1) = 'disputed') `+base, f, t, tz).
+		Scan(&deliveries, &delivered, &first, &reattempts, &returned, &failedAttempts, &measurable, &onTime, &withProof, &openExc, &corrected, &disputed); err != nil {
 		return nil, err
 	}
 	rate := func(n, d int) any {
@@ -458,7 +465,8 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 	rep.Totals = map[string]any{"deliveries": deliveries, "delivered": delivered, "first_attempt_delivered": first,
 		"first_attempt_rate": rate(first, deliveries), "failed_attempts": failedAttempts, "reattempts": reattempts, "returned": returned,
 		"on_time_measurable": measurable, "on_time": onTime, "on_time_rate": rate(onTime, measurable),
-		"proof_completeness": rate(withProof, delivered), "unresolved_exceptions": openExc}
+		"proof_completeness": rate(withProof, delivered), "unresolved_exceptions": openExc, "corrected_outcomes": corrected,
+		"disputed_outcomes": disputed}
 	breakdown := func(keyCol, labelCol, join string) ([]Breakdown, error) {
 		rows, err := s.pool.Query(ctx, `SELECT `+keyCol+`, `+labelCol+`, count(*), count(*) FILTER (WHERE d.status = 'delivered'),
 			count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1),

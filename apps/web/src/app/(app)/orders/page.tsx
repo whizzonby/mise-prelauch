@@ -1,4 +1,6 @@
 import { buttonClasses, Tag } from "@mise/ui";
+
+import { orderStatus } from "@/lib/order-status";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -27,7 +29,7 @@ export default async function OrdersPage() {
                   <span>
                     <span className="type-h4 flex flex-wrap items-center gap-2">
                       Week of {shortDate(o.week)}
-                      <Tag tone="success">{o.status === "confirmed" ? "Confirmed" : o.status}</Tag>
+                      <Tag tone={orderStatus(o.status, o.delivery_outcome).tone}>{orderStatus(o.status, o.delivery_outcome).label}</Tag>
                     </span>
                     <span className="type-caption text-muted">
                       {o.number} · {o.plan_name} · {o.meals_count} meals

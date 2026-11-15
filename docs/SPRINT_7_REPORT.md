@@ -11,6 +11,10 @@ Status words used throughout:
 - **Blocked**: needs a business input (§20); the software ships it empty and says so on screen.
 - **Deferred**: out of this sprint's scope.
 
+**Review fixes, 15 November 2026.** Two issues raised in review were fixed before Sprint 8 (§22):
+delivery dates are now bound to the order's week by an approved rule, and a corrected delivered outcome
+is recorded by commerce as a dispute that order views, customer pages and reports all show.
+
 Nothing here is live-delivery ready. No partner, agreement, zone, delivery day, window, fee, rate,
 capacity, proof policy, failure policy, return procedure, email wording or cold-chain rule was
 invented. All partners, couriers, zones, days and deliveries in the screenshots and the development
@@ -82,18 +86,25 @@ with an address guard trigger; dispatch runs, stops and manifests; append-only h
 packages; append-only tracking events and proofs; exceptions, exception events and support-case
 links; reschedule requests; returns and return packages; cost records; reconciliations; notification
 records). It also adds the `fulfillment` consumer offset, 23 permissions and 6 roles. It does not alter
-any commerce, production or inventory table. Up and down are written. Up was applied to the
+any commerce, production or inventory table. Up and down are written.
+
+`00012_delivery_week_and_outcomes.sql` (review fixes, additive): the delivery-week rule columns on
+`delivery_settings` (with a check that a rule has both ends and an approved reference),
+`deliveries.order_week` (backfilled from the order, then NOT NULL), and the commerce-owned,
+append-only `order_delivery_outcomes`. The development database is at version 12. Up was applied to the
 development database (version 11) and runs on every test harness start.
 
 ## 5. API endpoints
 
-OpenAPI 1.7.0 adds 59 paths (70 operations) and 79 schemas, and the TypeScript client was
+OpenAPI 1.7.0 added 59 paths (70 operations) and 79 schemas, and the TypeScript client was
 regenerated (`api.delivery.*` and three `api.commerce.*` customer methods). The contract test confirms
 every served route is documented. Groups: `/admin/fulfillment` (queue, item, verify, release, labels,
 trace, sync, consumer, batch flag); `/admin/delivery/{settings,zones,coverage,calendar,capacity,
 partners,couriers,costs,exceptions,deliveries,reschedule-requests,returns,dispatch-runs,overview}`;
 `/admin/reports/delivery`; and for customers `/me/orders/{id}/delivery` (+ `/support`,
-`/reschedule-requests`). Customer routes use the customer session and answer 404 for another
+`/reschedule-requests`). 1.7.1 (review fixes) adds `delivery_outcome` to `Order` and `OrderSummary`,
+the delivery-week rule to the settings schemas, `order_week` to `Delivery` and `disputed_outcomes` to
+the overview. Customer routes use the customer session and answer 404 for another
 customer's order.
 
 ## 6. Fulfillment workflow
@@ -230,11 +241,11 @@ gradients.
 | Suite | Command | Result |
 |---|---|---|
 | Go vet | `go vet ./...` (golang:1.27-alpine) | clean |
-| Go | `go test ./... -count=1 -p 1` against PostgreSQL 17 | **147 top-level tests passed, 0 failed, 0 skipped** (Sprint 7: 11 server integration tests + 4 delivery unit tests) |
+| Go | `go test ./... -count=1 -p 1` against PostgreSQL 17 | **149 top-level tests passed, 0 failed, 0 skipped** (Sprint 7: 13 server integration tests + 4 delivery unit tests; 15 Nov, after the review fixes) |
 | Vitest | `pnpm exec vitest run` per app | **43 passed** (admin 6, marketing 22, web 15) |
 | TypeScript | `tsc --noEmit` in api-client, admin, web | clean |
 | ESLint | admin and web Sprint 7 files | clean |
-| Playwright | `playwright test --workers=1` in three batches | **55 passed, 0 failed** (Sprints 1–4: 38; Sprints 3/5/6: 13; Sprint 7: 4) |
+| Playwright | `playwright test --workers=1` in three batches | **55 passed, 0 failed** (Sprints 1–4: 38; Sprints 3/5/6: 13; Sprint 7: 4), on 14 Nov and again on 15 Nov after the review fixes |
 
 What went wrong along the way, as it happened:
 - The first full Playwright run with 2 workers: 51 passed, 4 failed. Two were 60-second timeouts
@@ -248,10 +259,8 @@ What went wrong along the way, as it happened:
 
 ## 19. Known limitations
 
-- Nothing ties a delivery date to the order's week, because delivery days are undecided. The demo
-  delivered a 2027 week's order in November 2026.
-- Commerce never moves an order backwards. After a delivered → failed correction, the order stays
-  `delivered` in commerce, and a critical exception says so.
+- Resolved on 15 Nov (§22): delivery dates are now bound to the order's week, and corrected outcomes
+  are recorded as disputes in commerce.
 - One package per order. Splitting an order into several bags is not built.
 - Labels are data on screen, not a print layout, and are marked not certified.
 - File and API partner modes have no adapter. The webhook verifier is unit-tested and deliberately
@@ -277,6 +286,46 @@ Events for analytics: `fulfillment.created/verified/ready_for_dispatch/exception
 exception_raised/reconciled`, each deduplicated per aggregate and attempt. Tracking events say who
 reported each fact, so staff-recorded data can be told apart from partner data. The report endpoint
 gives definitions per figure. Nothing in Sprint 8 has been started; it needs explicit authorization.
+
+## 22. Review fixes (15 November 2026)
+
+**Priority 1: delivery dates follow the order's week.** `delivery_settings` holds an approved
+delivery-week rule: an order of the week starting Monday *W* may be delivered from *W*+min to *W*+max
+days (0–27), with the reference of the decision that set it. Every delivery stores its order's week
+(`order_week`). The rule is enforced when scheduling, when approving a reschedule, and again when
+assigning to a run (so narrowing the rule later also stops assignments). **With no rule, nothing can be
+scheduled** (`delivery_week_rule_missing`), and the settings and overview list this as a blocker.
+Delivery days are still undecided, so the rule ships unset. Local demo data sets a demo rule (Monday
+to Sunday of the order's week) and demo days inside each demo order's week. The planning screen shows
+each delivery's order week. Test: `TestDeliveryDatesFollowTheOrderWeekRule` (no rule refused; a
+half-set rule refused; an open day outside the week refused for scheduling and reschedule; narrowing
+the rule refuses the assignment). **Verified.**
+
+**Priority 2: one reconciliation contract between delivery and commerce.** Commerce owns a new
+append-only record, `order_delivery_outcomes`, written only through `orders.FlagDeliveryOutcome`.
+A delivered → failed correction:
+- records the order's delivered outcome as **disputed** (with the reason), and never rewrites the
+  order's status, its status history or any payment (asserted in the test);
+- returns the fulfillment to "with partner" (`Reopen`), like an ordinary failed attempt, so the
+  order can be redelivered. The first version of this fix put the fulfillment into an exception
+  that a redelivery could not leave; the new test caught it;
+- still raises a critical exception for staff.
+
+A later attempt delivered with proof records the outcome as **confirmed**. Everything reads the same
+record:
+- customer order page and order list: "Delivery under review" while disputed;
+- the customer delivery card: the corrected (failed) state;
+- admin order detail: a "Delivery outcome disputed" tag and note; admin order list: a "Disputed" tag;
+- delivery report: `corrected_outcomes` and `disputed_outcomes`, defined, and corrected deliveries
+  count under their corrected status;
+- operations overview: a "Disputed outcomes" count.
+
+Test: `TestCorrectedOutcomeIsADisputeInCommerceAndReports`. **Verified.**
+
+Other review items are tracked in §19 and remain open: one package per order, labels not a
+certified print layout, no file or API carrier adapters, cost records without an integration test,
+and outstanding Safari, Firefox, real-device, screen-reader and load testing. Multi-package support
+and a delivery-cost test should be done before a live launch.
 
 ## Commit
 

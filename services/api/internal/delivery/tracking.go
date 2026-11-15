@@ -324,6 +324,14 @@ func (s *Service) Deliver(ctx context.Context, sc Scope, actor, id string, in Ou
 			"Delivered with "+Human(method), actor); err != nil {
 			return err
 		}
+		if disputed, err := s.Orders.OutcomeDisputed(ctx, tx, r.OrderID); err != nil {
+			return err
+		} else if disputed {
+			if err := s.Orders.FlagDeliveryOutcome(ctx, tx, r.OrderID, "confirmed",
+				"Delivered on attempt "+itoa(r.Attempt)+" ("+r.Number+") with "+Human(method)+".", actor); err != nil {
+				return err
+			}
+		}
 		if err := event(ctx, tx, "delivery.delivered", "delivery", id, itoa(r.Attempt), map[string]any{"proof_method": method}); err != nil {
 			return err
 		}
@@ -551,7 +559,10 @@ func (s *Service) Correct(ctx context.Context, actor, id, to, why string) (*Deli
 		if from == "delivered" {
 			extra = `, delivered_at = NULL, failed_at = now()`
 			// Proofs are immutable and stay as history of what was recorded.
-			if err := s.Fulfillment.Interrupt(ctx, tx, r.ObligationID, actor, "Delivery outcome corrected: "+why); err != nil {
+			if err := s.Fulfillment.Reopen(ctx, tx, r.ObligationID, actor, "Delivery outcome corrected: "+why); err != nil {
+				return err
+			}
+			if err := s.Orders.FlagDeliveryOutcome(ctx, tx, r.OrderID, "disputed", "Delivery "+r.Number+" corrected from delivered to failed: "+why, actor); err != nil {
 				return err
 			}
 		} else {
@@ -566,7 +577,7 @@ func (s *Service) Correct(ctx context.Context, actor, id, to, why string) (*Deli
 		}
 		if _, err := s.RaiseException(ctx, tx, ExceptionInput{Stage: "delivery", Type: "other", Severity: "critical",
 			Summary: "Outcome of " + r.Number + " corrected", Notes: Human(from) + " → " + Human(to) + ": " + why +
-				" Commerce keeps its order status (it never moves an order backwards); review the order.",
+				" The order keeps its status and payment history; commerce records the delivered outcome as disputed until a later attempt is delivered.",
 			DeliveryID: id, NextAction: "escalate", Actor: actor}); err != nil {
 			return err
 		}

@@ -6938,6 +6938,11 @@ export interface components {
             created_at: string;
             /** Format: uuid */
             customer_id?: string;
+            /**
+             * @description Latest delivery outcome entry
+             * @enum {string|null}
+             */
+            delivery_outcome?: "disputed" | "confirmed" | null;
         };
         Order: {
             /** Format: uuid */
@@ -6978,6 +6983,14 @@ export interface components {
             payment_id: string | null;
             /** Format: uuid */
             subscription_cycle_id: string;
+            /** @description Set when delivery corrected a delivered outcome. The order's status and payment history are never rewritten; the latest entry says whether the delivered outcome is disputed or confirmed again. */
+            delivery_outcome?: {
+                /** @enum {string} */
+                state: "disputed" | "confirmed";
+                reason: string;
+                /** Format: date-time */
+                at: string;
+            } | null;
         };
         BillingCycle: {
             /** Format: uuid */
@@ -10172,6 +10185,10 @@ export interface components {
             unapproved_partner_policy_ref: string;
             label_certified: boolean;
             customer_emails_approved: boolean;
+            /** @description First eligible delivery day, counted from the order's week start (Monday = 0). Null means no approved rule, so nothing can be scheduled. */
+            delivery_offset_min_days: number | null;
+            delivery_offset_max_days: number | null;
+            delivery_week_rule_ref: string;
             /** Format: date-time */
             updated_at: string;
             blockers: string[];
@@ -10187,6 +10204,10 @@ export interface components {
             unapproved_partner_policy_ref?: string;
             label_certified?: boolean;
             customer_emails_approved?: boolean;
+            delivery_offset_min_days?: number;
+            delivery_offset_max_days?: number;
+            delivery_week_rule_ref?: string;
+            clear_delivery_week_rule?: boolean;
         };
         DeliveryRegion: {
             country: string;
@@ -10584,6 +10605,8 @@ export interface components {
             /** Format: uuid */
             customer_id: string;
             customer_name: string;
+            /** Format: date */
+            order_week: string;
             /** @enum {string} */
             status: "pending_assignment" | "assigned" | "ready_for_pickup" | "picked_up" | "in_transit" | "arriving" | "delivered" | "delivery_failed" | "returned" | "cancelled";
             version: number;
@@ -10985,6 +11008,7 @@ export interface components {
             reschedule_requests: number;
             blockers: string[];
             consumer_failed_jobs: number;
+            disputed_outcomes: number;
         };
         DeliveryBreakdown: {
             key: string;

@@ -97,6 +97,8 @@ export async function flagBatch(_: CatalogState, form: FormData): Promise<Catalo
 
 export async function saveDeliverySettings(_: CatalogState, form: FormData): Promise<CatalogState> {
   const hours = int(form, "reschedule_cutoff_hours");
+  const lo = int(form, "delivery_offset_min_days");
+  const hi = int(form, "delivery_offset_max_days");
   return run(
     (t) =>
       api.delivery.saveSettings(t, {
@@ -108,6 +110,9 @@ export async function saveDeliverySettings(_: CatalogState, form: FormData): Pro
         unapproved_partner_policy_ref: text(form, "unapproved_partner_policy_ref"),
         label_certified: flag(form, "label_certified"),
         customer_emails_approved: flag(form, "customer_emails_approved"),
+        ...(lo === undefined && hi === undefined
+          ? { clear_delivery_week_rule: true }
+          : { delivery_offset_min_days: lo, delivery_offset_max_days: hi, delivery_week_rule_ref: text(form, "delivery_week_rule_ref") }),
       }),
     ["/delivery"],
     "Settings saved.",

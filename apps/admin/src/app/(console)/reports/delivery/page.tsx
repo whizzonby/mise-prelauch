@@ -30,6 +30,8 @@ export default async function DeliveryReportPage({ searchParams }: { searchParam
     ["Returned", String(t.returned ?? 0)],
     ["Proof completeness", pct(t.proof_completeness)],
     ["Unresolved exceptions", String(t.unresolved_exceptions ?? 0)],
+    ["Corrected outcomes", String(t.corrected_outcomes ?? 0)],
+    ["Disputed outcomes", String(t.disputed_outcomes ?? 0)],
   ];
   const table = (rows: typeof r.by_zone) =>
     rows.length ? (

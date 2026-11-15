@@ -76,6 +76,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 </td>
                 <td className="p-3">
                   <Tag tone={commerceTone(o.status)}>{humanize(o.status)}</Tag>
+                  {o.delivery_outcome === "disputed" ? <Tag tone="error">Disputed</Tag> : null}
                 </td>
                 <td className="p-3">{o.plan_name}</td>
                 <td className="p-3">{o.meals_count}</td>

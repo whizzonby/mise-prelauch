@@ -39,7 +39,7 @@ func (w *kitchenWeek) configure() deliveryConfig {
 	c.courier = res.Data["id"].(string)
 	admin := bearer(h.adminLogin("boss@mise.test", "admin"))
 	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"proof_methods": []string{"confirmation_code", "recipient_acknowledgment"},
-		"proof_policy_ref": "OPS-POD-1 (test)"}, admin), http.StatusOK)
+		"proof_policy_ref": "OPS-POD-1 (test)", "delivery_offset_min_days": 0, "delivery_offset_max_days": 13, "delivery_week_rule_ref": "OPS-DAYS-1 (test)"}, admin), http.StatusOK)
 	return c
 }
 
@@ -679,5 +679,130 @@ func TestDeliveryEmailsAreRecordedHonestly(t *testing.T) {
 	}
 	if statuses[a] != "sent" || statuses[b] != "skipped" {
 		t.Fatalf("dispatched notifications = %v", statuses)
+	}
+}
+
+// ---------------------------------------------------------------- review fixes
+
+func TestDeliveryDatesFollowTheOrderWeekRule(t *testing.T) {
+	w := newKitchenWeek(t)
+	h := w.h
+	c := w.configure()
+	a, _ := w.released()
+	admin := bearer(h.adminLogin("boss@mise.test", "admin"))
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/calendar", map[string]any{"date": "2026-12-03", "status": "open"}, w.ops.dmgr), http.StatusOK)
+
+	// No approved rule: nothing can be scheduled, and the blocker says why.
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"clear_delivery_week_rule": true}, admin), http.StatusOK)
+	h.wantError(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/schedule", map[string]any{"service_date": serviceDay}, w.ops.dispatcher),
+		http.StatusUnprocessableEntity, "delivery_week_rule_missing")
+	if res := h.do("GET", "/api/v1/admin/delivery/settings", nil, w.ops.dispatcher); !strings.Contains(string(res.Raw), "No delivery-week rule is approved") {
+		t.Errorf("blockers = %s", res.Raw)
+	}
+	// A rule needs both ends and its approved reference.
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"delivery_offset_min_days": 3}, admin), http.StatusUnprocessableEntity)
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"delivery_offset_min_days": 3, "delivery_offset_max_days": 5}, admin), http.StatusUnprocessableEntity)
+	// Week of 16 Nov: Thursday to Saturday only.
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"delivery_offset_min_days": 3, "delivery_offset_max_days": 5,
+		"delivery_week_rule_ref": "OPS-DAYS-2 (test)"}, admin), http.StatusOK)
+	// An open service day outside the order's week is still refused.
+	h.wantError(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/schedule", map[string]any{"service_date": "2026-12-03"}, w.ops.dispatcher),
+		http.StatusUnprocessableEntity, "outside_delivery_week")
+	w.schedule(a, c) // 19 Nov: Thursday of the order's week
+	// A reschedule is held to the same rule.
+	h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/reschedule-requests", map[string]any{"reason": "Customer away"}, w.ops.coord), http.StatusCreated)
+	req := obj(t, list(t, h.do("GET", "/api/v1/admin/delivery/reschedule-requests", nil, w.ops.dmgr).Data["items"])[0])["id"].(string)
+	h.wantError(h.do("POST", "/api/v1/admin/delivery/reschedule-requests/"+req+"/decide", map[string]any{"decision": "approve", "new_date": "2026-12-03"}, w.ops.dmgr),
+		http.StatusUnprocessableEntity, "outside_delivery_week")
+	// Narrowing the rule after scheduling stops the assignment too.
+	w.capacity(5)
+	run := w.run(c)
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/settings", map[string]any{"delivery_offset_min_days": 4, "delivery_offset_max_days": 5,
+		"delivery_week_rule_ref": "OPS-DAYS-3 (test)"}, admin), http.StatusOK)
+	h.wantError(h.do("POST", "/api/v1/admin/delivery/dispatch-runs/"+run+"/stops", map[string]any{"delivery_id": a}, w.ops.dispatcher),
+		http.StatusUnprocessableEntity, "outside_delivery_week")
+}
+
+func TestCorrectedOutcomeIsADisputeInCommerceAndReports(t *testing.T) {
+	w := newKitchenWeek(t)
+	h := w.h
+	ctx := context.Background()
+	c := w.configure()
+	a, _ := w.released()
+	w.schedule(a, c)
+	w.capacity(10)
+	deliver := func(run, key string) {
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/dispatch-runs/"+run+"/stops", map[string]any{"delivery_id": a}, w.ops.dispatcher), http.StatusOK)
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/dispatch-runs/"+run+"/finalize", nil, w.ops.dispatcher), http.StatusOK)
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/dispatch-runs/"+run+"/release", nil, w.ops.dispatcher), http.StatusOK)
+		h.wantStatus(w.handoverAll(run, "h-"+key, w.ops.dispatcher), http.StatusOK)
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/events", map[string]any{"status": "in_transit", "idempotency_key": "t-" + key}, w.ops.courier), http.StatusOK)
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/proof", map[string]any{"method": "recipient_acknowledgment", "recipient_name": "Ana",
+			"idempotency_key": "p-" + key}, w.ops.courier), http.StatusOK)
+		h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/deliver", map[string]any{"idempotency_key": "d-" + key}, w.ops.courier), http.StatusOK)
+	}
+	deliver(w.run(c), "1")
+	order := func() map[string]any {
+		res := h.do("GET", "/api/v1/me/orders/"+w.orderA, nil, w.tokA)
+		h.wantStatus(res, http.StatusOK)
+		return res.Data
+	}
+	if o := order(); o["status"] != "delivered" || o["delivery_outcome"] != nil {
+		t.Fatalf("before correction = %v / %v", o["status"], o["delivery_outcome"])
+	}
+	payments := h.count(`SELECT count(*) FROM payment_status_history`)
+	history := h.count(`SELECT count(*) FROM order_status_history WHERE order_id = $1`, w.orderA)
+
+	// The delivered outcome is corrected: commerce records a dispute, rewrites nothing.
+	admin := bearer(h.adminLogin("boss@mise.test", "admin"))
+	h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/correct", map[string]any{"to": "delivery_failed",
+		"reason": "Partner confirmed it went to the wrong house"}, admin), http.StatusOK)
+	o := order()
+	if o["status"] != "delivered" || obj(t, o["delivery_outcome"])["state"] != "disputed" {
+		t.Fatalf("after correction = %v / %v", o["status"], o["delivery_outcome"])
+	}
+	if h.count(`SELECT count(*) FROM payment_status_history`) != payments || h.count(`SELECT count(*) FROM order_status_history WHERE order_id = $1`, w.orderA) != history {
+		t.Error("the correction rewrote payment or order history")
+	}
+	if _, err := h.pool.Exec(ctx, `UPDATE order_delivery_outcomes SET state = 'confirmed'`); err == nil {
+		t.Error("outcome entries can be edited")
+	}
+	// Staff lists, the customer's delivery card and the reports all agree.
+	staffOrders := h.do("GET", "/api/v1/admin/orders?status=delivered", nil, admin)
+	h.wantStatus(staffOrders, http.StatusOK)
+	found := false
+	for _, x := range list(t, staffOrders.Data["items"]) {
+		if obj(t, x)["id"] == w.orderA {
+			found = obj(t, x)["delivery_outcome"] == "disputed"
+		}
+	}
+	if !found {
+		t.Errorf("staff order list does not show the dispute: %s", staffOrders.Raw)
+	}
+	if cd := h.do("GET", "/api/v1/me/orders/"+w.orderA+"/delivery", nil, w.tokA).Data; cd["stage"] != "issue" {
+		t.Errorf("customer delivery stage = %v", cd["stage"])
+	}
+	rep := obj(t, h.do("GET", "/api/v1/admin/reports/delivery?from=2026-11-16&to=2026-11-29", nil, w.ops.dmgr).Data["totals"])
+	if rep["corrected_outcomes"] != float64(1) || rep["disputed_outcomes"] != float64(1) || rep["delivered"] != float64(0) {
+		t.Fatalf("report after correction = %v", rep)
+	}
+	if ov := h.do("GET", "/api/v1/admin/delivery/overview", nil, w.ops.dmgr).Data; ov["disputed_outcomes"] != float64(1) {
+		t.Errorf("overview disputed = %v", ov["disputed_outcomes"])
+	}
+
+	// A new attempt is delivered: commerce records the outcome as confirmed again.
+	h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/reattempt", map[string]any{"reason": "Redeliver to the right house"}, w.ops.dmgr), http.StatusOK)
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/calendar", map[string]any{"date": "2026-11-26", "status": "open"}, w.ops.dmgr), http.StatusOK)
+	h.wantStatus(h.do("PUT", "/api/v1/admin/delivery/capacity", map[string]any{"date": "2026-11-26", "capacity": 5}, w.ops.dmgr), http.StatusOK)
+	h.wantStatus(h.do("POST", "/api/v1/admin/delivery/deliveries/"+a+"/schedule", map[string]any{"service_date": "2026-11-26"}, w.ops.dispatcher), http.StatusOK)
+	run2 := h.do("POST", "/api/v1/admin/delivery/dispatch-runs", map[string]any{"service_date": "2026-11-26", "partner_id": c.partner, "courier_id": c.courier}, w.ops.dispatcher)
+	h.wantStatus(run2, http.StatusCreated)
+	deliver(run2.Data["id"].(string), "2")
+	if o := order(); obj(t, o["delivery_outcome"])["state"] != "confirmed" {
+		t.Fatalf("after redelivery = %v", o["delivery_outcome"])
+	}
+	rep = obj(t, h.do("GET", "/api/v1/admin/reports/delivery?from=2026-11-16&to=2026-11-29", nil, w.ops.dmgr).Data["totals"])
+	if rep["disputed_outcomes"] != float64(0) || rep["delivered"] != float64(1) {
+		t.Errorf("report after redelivery = %v", rep)
 	}
 }

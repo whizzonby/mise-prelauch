@@ -6,21 +6,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatMoney, shortDate } from "@/lib/commerce";
+import { orderStatus } from "@/lib/order-status";
 import { api, requireCustomer } from "@/lib/session";
 
 import { DeliverySection } from "./delivery-section";
 
 export const metadata: Metadata = { title: "Order" };
 
-const STATUS: Record<string, string> = {
-  confirmed: "Confirmed",
-  awaiting_production: "Confirmed",
-  in_production: "Being prepared",
-  ready_for_fulfillment: "Packed",
-  out_for_delivery: "Out for delivery",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
+
 
 /**
  * One order, as it was made: the meals and versions, the amounts and the
@@ -43,7 +36,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </Link>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <h1 className="type-h2">Week of {shortDate(order.week)}</h1>
-        <Tag tone="success">{STATUS[order.status] ?? "Confirmed"}</Tag>
+        <Tag tone={orderStatus(order.status, order.delivery_outcome?.state).tone}>{orderStatus(order.status, order.delivery_outcome?.state).label}</Tag>
       </div>
       <p className="type-body-sm mt-2 text-muted">
         Order {order.number} · {order.plan_name} plan

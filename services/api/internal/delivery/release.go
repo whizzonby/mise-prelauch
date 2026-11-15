@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -19,7 +20,8 @@ type Release struct {
 	OrderID      string
 	OrderNumber  string
 	CustomerID   string
-	Week         string
+	// The order's week (Monday): eligible delivery dates are counted from it.
+	Week         time.Time
 	// The address copied onto the order when it was made (orders.Address).
 	Address      json.RawMessage
 	PackageCount int
@@ -90,6 +92,9 @@ func (s *Service) CreateFromRelease(ctx context.Context, tx pgx.Tx, in Release) 
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return "", err
 	}
+	if in.Week.IsZero() {
+		return "", errors.New("delivery: release without the order's week")
+	}
 	var a Address
 	if err := json.Unmarshal(in.Address, &a); err != nil || strings.TrimSpace(a.Line1) == "" {
 		return "", unprocessable("address_missing", "The order has no usable delivery address.")
@@ -108,9 +113,9 @@ func (s *Service) CreateFromRelease(ctx context.Context, tx pgx.Tx, in Release) 
 	}
 	var id string
 	if err := tx.QueryRow(ctx, `
-		INSERT INTO deliveries (number, obligation_id, order_id, customer_id, zone_id, zone_source, address, address_validation, package_count)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id::text`,
-		number, in.ObligationID, in.OrderID, in.CustomerID, nilIfEmpty(cov.ZoneID), zoneSource, in.Address, cov.Validation, in.PackageCount).Scan(&id); err != nil {
+		INSERT INTO deliveries (number, obligation_id, order_id, customer_id, zone_id, zone_source, address, address_validation, package_count, order_week)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id::text`,
+		number, in.ObligationID, in.OrderID, in.CustomerID, nilIfEmpty(cov.ZoneID), zoneSource, in.Address, cov.Validation, in.PackageCount, in.Week).Scan(&id); err != nil {
 		return "", err
 	}
 	if err := s.track(ctx, tx, trackInput{DeliveryID: id, Type: "created", To: "pending_assignment", Attempt: 1, Source: "system",

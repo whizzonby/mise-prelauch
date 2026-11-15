@@ -806,3 +806,55 @@ func TestCorrectedOutcomeIsADisputeInCommerceAndReports(t *testing.T) {
 		t.Errorf("report after redelivery = %v", rep)
 	}
 }
+
+func TestDeliveryCostRecords(t *testing.T) {
+	w := newKitchenWeek(t)
+	h := w.h
+	c := w.configure()
+	a, _ := w.released()
+	w.schedule(a, c)
+	w.capacity(5)
+	run := w.run(c)
+	h.wantStatus(h.do("POST", "/api/v1/admin/delivery/dispatch-runs/"+run+"/stops", map[string]any{"delivery_id": a}, w.ops.dispatcher), http.StatusOK)
+	cost := func(as reqOpt, body map[string]any) response {
+		return h.do("POST", "/api/v1/admin/delivery/costs", body, as)
+	}
+	base := func(extra map[string]any) map[string]any {
+		b := map[string]any{"partner_id": c.partner, "run_id": run}
+		for k, v := range extra {
+			b[k] = v
+		}
+		return b
+	}
+	// Only partner managers record costs; the facts are validated.
+	h.wantStatus(cost(w.ops.dispatcher, base(map[string]any{"kind": "actual", "amount_minor": 5000})), http.StatusForbidden)
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "contracted", "amount_minor": 5000})), http.StatusUnprocessableEntity) // no rate reference
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "actual", "amount_minor": -100})), http.StatusUnprocessableEntity)
+	h.wantStatus(cost(w.ops.dmgr, map[string]any{"partner_id": c.partner, "kind": "actual", "amount_minor": 100}), http.StatusUnprocessableEntity) // no target
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "guess", "amount_minor": 100})), http.StatusUnprocessableEntity)
+	h.wantStatus(cost(w.ops.dmgr, map[string]any{"partner_id": "00000000-0000-0000-0000-000000000000", "run_id": run, "kind": "actual", "amount_minor": 1}), http.StatusUnprocessableEntity)
+	// Estimated, contracted, actual and a negative adjustment are kept apart.
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "estimated", "amount_minor": 6000})), http.StatusCreated)
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "contracted", "amount_minor": 5500, "rate_reference": "AGR-TEST-1 schedule A"})), http.StatusCreated)
+	h.wantStatus(cost(w.ops.dmgr, map[string]any{"partner_id": c.partner, "delivery_id": a, "kind": "actual", "amount_minor": 5200}), http.StatusCreated)
+	h.wantStatus(cost(w.ops.dmgr, base(map[string]any{"kind": "adjustment", "amount_minor": -200, "notes": "Fuel credit"})), http.StatusCreated)
+	res := h.do("GET", "/api/v1/admin/delivery/costs?run_id="+run, nil, w.ops.dmgr)
+	h.wantStatus(res, http.StatusOK)
+	if n := len(list(t, res.Data["items"])); n != 4 { // the delivery's cost is found through the run's stop
+		t.Fatalf("costs for the run = %d", n)
+	}
+	// The report sums each kind separately, in the delivery's period.
+	rep := h.do("GET", "/api/v1/admin/reports/delivery?from=2026-11-16&to=2026-11-22", nil, w.ops.dmgr)
+	h.wantStatus(rep, http.StatusOK)
+	got := map[string]float64{}
+	for _, x := range list(t, rep.Data["costs"]) {
+		got[obj(t, x)["kind"].(string)] = obj(t, x)["amount_minor"].(float64)
+	}
+	if got["estimated"] != 6000 || got["contracted"] != 5500 || got["actual"] != 5200 || got["adjustment"] != -200 {
+		t.Errorf("report costs = %v", got)
+	}
+	// Records are audited.
+	if n := h.count(`SELECT count(*) FROM audit_log WHERE action = 'delivery.cost_recorded'`); n != 4 {
+		t.Errorf("audited cost records = %d", n)
+	}
+}

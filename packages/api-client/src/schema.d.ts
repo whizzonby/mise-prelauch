@@ -5793,6 +5793,501 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/analytics/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The metric catalogue entries the caller may see. Needs admin.access. */
+        get: operations["adminAnalyticsMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Snapshot freshness, recent refreshes and the event consumer. Needs analytics_executive.read. */
+        get: operations["adminAnalyticsStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Queues a snapshot refresh or backfill (idempotent). Needs analytics.export. */
+        post: operations["adminAnalyticsRefresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/data-quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The latest result of each check. Needs analytics_executive.read. */
+        get: operations["adminDataQuality"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/data-quality/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Runs every check now and stores the results. Needs analytics.export. */
+        post: operations["adminRunDataQuality"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Daily snapshot values of one snapshotted metric. Needs the metric's permission. */
+        get: operations["adminAnalyticsSeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description overview, revenue, customers, meals, production, procurement, inventory or delivery. Compared with the previous period of equal length. Needs the dashboard's analytics permission. */
+        get: operations["adminAnalyticsDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/analytics/{kind}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The dashboard's figures as CSV (aggregates only, formula-safe, audited, not cached). Needs analytics.export and the dashboard's permission. */
+        get: operations["adminAnalyticsExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs automation.read. */
+        get: operations["adminAutomationOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every rule, enabled or not, with what is missing. Needs automation.read. */
+        get: operations["adminAutomationRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Each save is a new version. Needs automation.manage. */
+        patch: operations["adminSaveAutomationRule"];
+        trace?: never;
+    };
+    "/api/v1/admin/automation/rules/{id}/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Evaluates an enabled rule now; cooldowns still apply. Needs automation.execute. */
+        post: operations["adminEvaluateAutomationRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Newest first. Needs automation.read. */
+        get: operations["adminAutomationExecutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/executions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With its history. Needs automation.read. */
+        get: operations["adminAutomationExecution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/executions/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Only a failed execution; the action is idempotent. Needs automation.execute. */
+        post: operations["adminRetryAutomationExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/executions/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs automation.approve. */
+        post: operations["adminDecideAutomationExecution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Tasks for the permissions the caller holds. Needs admin.access. */
+        get: operations["adminAutomationTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/automation/tasks/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs admin.access and the task's permission. */
+        post: operations["adminCloseAutomationTask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/scheduled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Shipped disabled with no recipients. Needs automation.read. */
+        get: operations["adminReportSchedules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/scheduled/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs automation.manage. */
+        patch: operations["adminSaveReportSchedule"];
+        trace?: never;
+    };
+    "/api/v1/admin/reports/scheduled/{id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Generates the last complete period once; a second request is refused. Needs automation.execute. */
+        post: operations["adminRunReportNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Newest first, without content. Needs automation.read. */
+        get: operations["adminReportRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With the generated content. Needs automation.read. */
+        get: operations["adminReportRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/runs/{id}/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Audited, not cached. Needs analytics.export. */
+        get: operations["adminReportRunCSV"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/forecasting/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs forecasting.read. */
+        get: operations["adminForecastReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/forecasting/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs forecasting.read. */
+        get: operations["adminForecastSettings"];
+        /** @description Audited. Needs forecasting.configure. */
+        put: operations["adminSaveForecastSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/forecasting/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Newest first, without values. Needs forecasting.read. */
+        get: operations["adminForecastRuns"];
+        put?: never;
+        /** @description Always recorded; status refused when the readiness gate is not passed. Needs forecasting.run. */
+        post: operations["adminRunForecast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/forecasting/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description With values and backtests. Needs forecasting.read. */
+        get: operations["adminForecastRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/forecasting/runs/{id}/ingredients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs forecasting.read. */
+        get: operations["adminForecastIngredients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5944,7 +6439,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -11085,6 +11580,434 @@ export interface components {
             case_number: number;
             /** @enum {string} */
             status: "received";
+        };
+        /** @description A catalogue entry. Every figure on a dashboard, report or export comes from one of these definitions. */
+        AnalyticsMetric: {
+            id: string;
+            name: string;
+            definition: string;
+            domain: string;
+            source_fields: string[];
+            calculation: string;
+            filters: string[];
+            reporting_period: string;
+            update_frequency: string;
+            missing_data: string;
+            currency: string;
+            limitations: string;
+            owner: string;
+            /** @enum {string} */
+            kind: "count" | "money" | "ratio" | "number" | "hours" | "days";
+            permission: string;
+            snapshotted: boolean;
+        };
+        /** @description value is null when the figure cannot be calculated (never shown as zero). Money is in minor units (cents). */
+        AnalyticsMetricValue: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            kind: "count" | "money" | "ratio" | "number" | "hours" | "days";
+            value: number | null;
+            previous: number | null;
+            change: number | null;
+            definition: string;
+            limitations: string;
+            currency: string;
+        };
+        AnalyticsTable: {
+            title: string;
+            note: string;
+            columns: string[];
+            rows: string[][];
+            link?: string;
+        };
+        AnalyticsSection: {
+            title: string;
+            note?: string;
+            metrics: components["schemas"]["AnalyticsMetricValue"][];
+            tables: components["schemas"]["AnalyticsTable"][];
+        };
+        /** @description Notices say when figures include test-provider payments or demo records. */
+        AnalyticsDashboard: {
+            kind: string;
+            title: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** Format: date */
+            previous_from: string;
+            /** Format: date */
+            previous_to: string;
+            time_zone: string;
+            /** Format: date-time */
+            generated_at: string;
+            /** Format: date-time */
+            last_refresh: string | null;
+            notices: string[];
+            sections: components["schemas"]["AnalyticsSection"][];
+            filters: string[];
+        };
+        AnalyticsRefreshRun: {
+            id: number;
+            reason: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @enum {string} */
+            status: "running" | "succeeded" | "failed";
+            values_written: number;
+            error: string | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        AnalyticsStatus: {
+            /** Format: date-time */
+            last_success: string | null;
+            stale: boolean;
+            stale_after: string;
+            runs: components["schemas"]["AnalyticsRefreshRun"][];
+            consumer: components["schemas"]["ConsumerStatus"] | null;
+            snapshots: number;
+        };
+        /** @description A backfill range (local dates). Re-running a range rewrites the same rows. */
+        AnalyticsRefreshInput: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+        };
+        AnalyticsRefreshQueued: {
+            queued: boolean;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        DataQualityCheck: {
+            id: string;
+            name: string;
+            description: string;
+            /** @enum {string} */
+            status: "ok" | "warning" | "failed";
+            count: number;
+            detail: string;
+            /** Format: date-time */
+            checked_at: string;
+        };
+        AnalyticsPoint: {
+            /** Format: date */
+            day: string;
+            value: number | null;
+        };
+        AnalyticsSeries: {
+            metric: string;
+            points: components["schemas"]["AnalyticsPoint"][];
+        };
+        AutomationParam: {
+            name: string;
+            label: string;
+            unit: string;
+            min: number;
+            max: number;
+            required: boolean;
+        };
+        /** @description A typed recipe, not code. missing lists what the business must decide before it can be enabled. */
+        AutomationRule: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "procurement_shortage" | "overdue_purchase_order" | "production_hold_unresolved" | "delivery_failure_unresolved" | "run_unreconciled" | "payment_failed";
+            name: string;
+            description: string;
+            enabled: boolean;
+            params: {
+                [key: string]: number;
+            };
+            param_specs: components["schemas"]["AutomationParam"][];
+            /** @enum {string} */
+            action: "alert" | "task" | "request_approval";
+            owner_permission: string;
+            /** @enum {string} */
+            priority: "low" | "normal" | "high" | "critical";
+            cooldown_minutes: number | null;
+            approval_ref: string;
+            version: number;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            last_evaluated_at: string | null;
+            /** Format: date-time */
+            enabled_at: string | null;
+            event_triggers: string[];
+            missing: string[];
+            /** Format: date-time */
+            last_success: string | null;
+            failed_executions: number;
+        };
+        /** @description Fields left out keep their value. Enabling is refused until the thresholds, a cooldown and an approval reference are set. */
+        AutomationRuleInput: {
+            enabled?: boolean;
+            params?: {
+                [key: string]: number;
+            };
+            /** @enum {string} */
+            action?: "alert" | "task" | "request_approval";
+            /** @enum {string} */
+            priority?: "low" | "normal" | "high" | "critical";
+            cooldown_minutes?: number;
+            approval_ref?: string;
+        };
+        AutomationEvaluated: {
+            executions_created: number;
+        };
+        AutomationEvent: {
+            type: string;
+            body: string | null;
+            actor_name: string | null;
+            /** Format: date-time */
+            at: string;
+        };
+        AutomationExecution: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rule_id: string;
+            rule_name: string;
+            rule_version: number;
+            /** @enum {string} */
+            trigger: "schedule" | "event" | "manual";
+            trigger_ref: string;
+            subject_type: string;
+            subject_id: string;
+            subject_label: string;
+            action: string;
+            /** @enum {string} */
+            status: "pending" | "succeeded" | "failed" | "awaiting_approval" | "approved" | "rejected";
+            attempts: number;
+            last_error: string | null;
+            detail: string;
+            link: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            finished_at: string | null;
+            /** Format: date-time */
+            decided_at: string | null;
+            decision_note: string | null;
+            events?: components["schemas"]["AutomationEvent"][];
+        };
+        /** @description Approving records the decision and tells the owning team. It performs no financial or operational action. */
+        AutomationDecisionInput: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            note: string;
+        };
+        AutomationTask: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            execution_id: string | null;
+            title: string;
+            detail: string;
+            permission: string;
+            link: string;
+            /** @enum {string} */
+            status: "open" | "done" | "dismissed";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            closed_at: string | null;
+            close_note: string | null;
+        };
+        AutomationTaskClose: {
+            /** @enum {string} */
+            status: "done" | "dismissed";
+            note?: string;
+        };
+        AutomationOverview: {
+            enabled: number;
+            disabled: number;
+            failed_executions: number;
+            awaiting_approval: number;
+            open_tasks: number;
+            /** Format: date-time */
+            last_success: string | null;
+            executions_last_7_days: number;
+        };
+        ReportSchedule: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "daily_operations" | "weekly_business" | "weekly_production" | "weekly_procurement" | "monthly_executive";
+            name: string;
+            enabled: boolean;
+            recipients: string[];
+            recipient_emails: string[];
+            approval_ref: string;
+            permission: string;
+            dashboards: string[];
+            next_period: string;
+            /** Format: date-time */
+            last_run: string | null;
+            missing: string[];
+        };
+        /** @description Recipients are staff emails; each must be an active account holding the report's permission. */
+        ReportScheduleInput: {
+            enabled?: boolean;
+            recipients?: string[];
+            approval_ref?: string;
+        };
+        ReportDelivery: {
+            email: string;
+            /** @enum {string} */
+            status: "queued" | "sent" | "failed" | "skipped";
+            reason: string | null;
+        };
+        /** @description One run per schedule and period. Email outcomes are the provider's, never assumed. */
+        ReportRun: {
+            /** Format: uuid */
+            id: string;
+            kind: string;
+            name: string;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            /** @enum {string} */
+            status: "running" | "succeeded" | "failed";
+            /** @enum {string} */
+            trigger: "schedule" | "manual";
+            error: string | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            generated_at: string | null;
+            deliveries: components["schemas"]["ReportDelivery"][];
+            content?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Activation criteria. They ship unset; with any unset, no forecast is produced. */
+        ForecastSettings: {
+            min_weeks: number | null;
+            max_missing_share: number | null;
+            min_improvement: number | null;
+            min_interval_residuals: number | null;
+            season_weeks: number | null;
+            horizon_weeks: number;
+            approval_ref: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Fields left out keep their value. Setting min_weeks needs an approval reference. */
+        ForecastSettingsInput: {
+            min_weeks?: number;
+            max_missing_share?: number;
+            min_improvement?: number;
+            min_interval_residuals?: number;
+            season_weeks?: number;
+            clear_season?: boolean;
+            horizon_weeks?: number;
+            approval_ref?: string;
+        };
+        ForecastCriterion: {
+            name: string;
+            required: string | null;
+            actual: string;
+            met: boolean;
+        };
+        /** @description Verified demand is confirmed orders paid through a non-test provider for non-demo meals. Test, unpaid and demo kits are reported, never used. */
+        ForecastReadiness: {
+            ready: boolean;
+            message: string;
+            reasons: string[];
+            criteria: components["schemas"]["ForecastCriterion"][];
+            /** Format: date */
+            history_from: string | null;
+            /** Format: date */
+            history_to: string | null;
+            verified_weeks: number;
+            span_weeks: number;
+            missing_share: number | null;
+            verified_kits: number;
+            meals_with_history: number;
+            test_paid_kits: number;
+            unpaid_kits: number;
+            demo_meal_kits: number;
+            cancelled_orders: number;
+            confirmed_orders: number;
+            outlier_weeks: number;
+            new_meals_last_8_weeks: number;
+            seasonal_coverage: string | null;
+            settings: components["schemas"]["ForecastSettings"];
+        };
+        ForecastValue: {
+            /** Format: uuid */
+            meal_id: string;
+            meal_name: string;
+            /** Format: date */
+            week: string;
+            expected: number;
+            lower: number | null;
+            upper: number | null;
+        };
+        ForecastBacktest: {
+            method: string;
+            folds: number;
+            mae: number | null;
+            wape: number | null;
+            bias: number | null;
+            mase: number | null;
+            selected: boolean;
+        };
+        /** @description Append-only. A refused run records the readiness that refused it. */
+        ForecastRun: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            trigger: "manual" | "schedule";
+            actor_name: string | null;
+            /** @enum {string} */
+            status: "refused" | "completed";
+            /** Format: date */
+            input_from: string | null;
+            /** Format: date */
+            input_to: string | null;
+            method: string | null;
+            method_version: string | null;
+            horizon_weeks: number;
+            readiness: components["schemas"]["ForecastReadiness"];
+            notes: string;
+            /** Format: date-time */
+            created_at: string;
+            values?: components["schemas"]["ForecastValue"][];
+            backtests?: components["schemas"]["ForecastBacktest"][];
+        };
+        ForecastIngredientNeed: {
+            /** Format: uuid */
+            ingredient_id: string;
+            ingredient_name: string;
+            preparation: string;
+            quantity: string | null;
+            unit: string;
+            /** @enum {string} */
+            status: "ok" | "unconvertible" | "inactive_ingredient";
+            approximate: boolean;
+            note: string;
+        };
+        /** @description Computed on request through the production requirement engine. Never stored in a plan or order. */
+        ForecastIngredients: {
+            /** Format: uuid */
+            run_id: string;
+            /** Format: date */
+            week: string;
+            label: string;
+            needs: components["schemas"]["ForecastIngredientNeed"][];
+            meals_without_recipe: string[];
         };
     };
     responses: {
@@ -23496,6 +24419,902 @@ export interface operations {
                 };
             };
             401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AnalyticsMetric"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnalyticsStatus"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyticsRefreshInput"];
+            };
+        };
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnalyticsRefreshQueued"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminDataQuality: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DataQualityCheck"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRunDataQuality: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["DataQualityCheck"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsSeries: {
+        parameters: {
+            query?: {
+                metric?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Series. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnalyticsSeries"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsDashboard: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                plan_id?: string;
+                meal_id?: string;
+                zone_id?: string;
+                supplier_id?: string;
+            };
+            header?: never;
+            path: {
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dashboard. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnalyticsDashboard"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAnalyticsExport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                plan_id?: string;
+                meal_id?: string;
+                zone_id?: string;
+                supplier_id?: string;
+            };
+            header?: never;
+            path: {
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAutomationOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationOverview"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAutomationRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AutomationRule"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveAutomationRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomationRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Rule. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationRule"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminEvaluateAutomationRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evaluated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationEvaluated"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminAutomationExecutions: {
+        parameters: {
+            query?: {
+                status?: string;
+                rule_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AutomationExecution"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminAutomationExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Execution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationExecution"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminRetryAutomationExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Execution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationExecution"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminDecideAutomationExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomationDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Execution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationExecution"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminAutomationTasks: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["AutomationTask"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCloseAutomationTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomationTaskClose"];
+            };
+        };
+        responses: {
+            /** @description Task. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AutomationTask"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminReportSchedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReportSchedule"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveReportSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportScheduleInput"];
+            };
+        };
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReportSchedule"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminRunReportNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReportRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminReportRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ReportRun"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminReportRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReportRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminReportRunCSV: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminForecastReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastReadiness"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminForecastSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminSaveForecastSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForecastSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastSettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminForecastRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ForecastRun"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminRunForecast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminForecastRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminForecastIngredients: {
+        parameters: {
+            query?: {
+                week?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Projection. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForecastIngredients"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
             422: components["responses"]["Error"];

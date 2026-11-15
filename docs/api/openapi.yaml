@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.7.1
+  version: 1.8.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -85,6 +85,14 @@ tags:
     description: "Delivery: zones, calendar, capacity, partners, dispatch, custody, tracking, proof, exceptions, reconciliation (Sprint 7)."
   - name: customer-delivery
     description: A customer's own delivery status, support and reschedule requests (Sprint 7).
+  - name: admin-analytics
+    description: "Analytics: metric catalogue, dashboards, snapshots, data quality and exports (Sprint 8)."
+  - name: admin-automation
+    description: "Automation: typed rules, executions, approvals and tasks (Sprint 8). Never financial or operational actions."
+  - name: admin-reports
+    description: "Scheduled reports: generated once per period, recorded email outcomes (Sprint 8)."
+  - name: admin-forecasting
+    description: "Forecasting: readiness, baseline models, backtests and versioned runs (Sprint 8). Advisory only."
 paths:
   /api/v1/health:
     get:
@@ -10790,6 +10798,805 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
 
+  /api/v1/admin/analytics/metrics:
+    get:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsMetrics
+      description: The metric catalogue entries the caller may see. Needs admin.access.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AnalyticsMetric" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/status:
+    get:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsStatus
+      description: "Snapshot freshness, recent refreshes and the event consumer. Needs analytics_executive.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AnalyticsStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/refresh:
+    post:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsRefresh
+      description: Queues a snapshot refresh or backfill (idempotent). Needs analytics.export.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnalyticsRefreshInput" }
+      responses:
+        "202":
+          description: Queued.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AnalyticsRefreshQueued" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/data-quality:
+    get:
+      tags: [admin-analytics]
+      operationId: adminDataQuality
+      description: The latest result of each check. Needs analytics_executive.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DataQualityCheck" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/data-quality/run:
+    post:
+      tags: [admin-analytics]
+      operationId: adminRunDataQuality
+      description: Runs every check now and stores the results. Needs analytics.export.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/DataQualityCheck" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/series:
+    get:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsSeries
+      description: "Daily snapshot values of one snapshotted metric. Needs the metric's permission."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: metric
+          in: query
+          required: false
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Series.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AnalyticsSeries" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/{kind}:
+    get:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsDashboard
+      description: "overview, revenue, customers, meals, production, procurement, inventory or delivery. Compared with the previous period of equal length. Needs the dashboard's analytics permission."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: meal_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: zone_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Dashboard.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AnalyticsDashboard" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/analytics/{kind}/export:
+    get:
+      tags: [admin-analytics]
+      operationId: adminAnalyticsExport
+      description: "The dashboard's figures as CSV (aggregates only, formula-safe, audited, not cached). Needs analytics.export and the dashboard's permission."
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { type: string }
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: plan_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: meal_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: zone_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: supplier_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: CSV.
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/overview:
+    get:
+      tags: [admin-automation]
+      operationId: adminAutomationOverview
+      description: Needs automation.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Overview.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationOverview" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/rules:
+    get:
+      tags: [admin-automation]
+      operationId: adminAutomationRules
+      description: "Every rule, enabled or not, with what is missing. Needs automation.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AutomationRule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/rules/{id}:
+    patch:
+      tags: [admin-automation]
+      operationId: adminSaveAutomationRule
+      description: Each save is a new version. Needs automation.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AutomationRuleInput" }
+      responses:
+        "200":
+          description: Rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationRule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/rules/{id}/evaluate:
+    post:
+      tags: [admin-automation]
+      operationId: adminEvaluateAutomationRule
+      description: Evaluates an enabled rule now; cooldowns still apply. Needs automation.execute.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Evaluated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationEvaluated" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/executions:
+    get:
+      tags: [admin-automation]
+      operationId: adminAutomationExecutions
+      description: Newest first. Needs automation.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: rule_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AutomationExecution" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/executions/{id}:
+    get:
+      tags: [admin-automation]
+      operationId: adminAutomationExecution
+      description: With its history. Needs automation.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Execution.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationExecution" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/executions/{id}/retry:
+    post:
+      tags: [admin-automation]
+      operationId: adminRetryAutomationExecution
+      description: Only a failed execution; the action is idempotent. Needs automation.execute.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Execution.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationExecution" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/executions/{id}/decision:
+    post:
+      tags: [admin-automation]
+      operationId: adminDecideAutomationExecution
+      description: Needs automation.approve.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AutomationDecisionInput" }
+      responses:
+        "200":
+          description: Execution.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationExecution" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/tasks:
+    get:
+      tags: [admin-automation]
+      operationId: adminAutomationTasks
+      description: Tasks for the permissions the caller holds. Needs admin.access.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/AutomationTask" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/automation/tasks/{id}/close:
+    post:
+      tags: [admin-automation]
+      operationId: adminCloseAutomationTask
+      description: "Needs admin.access and the task's permission."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AutomationTaskClose" }
+      responses:
+        "200":
+          description: Task.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/AutomationTask" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/scheduled:
+    get:
+      tags: [admin-reports]
+      operationId: adminReportSchedules
+      description: Shipped disabled with no recipients. Needs automation.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReportSchedule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/scheduled/{id}:
+    patch:
+      tags: [admin-reports]
+      operationId: adminSaveReportSchedule
+      description: Needs automation.manage.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportScheduleInput" }
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReportSchedule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/scheduled/{id}/run:
+    post:
+      tags: [admin-reports]
+      operationId: adminRunReportNow
+      description: Generates the last complete period once; a second request is refused. Needs automation.execute.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "201":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ReportRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/runs:
+    get:
+      tags: [admin-reports]
+      operationId: adminReportRuns
+      description: "Newest first, without content. Needs automation.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReportRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/runs/{id}:
+    get:
+      tags: [admin-reports]
+      operationId: adminReportRun
+      description: With the generated content. Needs automation.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ReportRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/reports/runs/{id}/csv:
+    get:
+      tags: [admin-reports]
+      operationId: adminReportRunCSV
+      description: "Audited, not cached. Needs analytics.export."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: CSV.
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/forecasting/readiness:
+    get:
+      tags: [admin-forecasting]
+      operationId: adminForecastReadiness
+      description: Needs forecasting.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Readiness.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastReadiness" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/forecasting/settings:
+    get:
+      tags: [admin-forecasting]
+      operationId: adminForecastSettings
+      description: Needs forecasting.read.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [admin-forecasting]
+      operationId: adminSaveForecastSettings
+      description: Audited. Needs forecasting.configure.
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ForecastSettingsInput" }
+      responses:
+        "200":
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastSettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/forecasting/runs:
+    get:
+      tags: [admin-forecasting]
+      operationId: adminForecastRuns
+      description: "Newest first, without values. Needs forecasting.read."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: List.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/ForecastRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-forecasting]
+      operationId: adminRunForecast
+      description: Always recorded; status refused when the readiness gate is not passed. Needs forecasting.run.
+      security: [{ adminSession: [] }]
+      responses:
+        "201":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/forecasting/runs/{id}:
+    get:
+      tags: [admin-forecasting]
+      operationId: adminForecastRun
+      description: With values and backtests. Needs forecasting.read.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Run.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/forecasting/runs/{id}/ingredients:
+    get:
+      tags: [admin-forecasting]
+      operationId: adminForecastIngredients
+      description: Needs forecasting.read.
+      security: [{ adminSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: week
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Projection.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ForecastIngredients" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -11099,7 +11906,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -16749,3 +17556,490 @@ components:
       properties:
         case_number: { type: integer }
         status: { type: string, enum: [received] }
+    # ---------------- Sprint 8: analytics, automation and forecasting
+    AnalyticsMetric:
+      type: object
+      required: [id, name, definition, domain, source_fields, calculation, filters, reporting_period, update_frequency, missing_data, currency, limitations, owner, kind, permission, snapshotted]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        definition: { type: string }
+        domain: { type: string }
+        source_fields:
+          type: array
+          items: { type: string }
+        calculation: { type: string }
+        filters:
+          type: array
+          items: { type: string }
+        reporting_period: { type: string }
+        update_frequency: { type: string }
+        missing_data: { type: string }
+        currency: { type: string }
+        limitations: { type: string }
+        owner: { type: string }
+        kind: { type: string, enum: [count, money, ratio, number, hours, days] }
+        permission: { type: string }
+        snapshotted: { type: boolean }
+      description: "A catalogue entry. Every figure on a dashboard, report or export comes from one of these definitions."
+    AnalyticsMetricValue:
+      type: object
+      required: [id, name, kind, value, previous, change, definition, limitations, currency]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [count, money, ratio, number, hours, days] }
+        value: { type: [number, "null"] }
+        previous: { type: [number, "null"] }
+        change: { type: [number, "null"] }
+        definition: { type: string }
+        limitations: { type: string }
+        currency: { type: string }
+      description: value is null when the figure cannot be calculated (never shown as zero). Money is in minor units (cents).
+    AnalyticsTable:
+      type: object
+      required: [title, note, columns, rows]
+      properties:
+        title: { type: string }
+        note: { type: string }
+        columns:
+          type: array
+          items: { type: string }
+        rows:
+          type: array
+          items:
+            type: array
+            items: { type: string }
+        link: { type: string }
+    AnalyticsSection:
+      type: object
+      required: [title, metrics, tables]
+      properties:
+        title: { type: string }
+        note: { type: string }
+        metrics:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsMetricValue" }
+        tables:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsTable" }
+    AnalyticsDashboard:
+      type: object
+      required: [kind, title, from, to, previous_from, previous_to, time_zone, generated_at, last_refresh, notices, sections, filters]
+      properties:
+        kind: { type: string }
+        title: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        previous_from: { type: string, format: date }
+        previous_to: { type: string, format: date }
+        time_zone: { type: string }
+        generated_at: { type: string, format: date-time }
+        last_refresh: { type: [string, "null"], format: date-time }
+        notices:
+          type: array
+          items: { type: string }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsSection" }
+        filters:
+          type: array
+          items: { type: string }
+      description: Notices say when figures include test-provider payments or demo records.
+    AnalyticsRefreshRun:
+      type: object
+      required: [id, reason, from, to, status, values_written, error, started_at, finished_at]
+      properties:
+        id: { type: integer }
+        reason: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        status: { type: string, enum: [running, succeeded, failed] }
+        values_written: { type: integer }
+        error: { type: [string, "null"] }
+        started_at: { type: string, format: date-time }
+        finished_at: { type: [string, "null"], format: date-time }
+    AnalyticsStatus:
+      type: object
+      required: [last_success, stale, stale_after, runs, consumer, snapshots]
+      properties:
+        last_success: { type: [string, "null"], format: date-time }
+        stale: { type: boolean }
+        stale_after: { type: string }
+        runs:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsRefreshRun" }
+        consumer:
+          oneOf: [{ $ref: "#/components/schemas/ConsumerStatus" }, { type: "null" }]
+        snapshots: { type: integer }
+    AnalyticsRefreshInput:
+      type: object
+      additionalProperties: false
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+      description: A backfill range (local dates). Re-running a range rewrites the same rows.
+    AnalyticsRefreshQueued:
+      type: object
+      required: [queued, from, to]
+      properties:
+        queued: { type: boolean }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+    DataQualityCheck:
+      type: object
+      required: [id, name, description, status, count, detail, checked_at]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [ok, warning, failed] }
+        count: { type: integer }
+        detail: { type: string }
+        checked_at: { type: string, format: date-time }
+    AnalyticsPoint:
+      type: object
+      required: [day, value]
+      properties:
+        day: { type: string, format: date }
+        value: { type: [number, "null"] }
+    AnalyticsSeries:
+      type: object
+      required: [metric, points]
+      properties:
+        metric: { type: string }
+        points:
+          type: array
+          items: { $ref: "#/components/schemas/AnalyticsPoint" }
+    AutomationParam:
+      type: object
+      required: [name, label, unit, min, max, required]
+      properties:
+        name: { type: string }
+        label: { type: string }
+        unit: { type: string }
+        min: { type: integer }
+        max: { type: integer }
+        required: { type: boolean }
+    AutomationRule:
+      type: object
+      required: [id, kind, name, description, enabled, params, param_specs, action, owner_permission, priority, cooldown_minutes, approval_ref, version, updated_at, last_evaluated_at, enabled_at, event_triggers, missing, last_success, failed_executions]
+      properties:
+        id: { type: string, format: uuid }
+        kind:
+          type: string
+          enum: [procurement_shortage, overdue_purchase_order, production_hold_unresolved, delivery_failure_unresolved, run_unreconciled, payment_failed]
+        name: { type: string }
+        description: { type: string }
+        enabled: { type: boolean }
+        params:
+          type: object
+          additionalProperties: { type: integer }
+        param_specs:
+          type: array
+          items: { $ref: "#/components/schemas/AutomationParam" }
+        action: { type: string, enum: [alert, task, request_approval] }
+        owner_permission: { type: string }
+        priority: { type: string, enum: [low, normal, high, critical] }
+        cooldown_minutes: { type: [integer, "null"] }
+        approval_ref: { type: string }
+        version: { type: integer }
+        updated_at: { type: string, format: date-time }
+        last_evaluated_at: { type: [string, "null"], format: date-time }
+        enabled_at: { type: [string, "null"], format: date-time }
+        event_triggers:
+          type: array
+          items: { type: string }
+        missing:
+          type: array
+          items: { type: string }
+        last_success: { type: [string, "null"], format: date-time }
+        failed_executions: { type: integer }
+      description: "A typed recipe, not code. missing lists what the business must decide before it can be enabled."
+    AutomationRuleInput:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        params:
+          type: object
+          additionalProperties: { type: integer }
+        action: { type: string, enum: [alert, task, request_approval] }
+        priority: { type: string, enum: [low, normal, high, critical] }
+        cooldown_minutes: { type: integer }
+        approval_ref: { type: string }
+      description: "Fields left out keep their value. Enabling is refused until the thresholds, a cooldown and an approval reference are set."
+    AutomationEvaluated:
+      type: object
+      required: [executions_created]
+      properties:
+        executions_created: { type: integer }
+    AutomationEvent:
+      type: object
+      required: [type, body, actor_name, at]
+      properties:
+        type: { type: string }
+        body: { type: [string, "null"] }
+        actor_name: { type: [string, "null"] }
+        at: { type: string, format: date-time }
+    AutomationExecution:
+      type: object
+      required: [id, rule_id, rule_name, rule_version, trigger, trigger_ref, subject_type, subject_id, subject_label, action, status, attempts, last_error, detail, link, created_at, finished_at, decided_at, decision_note]
+      properties:
+        id: { type: string, format: uuid }
+        rule_id: { type: string, format: uuid }
+        rule_name: { type: string }
+        rule_version: { type: integer }
+        trigger: { type: string, enum: [schedule, event, manual] }
+        trigger_ref: { type: string }
+        subject_type: { type: string }
+        subject_id: { type: string }
+        subject_label: { type: string }
+        action: { type: string }
+        status: { type: string, enum: [pending, succeeded, failed, awaiting_approval, approved, rejected] }
+        attempts: { type: integer }
+        last_error: { type: [string, "null"] }
+        detail: { type: string }
+        link: { type: string }
+        created_at: { type: string, format: date-time }
+        finished_at: { type: [string, "null"], format: date-time }
+        decided_at: { type: [string, "null"], format: date-time }
+        decision_note: { type: [string, "null"] }
+        events:
+          type: array
+          items: { $ref: "#/components/schemas/AutomationEvent" }
+    AutomationDecisionInput:
+      type: object
+      required: [decision, note]
+      additionalProperties: false
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        note: { type: string }
+      description: Approving records the decision and tells the owning team. It performs no financial or operational action.
+    AutomationTask:
+      type: object
+      required: [id, execution_id, title, detail, permission, link, status, created_at, closed_at, close_note]
+      properties:
+        id: { type: string, format: uuid }
+        execution_id: { type: [string, "null"], format: uuid }
+        title: { type: string }
+        detail: { type: string }
+        permission: { type: string }
+        link: { type: string }
+        status: { type: string, enum: [open, done, dismissed] }
+        created_at: { type: string, format: date-time }
+        closed_at: { type: [string, "null"], format: date-time }
+        close_note: { type: [string, "null"] }
+    AutomationTaskClose:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [done, dismissed] }
+        note: { type: string }
+    AutomationOverview:
+      type: object
+      required: [enabled, disabled, failed_executions, awaiting_approval, open_tasks, last_success, executions_last_7_days]
+      properties:
+        enabled: { type: integer }
+        disabled: { type: integer }
+        failed_executions: { type: integer }
+        awaiting_approval: { type: integer }
+        open_tasks: { type: integer }
+        last_success: { type: [string, "null"], format: date-time }
+        executions_last_7_days: { type: integer }
+    ReportSchedule:
+      type: object
+      required: [id, kind, name, enabled, recipients, recipient_emails, approval_ref, permission, dashboards, next_period, last_run, missing]
+      properties:
+        id: { type: string, format: uuid }
+        kind:
+          type: string
+          enum: [daily_operations, weekly_business, weekly_production, weekly_procurement, monthly_executive]
+        name: { type: string }
+        enabled: { type: boolean }
+        recipients:
+          type: array
+          items: { type: string, format: uuid }
+        recipient_emails:
+          type: array
+          items: { type: string }
+        approval_ref: { type: string }
+        permission: { type: string }
+        dashboards:
+          type: array
+          items: { type: string }
+        next_period: { type: string }
+        last_run: { type: [string, "null"], format: date-time }
+        missing:
+          type: array
+          items: { type: string }
+    ReportScheduleInput:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        recipients:
+          type: array
+          items: { type: string }
+        approval_ref: { type: string }
+      description: "Recipients are staff emails; each must be an active account holding the report's permission."
+    ReportDelivery:
+      type: object
+      required: [email, status, reason]
+      properties:
+        email: { type: string }
+        status: { type: string, enum: [queued, sent, failed, skipped] }
+        reason: { type: [string, "null"] }
+    ReportRun:
+      type: object
+      required: [id, kind, name, period_start, period_end, status, trigger, error, started_at, generated_at, deliveries]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string }
+        name: { type: string }
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        status: { type: string, enum: [running, succeeded, failed] }
+        trigger: { type: string, enum: [schedule, manual] }
+        error: { type: [string, "null"] }
+        started_at: { type: string, format: date-time }
+        generated_at: { type: [string, "null"], format: date-time }
+        deliveries:
+          type: array
+          items: { $ref: "#/components/schemas/ReportDelivery" }
+        content: { type: object, additionalProperties: true }
+      description: "One run per schedule and period. Email outcomes are the provider's, never assumed."
+    ForecastSettings:
+      type: object
+      required: [min_weeks, max_missing_share, min_improvement, min_interval_residuals, season_weeks, horizon_weeks, approval_ref, updated_at]
+      properties:
+        min_weeks: { type: [integer, "null"] }
+        max_missing_share: { type: [number, "null"] }
+        min_improvement: { type: [number, "null"] }
+        min_interval_residuals: { type: [integer, "null"] }
+        season_weeks: { type: [integer, "null"] }
+        horizon_weeks: { type: integer }
+        approval_ref: { type: string }
+        updated_at: { type: string, format: date-time }
+      description: "Activation criteria. They ship unset; with any unset, no forecast is produced."
+    ForecastSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        min_weeks: { type: integer }
+        max_missing_share: { type: number }
+        min_improvement: { type: number }
+        min_interval_residuals: { type: integer }
+        season_weeks: { type: integer }
+        clear_season: { type: boolean }
+        horizon_weeks: { type: integer }
+        approval_ref: { type: string }
+      description: Fields left out keep their value. Setting min_weeks needs an approval reference.
+    ForecastCriterion:
+      type: object
+      required: [name, required, actual, met]
+      properties:
+        name: { type: string }
+        required: { type: [string, "null"] }
+        actual: { type: string }
+        met: { type: boolean }
+    ForecastReadiness:
+      type: object
+      required: [ready, message, reasons, criteria, history_from, history_to, verified_weeks, span_weeks, missing_share, verified_kits, meals_with_history, test_paid_kits, unpaid_kits, demo_meal_kits, cancelled_orders, confirmed_orders, outlier_weeks, new_meals_last_8_weeks, seasonal_coverage, settings]
+      properties:
+        ready: { type: boolean }
+        message: { type: string }
+        reasons:
+          type: array
+          items: { type: string }
+        criteria:
+          type: array
+          items: { $ref: "#/components/schemas/ForecastCriterion" }
+        history_from: { type: [string, "null"], format: date }
+        history_to: { type: [string, "null"], format: date }
+        verified_weeks: { type: integer }
+        span_weeks: { type: integer }
+        missing_share: { type: [number, "null"] }
+        verified_kits: { type: number }
+        meals_with_history: { type: integer }
+        test_paid_kits: { type: number }
+        unpaid_kits: { type: number }
+        demo_meal_kits: { type: number }
+        cancelled_orders: { type: integer }
+        confirmed_orders: { type: integer }
+        outlier_weeks: { type: integer }
+        new_meals_last_8_weeks: { type: integer }
+        seasonal_coverage: { type: [string, "null"] }
+        settings: { $ref: "#/components/schemas/ForecastSettings" }
+      description: "Verified demand is confirmed orders paid through a non-test provider for non-demo meals. Test, unpaid and demo kits are reported, never used."
+    ForecastValue:
+      type: object
+      required: [meal_id, meal_name, week, expected, lower, upper]
+      properties:
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        week: { type: string, format: date }
+        expected: { type: number }
+        lower: { type: [number, "null"] }
+        upper: { type: [number, "null"] }
+    ForecastBacktest:
+      type: object
+      required: [method, folds, mae, wape, bias, mase, selected]
+      properties:
+        method: { type: string }
+        folds: { type: integer }
+        mae: { type: [number, "null"] }
+        wape: { type: [number, "null"] }
+        bias: { type: [number, "null"] }
+        mase: { type: [number, "null"] }
+        selected: { type: boolean }
+    ForecastRun:
+      type: object
+      required: [id, trigger, actor_name, status, input_from, input_to, method, method_version, horizon_weeks, readiness, notes, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        trigger: { type: string, enum: [manual, schedule] }
+        actor_name: { type: [string, "null"] }
+        status: { type: string, enum: [refused, completed] }
+        input_from: { type: [string, "null"], format: date }
+        input_to: { type: [string, "null"], format: date }
+        method: { type: [string, "null"] }
+        method_version: { type: [string, "null"] }
+        horizon_weeks: { type: integer }
+        readiness: { $ref: "#/components/schemas/ForecastReadiness" }
+        notes: { type: string }
+        created_at: { type: string, format: date-time }
+        values:
+          type: array
+          items: { $ref: "#/components/schemas/ForecastValue" }
+        backtests:
+          type: array
+          items: { $ref: "#/components/schemas/ForecastBacktest" }
+      description: Append-only. A refused run records the readiness that refused it.
+    ForecastIngredientNeed:
+      type: object
+      required: [ingredient_id, ingredient_name, preparation, quantity, unit, status, approximate, note]
+      properties:
+        ingredient_id: { type: string, format: uuid }
+        ingredient_name: { type: string }
+        preparation: { type: string }
+        quantity: { type: [string, "null"] }
+        unit: { type: string }
+        status: { type: string, enum: [ok, unconvertible, inactive_ingredient] }
+        approximate: { type: boolean }
+        note: { type: string }
+    ForecastIngredients:
+      type: object
+      required: [run_id, week, label, needs, meals_without_recipe]
+      properties:
+        run_id: { type: string, format: uuid }
+        week: { type: string, format: date }
+        label: { type: string }
+        needs:
+          type: array
+          items: { $ref: "#/components/schemas/ForecastIngredientNeed" }
+        meals_without_recipe:
+          type: array
+          items: { type: string }
+      description: Computed on request through the production requirement engine. Never stored in a plan or order.

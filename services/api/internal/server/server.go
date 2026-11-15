@@ -13,6 +13,8 @@ import (
 
 	"mise.tt/api/internal/addresses"
 	"mise.tt/api/internal/admin"
+	"mise.tt/api/internal/analytics"
+	"mise.tt/api/internal/automation"
 	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/billing"
 	"mise.tt/api/internal/catalog"
@@ -23,8 +25,9 @@ import (
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
-	"mise.tt/api/internal/identity"
+	"mise.tt/api/internal/forecasting"
 	"mise.tt/api/internal/fulfillment"
+	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/inventory"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/menus"
@@ -378,6 +381,11 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&fulfillment.Handler{S: ff.Fulfillment, Identity: ids}).Routes(mux)
 	(&delivery.Handler{S: ff.Delivery, Identity: ids}).Routes(mux)
 	(&delivery.CustomerHandler{S: ff.Delivery, Identity: ids, Customers: customerService, Orders: com.Orders}).Routes(mux)
+	an := NewAnalytics(pool, com)
+	(&analytics.Handler{S: an, Identity: ids}).Routes(mux)
+	au, reports := NewAutomation(cfg, pool, com, bo, ids, an, nil)
+	(&automation.Handler{S: au, R: reports, Identity: ids}).Routes(mux)
+	(&forecasting.Handler{S: NewForecasting(pool, com), Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

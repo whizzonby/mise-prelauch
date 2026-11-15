@@ -37,9 +37,15 @@ export function Panel({ title, note, children, className }: { title?: string; no
   );
 }
 
-export function DataTable({ head, children, minWidth = "44rem" }: { head: string[]; children: ReactNode; minWidth?: string }) {
+/** A table that scrolls sideways on narrow screens; the scroll area is focusable so it can be scrolled from the keyboard. */
+export function DataTable({ head, children, minWidth = "44rem", label }: { head: string[]; children: ReactNode; minWidth?: string; label?: string }) {
   return (
-    <div className="overflow-x-auto border border-border bg-surface">
+    <div
+      className="overflow-x-auto border border-border bg-surface"
+      tabIndex={0}
+      role="region"
+      aria-label={label ?? (head.filter(Boolean).join(", ") || "Table")}
+    >
       <table className="w-full text-left" style={{ minWidth }}>
         <thead className="type-caption border-b border-border text-muted">
           <tr>

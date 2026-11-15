@@ -699,6 +699,43 @@ export type CustomerDelivery = S["CustomerDelivery"];
 export type DeliveryMilestone = S["DeliveryMilestone"];
 export type DeliverySupportResult = S["DeliverySupportResult"];
 
+// ---------- Sprint 8: analytics, automation and forecasting (generated types) ----------
+
+export type AnalyticsMetric = S["AnalyticsMetric"];
+export type AnalyticsMetricValue = S["AnalyticsMetricValue"];
+export type AnalyticsTable = S["AnalyticsTable"];
+export type AnalyticsSection = S["AnalyticsSection"];
+export type AnalyticsDashboard = S["AnalyticsDashboard"];
+export type AnalyticsRefreshRun = S["AnalyticsRefreshRun"];
+export type AnalyticsStatus = S["AnalyticsStatus"];
+export type AnalyticsRefreshQueued = S["AnalyticsRefreshQueued"];
+export type DataQualityCheck = S["DataQualityCheck"];
+export type AnalyticsSeries = S["AnalyticsSeries"];
+export type AnalyticsPoint = S["AnalyticsPoint"];
+export type AutomationParam = S["AutomationParam"];
+export type AutomationRule = S["AutomationRule"];
+export type AutomationRuleInput = S["AutomationRuleInput"];
+export type AutomationEvent = S["AutomationEvent"];
+export type AutomationExecution = S["AutomationExecution"];
+export type AutomationTask = S["AutomationTask"];
+export type AutomationOverview = S["AutomationOverview"];
+export type ReportSchedule = S["ReportSchedule"];
+export type ReportScheduleInput = S["ReportScheduleInput"];
+export type ReportDelivery = S["ReportDelivery"];
+export type ReportRun = S["ReportRun"];
+export type ForecastSettings = S["ForecastSettings"];
+export type ForecastSettingsInput = S["ForecastSettingsInput"];
+export type ForecastCriterion = S["ForecastCriterion"];
+export type ForecastReadiness = S["ForecastReadiness"];
+export type ForecastValue = S["ForecastValue"];
+export type ForecastBacktest = S["ForecastBacktest"];
+export type ForecastRun = S["ForecastRun"];
+export type ForecastIngredientNeed = S["ForecastIngredientNeed"];
+export type ForecastIngredients = S["ForecastIngredients"];
+
+/** Date range (local YYYY-MM-DD) and optional filters for analytics. */
+export type AnalyticsQuery = { from?: string; to?: string; plan_id?: string; meal_id?: string; zone_id?: string; supplier_id?: string };
+
 export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extraHeaders }: ClientOptions) {
   const base = baseUrl.replace(/\/$/, "");
 
@@ -1440,6 +1477,59 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<DeliveryReconciliation>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/reconciliation`, { token, cache: "no-store" }),
       reconcile: (token: string, id: string, explanation: string) =>
         request<DeliveryReconciliation>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/reconcile`, { method: "POST", body: { explanation }, token, cache: "no-store" }),
+    },
+
+    /** Sprint 8: analytics, automation, scheduled reports and forecasting. Admin session; permissions per route. */
+    intelligence: {
+      metrics: (token: string) => request<{ items: AnalyticsMetric[] }>("/admin/analytics/metrics", { token, cache: "no-store" }),
+      dashboard: (token: string, kind: string, query: AnalyticsQuery = {}) =>
+        request<AnalyticsDashboard>(`/admin/analytics/${encodeURIComponent(kind)}`, { token, query, cache: "no-store" }),
+      /** The raw CSV response, to stream to the browser. */
+      exportCsv: (token: string, kind: string, query: AnalyticsQuery = {}) => send(`/admin/analytics/${encodeURIComponent(kind)}/export`, { token, query, cache: "no-store" }),
+      status: (token: string) => request<AnalyticsStatus>("/admin/analytics/status", { token, cache: "no-store" }),
+      refresh: (token: string, input: { from?: string; to?: string } = {}) =>
+        request<AnalyticsRefreshQueued>("/admin/analytics/refresh", { method: "POST", body: input, token, cache: "no-store" }),
+      dataQuality: (token: string) => request<{ items: DataQualityCheck[] }>("/admin/analytics/data-quality", { token, cache: "no-store" }),
+      runDataQuality: (token: string) =>
+        request<{ items: DataQualityCheck[] }>("/admin/analytics/data-quality/run", { method: "POST", token, cache: "no-store" }),
+      series: (token: string, metric: string, query: { from?: string; to?: string } = {}) =>
+        request<AnalyticsSeries>("/admin/analytics/series", { token, query: { metric, ...query }, cache: "no-store" }),
+
+      automationOverview: (token: string) => request<AutomationOverview>("/admin/automation/overview", { token, cache: "no-store" }),
+      rules: (token: string) => request<{ items: AutomationRule[] }>("/admin/automation/rules", { token, cache: "no-store" }),
+      saveRule: (token: string, id: string, input: AutomationRuleInput) =>
+        request<AutomationRule>(`/admin/automation/rules/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      evaluateRule: (token: string, id: string) =>
+        request<{ executions_created: number }>(`/admin/automation/rules/${encodeURIComponent(id)}/evaluate`, { method: "POST", token, cache: "no-store" }),
+      executions: (token: string, query: { status?: string; rule_id?: string } = {}) =>
+        request<{ items: AutomationExecution[] }>("/admin/automation/executions", { token, query, cache: "no-store" }),
+      execution: (token: string, id: string) => request<AutomationExecution>(`/admin/automation/executions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      retryExecution: (token: string, id: string) =>
+        request<AutomationExecution>(`/admin/automation/executions/${encodeURIComponent(id)}/retry`, { method: "POST", token, cache: "no-store" }),
+      decide: (token: string, id: string, input: { decision: "approve" | "reject"; note: string }) =>
+        request<AutomationExecution>(`/admin/automation/executions/${encodeURIComponent(id)}/decision`, { method: "POST", body: input, token, cache: "no-store" }),
+      tasks: (token: string, status = "open") => request<{ items: AutomationTask[] }>("/admin/automation/tasks", { token, query: { status }, cache: "no-store" }),
+      closeTask: (token: string, id: string, input: { status: "done" | "dismissed"; note?: string }) =>
+        request<AutomationTask>(`/admin/automation/tasks/${encodeURIComponent(id)}/close`, { method: "POST", body: input, token, cache: "no-store" }),
+
+      schedules: (token: string) => request<{ items: ReportSchedule[] }>("/admin/reports/scheduled", { token, cache: "no-store" }),
+      saveSchedule: (token: string, id: string, input: ReportScheduleInput) =>
+        request<{ items: ReportSchedule[] }>(`/admin/reports/scheduled/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      runReport: (token: string, id: string) => request<ReportRun>(`/admin/reports/scheduled/${encodeURIComponent(id)}/run`, { method: "POST", token, cache: "no-store" }),
+      reportRuns: (token: string) => request<{ items: ReportRun[] }>("/admin/reports/runs", { token, cache: "no-store" }),
+      reportRun: (token: string, id: string) => request<ReportRun>(`/admin/reports/runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      /** The raw CSV response, to stream to the browser. */
+      reportCsv: (token: string, id: string) => send(`/admin/reports/runs/${encodeURIComponent(id)}/csv`, { token, cache: "no-store" }),
+
+      readiness: (token: string) => request<ForecastReadiness>("/admin/forecasting/readiness", { token, cache: "no-store" }),
+      forecastSettings: (token: string) => request<ForecastSettings>("/admin/forecasting/settings", { token, cache: "no-store" }),
+      saveForecastSettings: (token: string, input: ForecastSettingsInput) =>
+        request<ForecastSettings>("/admin/forecasting/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      forecastRuns: (token: string) => request<{ items: ForecastRun[] }>("/admin/forecasting/runs", { token, cache: "no-store" }),
+      runForecast: (token: string) => request<ForecastRun>("/admin/forecasting/runs", { method: "POST", token, cache: "no-store" }),
+      forecastRun: (token: string, id: string) => request<ForecastRun>(`/admin/forecasting/runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      forecastIngredients: (token: string, id: string, week: string) =>
+        request<ForecastIngredients>(`/admin/forecasting/runs/${encodeURIComponent(id)}/ingredients`, { token, query: { week }, cache: "no-store" }),
     },
 
     /** Plans and published menus. Public: the same for everyone. */

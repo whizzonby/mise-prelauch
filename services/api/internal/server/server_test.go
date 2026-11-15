@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"mise.tt/api/internal/backoffice"
+	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/config"
@@ -24,7 +25,6 @@ import (
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
 	"mise.tt/api/internal/platform/ratelimit"
-	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
@@ -132,7 +132,8 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	// Roles and permissions are reference data seeded by migrations; they stay.
 	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts, domain_events,
 		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria,
-		delivery_counters, delivery_service_zones, delivery_partners RESTART IDENTITY CASCADE`); err != nil {
+		delivery_counters, delivery_service_zones, delivery_partners,
+		analytics_refresh_runs, analytics_snapshots, analytics_quality_results, automation_executions, automation_tasks, report_runs, forecast_runs RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	// Supply-chain policies start unset, and event consumers start at the beginning.
@@ -147,6 +148,11 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 			failure_reasons = ARRAY['recipient_unavailable', 'address_not_found', 'refused', 'damaged', 'partner_unable', 'operational_delay', 'other'],
 			allow_unapproved_partners = false, unapproved_partner_policy_ref = '', label_certified = false, customer_emails_approved = false,
 			delivery_offset_min_days = NULL, delivery_offset_max_days = NULL, delivery_week_rule_ref = ''`,
+		// Sprint 8 rules, schedules and forecast criteria ship unconfigured.
+		`UPDATE automation_rules SET enabled = false, params = '{}', cooldown_minutes = NULL, approval_ref = '', last_evaluated_at = NULL, enabled_at = NULL`,
+		`UPDATE scheduled_reports SET enabled = false, recipients = '{}', approval_ref = ''`,
+		`UPDATE forecast_settings SET min_weeks = NULL, max_missing_share = NULL, min_improvement = NULL, min_interval_residuals = NULL, season_weeks = NULL,
+			horizon_weeks = 4, approval_ref = ''`,
 	} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatalf("reset supply settings: %v", err)

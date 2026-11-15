@@ -8,15 +8,18 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"mise.tt/api/internal/analytics"
+	"mise.tt/api/internal/automation"
 	"mise.tt/api/internal/backoffice"
+	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/platform/jobs"
 	"mise.tt/api/internal/platform/mail"
-	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/procurement"
 	"mise.tt/api/internal/server"
 )
@@ -91,6 +94,40 @@ func run() error {
 	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
 	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
 	go ff.Fulfillment.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
+	// Sprint 8: analytics snapshots (hourly, on events, idempotent).
+	an := server.NewAnalytics(pool, com)
+	runner.Register(analytics.JobRefresh, an.HandleRefresh)
+	runner.Register(analytics.JobEvent, an.HandleEvent)
+	// Sprint 8: automation rules (scheduled and on events) and scheduled
+	// reports, in the same loop; every action runs as a retried job.
+	var reportMailer automation.Mailer
+	if cfg.Mail.Driver != "log" {
+		reportMailer = mailer
+	}
+	au, reports := server.NewAutomation(cfg, pool, com, bo, ids, an, reportMailer)
+	runner.Register(automation.JobExecute, au.HandleExecute)
+	runner.Register(automation.JobEvent, au.HandleEvent)
+	runner.Register(automation.JobReportEmail, reports.HandleEmail)
+	go func() {
+		t := time.NewTicker(cfg.Commerce.SchedulerInterval)
+		defer t.Stop()
+		for {
+			if err := an.Tick(ctx, 30*time.Second); err != nil && ctx.Err() == nil {
+				slog.ErrorContext(ctx, "analytics tick failed", "error", err.Error())
+			}
+			if err := au.Tick(ctx, 30*time.Second); err != nil && ctx.Err() == nil {
+				slog.ErrorContext(ctx, "automation tick failed", "error", err.Error())
+			}
+			if _, err := reports.Due(ctx); err != nil && ctx.Err() == nil {
+				slog.ErrorContext(ctx, "scheduled reports failed", "error", err.Error())
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
 
 	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
 	err = runner.Run(ctx)

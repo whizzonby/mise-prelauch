@@ -7,6 +7,8 @@
 //	misectl commerce seed-demo                 (demo plans and menus; needs CATALOG_DEMO_ENABLED)
 //	misectl commerce tick [-at 2026-11-20T04:00:00Z]   (one scheduler run; -at only when local)
 //	misectl production seed-demo               (a released demo production plan; local only, needs the worker)
+//	misectl analytics catalog                  (prints the metric catalogue)
+//	misectl analytics backfill -from 2026-11-01 -to 2026-11-30   (recompute daily snapshots; idempotent)
 //	misectl delivery seed-demo [-ready]        (demo zone, days, partner and courier; -ready also completes the newest demo plan; local only)
 //	misectl events replay -consumer procurement|fulfillment -from 0   (re-deliver domain events after an id; consumers are idempotent)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
@@ -32,9 +34,10 @@ import (
 	"os"
 	"time"
 
+	"mise.tt/api/internal/analytics"
 	"mise.tt/api/internal/platform/config"
-	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/consumer"
+	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/server"
 )
 
@@ -50,7 +53,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl delivery seed-demo [-ready] | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl delivery seed-demo [-ready] | misectl analytics catalog|backfill | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -181,6 +184,34 @@ func run(args []string) error {
 		}
 		fmt.Printf("demo delivery ready: zone %s, %d service days, partner %s, courier %s, batches completed %v, fulfillments created %d\n",
 			out.Zone, len(out.ServiceDays), out.Partner, out.Courier, out.Completed, out.Obligations)
+		return nil
+
+	case "analytics catalog":
+		// The metric catalogue (docs/analytics/METRIC_CATALOG.md) from the registry.
+		fmt.Print(analytics.Catalog())
+		return nil
+
+	case "analytics backfill":
+		fs := flag.NewFlagSet("analytics backfill", flag.ContinueOnError)
+		from := fs.String("from", "", "first local day (YYYY-MM-DD)")
+		to := fs.String("to", "", "last local day (YYYY-MM-DD)")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		com, err := server.NewCommerce(cfg, pool, nil)
+		if err != nil {
+			return err
+		}
+		an := server.NewAnalytics(pool, com)
+		r, err := an.ParseRange(*from, *to)
+		if err != nil {
+			return err
+		}
+		run, err := an.Refresh(ctx, "backfill", "", r)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("analytics backfill %s to %s: %s, %d values written\n", run.From, run.To, run.Status, run.ValuesWritten)
 		return nil
 
 	case "events replay":

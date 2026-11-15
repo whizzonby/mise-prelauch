@@ -97,29 +97,46 @@ const (
 	PermSupplierReportsRead        Permission = "supplier_reports.read"
 
 	// Sprint 7: fulfillment and delivery.
-	PermFulfillmentRead        Permission = "fulfillment.read"
-	PermFulfillmentVerify      Permission = "fulfillment.verify"
-	PermFulfillmentRelease     Permission = "fulfillment.release"
-	PermDeliveryRead           Permission = "delivery.read"
-	PermDeliveryReadAssigned   Permission = "delivery.read_assigned"
-	PermDeliveryPlan           Permission = "delivery.plan"
-	PermDeliveryAssign         Permission = "delivery.assign"
-	PermDeliveryDispatch       Permission = "delivery.dispatch"
-	PermDeliveryUpdateStatus   Permission = "delivery.update_status"
-	PermDeliveryReschedule     Permission = "delivery.reschedule"
-	PermDeliveryConfirm        Permission = "delivery.confirm"
-	PermDeliveryReconcile      Permission = "delivery.reconcile"
-	PermDeliveryPartnersRead   Permission = "delivery_partners.read"
-	PermDeliveryPartnersManage Permission = "delivery_partners.manage"
-	PermDeliveryPartnersApprove Permission = "delivery_partners.approve"
-	PermDeliveryZonesRead      Permission = "delivery_zones.read"
-	PermDeliveryZonesManage    Permission = "delivery_zones.manage"
-	PermDeliveryProofRead      Permission = "delivery_proof.read"
-	PermDeliveryProofCreate    Permission = "delivery_proof.create"
-	PermDeliveryExceptionsRead Permission = "delivery_exceptions.read"
+	PermFulfillmentRead          Permission = "fulfillment.read"
+	PermFulfillmentVerify        Permission = "fulfillment.verify"
+	PermFulfillmentRelease       Permission = "fulfillment.release"
+	PermDeliveryRead             Permission = "delivery.read"
+	PermDeliveryReadAssigned     Permission = "delivery.read_assigned"
+	PermDeliveryPlan             Permission = "delivery.plan"
+	PermDeliveryAssign           Permission = "delivery.assign"
+	PermDeliveryDispatch         Permission = "delivery.dispatch"
+	PermDeliveryUpdateStatus     Permission = "delivery.update_status"
+	PermDeliveryReschedule       Permission = "delivery.reschedule"
+	PermDeliveryConfirm          Permission = "delivery.confirm"
+	PermDeliveryReconcile        Permission = "delivery.reconcile"
+	PermDeliveryPartnersRead     Permission = "delivery_partners.read"
+	PermDeliveryPartnersManage   Permission = "delivery_partners.manage"
+	PermDeliveryPartnersApprove  Permission = "delivery_partners.approve"
+	PermDeliveryZonesRead        Permission = "delivery_zones.read"
+	PermDeliveryZonesManage      Permission = "delivery_zones.manage"
+	PermDeliveryProofRead        Permission = "delivery_proof.read"
+	PermDeliveryProofCreate      Permission = "delivery_proof.create"
+	PermDeliveryExceptionsRead   Permission = "delivery_exceptions.read"
 	PermDeliveryExceptionsManage Permission = "delivery_exceptions.manage"
-	PermDeliveryReportsRead    Permission = "delivery_reports.read"
-	PermDeliverySettingsManage Permission = "delivery_settings.manage"
+	PermDeliveryReportsRead      Permission = "delivery_reports.read"
+	PermDeliverySettingsManage   Permission = "delivery_settings.manage"
+
+	// Sprint 8: analytics, automation and forecasting.
+	PermAnalyticsExecutiveRead   Permission = "analytics_executive.read"
+	PermAnalyticsRevenueRead     Permission = "analytics_revenue.read"
+	PermAnalyticsCustomersRead   Permission = "analytics_customers.read"
+	PermAnalyticsProductionRead  Permission = "analytics_production.read"
+	PermAnalyticsProcurementRead Permission = "analytics_procurement.read"
+	PermAnalyticsInventoryRead   Permission = "analytics_inventory.read"
+	PermAnalyticsDeliveryRead    Permission = "analytics_delivery.read"
+	PermAnalyticsExport          Permission = "analytics.export"
+	PermAutomationRead           Permission = "automation.read"
+	PermAutomationManage         Permission = "automation.manage"
+	PermAutomationExecute        Permission = "automation.execute"
+	PermAutomationApprove        Permission = "automation.approve"
+	PermForecastingRead          Permission = "forecasting.read"
+	PermForecastingRun           Permission = "forecasting.run"
+	PermForecastingConfigure     Permission = "forecasting.configure"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -146,6 +163,9 @@ var AllPermissions = []Permission{
 	PermDeliveryPartnersRead, PermDeliveryPartnersManage, PermDeliveryPartnersApprove, PermDeliveryZonesRead, PermDeliveryZonesManage,
 	PermDeliveryProofRead, PermDeliveryProofCreate, PermDeliveryExceptionsRead, PermDeliveryExceptionsManage, PermDeliveryReportsRead,
 	PermDeliverySettingsManage,
+	PermAnalyticsExecutiveRead, PermAnalyticsRevenueRead, PermAnalyticsCustomersRead, PermAnalyticsProductionRead, PermAnalyticsProcurementRead,
+	PermAnalyticsInventoryRead, PermAnalyticsDeliveryRead, PermAnalyticsExport, PermAutomationRead, PermAutomationManage, PermAutomationExecute,
+	PermAutomationApprove, PermForecastingRead, PermForecastingRun, PermForecastingConfigure,
 }
 
 // RoleCustomer is the role every registered customer holds.

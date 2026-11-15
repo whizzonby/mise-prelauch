@@ -338,99 +338,125 @@ func (s *Service) calculate(ctx context.Context, tx pgx.Tx, planID string) error
 	if err != nil {
 		return err
 	}
-	type src struct {
-		itemID, versionID, lineID string
-		amount                    qty.Q
-		unit                      string
-	}
-	type agg struct {
-		ingredient, name, prep, base string
-		active, approximate, broken  bool
-		total                        qty.Q
-		note                         string
-		sources                      []src
-	}
-	type rawLine struct {
-		itemID, versionID, lineID, ingredient, unit, prep, base, name string
-		kits, servings, yield                                         int
-		amount                                                        string
-		yieldPct                                                      *string
-		active                                                        bool
-	}
-	var raws []rawLine
+	var lines []RequirementLine
 	for rows.Next() {
-		var r rawLine
+		var r RequirementLine
 		var kits, servings, yield int32
-		var srv, yl int16
-		_ = srv
-		_ = yl
-		if err := rows.Scan(&r.itemID, &r.versionID, &kits, &servings, &yield, &r.lineID, &r.ingredient, &r.amount, &r.unit, &r.prep,
-			&r.yieldPct, &r.base, &r.active, &r.name); err != nil {
+		if err := rows.Scan(&r.Ref, &r.VersionID, &kits, &servings, &yield, &r.LineID, &r.IngredientID, &r.Amount, &r.Unit, &r.Preparation,
+			&r.YieldPercent, &r.BaseUnit, &r.Active, &r.IngredientName); err != nil {
 			rows.Close()
 			return err
 		}
-		r.kits, r.servings, r.yield = int(kits), int(servings), int(yield)
-		raws = append(raws, r)
+		r.Kits, r.ServingsPerKit, r.YieldServings = qty.Int(int64(kits)), int(servings), int(yield)
+		lines = append(lines, r)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return err
 	}
-	byKey := map[string]*agg{}
-	var keys []string
-	for _, r := range raws {
-		scaled := qty.MustParse(r.amount).Mul(qty.Int(int64(r.kits) * int64(r.servings))).Div(qty.Int(int64(r.yield)))
-		if r.yieldPct != nil {
-			scaled = scaled.Div(qty.MustParse(*r.yieldPct).Div(qty.Int(100)))
-		}
-		key := r.ingredient + "|" + r.prep
-		a := byKey[key]
-		if a == nil {
-			a = &agg{ingredient: r.ingredient, name: r.name, prep: r.prep, base: r.base, active: r.active}
-			byKey[key] = a
-			keys = append(keys, key)
-		}
-		a.sources = append(a.sources, src{itemID: r.itemID, versionID: r.versionID, lineID: r.lineID, amount: scaled, unit: r.unit})
-		inBase, approx, err := conv.Convert(ctx, r.ingredient, scaled, r.unit, r.base)
-		if errors.Is(err, culinary.ErrIncompatible) {
-			a.broken = true
-			a.note = "No conversion from " + r.unit + " to " + r.base + " is recorded for this ingredient."
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		a.total = a.total.Add(inBase)
-		a.approximate = a.approximate || approx
+	needs, err := AggregateRequirements(ctx, conv, lines)
+	if err != nil {
+		return err
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		a := byKey[k]
-		status := "ok"
-		var amount *string
-		switch {
-		case a.broken:
-			status = "unconvertible"
-		case !a.active:
-			status = "inactive_ingredient"
-		}
-		if !a.broken {
-			v := a.total.String()
-			amount = &v
-		}
+	for _, a := range needs {
 		var rid string
 		if err := tx.QueryRow(ctx, `INSERT INTO ingredient_requirements (plan_id, ingredient_id, preparation, quantity, unit, status, approximate, note)
-			VALUES ($1, $2, $3, $4::numeric, $5, $6, $7, $8) RETURNING id`, planID, a.ingredient, a.prep, amount, a.base, status, a.approximate, a.note).Scan(&rid); err != nil {
+			VALUES ($1, $2, $3, $4::numeric, $5, $6, $7, $8) RETURNING id`, planID, a.IngredientID, a.Preparation, a.Quantity, a.Unit, a.Status, a.Approximate, a.Note).Scan(&rid); err != nil {
 			return err
 		}
-		for _, x := range a.sources {
+		for _, x := range a.Sources {
 			if _, err := tx.Exec(ctx, `INSERT INTO ingredient_requirement_sources (requirement_id, plan_item_id, recipe_version_id, bom_line_id, quantity, unit)
-				VALUES ($1, $2, $3, $4, $5::numeric, $6)`, rid, x.itemID, x.versionID, x.lineID, x.amount.String(), x.unit); err != nil {
+				VALUES ($1, $2, $3, $4, $5::numeric, $6)`, rid, x.Ref, x.VersionID, x.LineID, x.Amount.String(), x.Unit); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// RequirementLine is one recipe ingredient line for a number of kits.
+type RequirementLine struct {
+	Ref                                 string // the plan item (or forecast meal) the kits belong to
+	VersionID, LineID                   string
+	IngredientID, IngredientName        string
+	Amount, Unit, Preparation, BaseUnit string
+	YieldPercent                        *string
+	Active                              bool
+	Kits                                qty.Q // may be fractional for a forecast
+	ServingsPerKit, YieldServings       int
+}
+
+// RequirementNeed is one ingredient and preparation, totalled in its base unit.
+type RequirementNeed struct {
+	IngredientID, IngredientName, Preparation, Unit string
+	Quantity                                        *string // nil when a line could not be converted
+	Status                                          string  // ok, unconvertible, inactive_ingredient
+	Approximate                                     bool
+	Note                                            string
+	Sources                                         []RequirementSourceLine
+}
+
+type RequirementSourceLine struct {
+	Ref, VersionID, LineID, Unit string
+	Amount                       qty.Q
+}
+
+// AggregateRequirements is the single bill-of-materials engine: scale each
+// recipe line to the kits, correct for yield, convert to the ingredient's
+// base unit and total per ingredient and preparation. Exact rational
+// arithmetic. Production plans and forecasts both use it.
+func AggregateRequirements(ctx context.Context, conv *culinary.Converter, lines []RequirementLine) ([]RequirementNeed, error) {
+	type agg struct {
+		RequirementNeed
+		broken, active bool
+		total          qty.Q
+	}
+	byKey := map[string]*agg{}
+	var keys []string
+	for _, r := range lines {
+		scaled := qty.MustParse(r.Amount).Mul(r.Kits).Mul(qty.Int(int64(r.ServingsPerKit))).Div(qty.Int(int64(r.YieldServings)))
+		if r.YieldPercent != nil {
+			scaled = scaled.Div(qty.MustParse(*r.YieldPercent).Div(qty.Int(100)))
+		}
+		key := r.IngredientID + "|" + r.Preparation
+		a := byKey[key]
+		if a == nil {
+			a = &agg{RequirementNeed: RequirementNeed{IngredientID: r.IngredientID, IngredientName: r.IngredientName, Preparation: r.Preparation, Unit: r.BaseUnit},
+				active: r.Active}
+			byKey[key] = a
+			keys = append(keys, key)
+		}
+		a.Sources = append(a.Sources, RequirementSourceLine{Ref: r.Ref, VersionID: r.VersionID, LineID: r.LineID, Amount: scaled, Unit: r.Unit})
+		inBase, approx, err := conv.Convert(ctx, r.IngredientID, scaled, r.Unit, r.BaseUnit)
+		if errors.Is(err, culinary.ErrIncompatible) {
+			a.broken = true
+			a.Note = "No conversion from " + r.Unit + " to " + r.BaseUnit + " is recorded for this ingredient."
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		a.total = a.total.Add(inBase)
+		a.Approximate = a.Approximate || approx
+	}
+	sort.Strings(keys)
+	out := make([]RequirementNeed, 0, len(keys))
+	for _, k := range keys {
+		a := byKey[k]
+		a.Status = "ok"
+		switch {
+		case a.broken:
+			a.Status = "unconvertible"
+		case !a.active:
+			a.Status = "inactive_ingredient"
+		}
+		if !a.broken {
+			v := a.total.String()
+			a.Quantity = &v
+		}
+		out = append(out, a.RequirementNeed)
+	}
+	return out, nil
 }
 
 func (s *Service) requirements(ctx context.Context, q db.Querier, planID string) ([]Requirement, error) {

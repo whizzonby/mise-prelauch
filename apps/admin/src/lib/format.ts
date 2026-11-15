@@ -135,6 +135,9 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "awaiting_review":
     case "skipped":
     case "medium":
+    case "warning":
+    case "awaiting_approval":
+    case "refused":
       return "warning";
     case "active":
     case "published":

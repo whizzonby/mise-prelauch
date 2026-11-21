@@ -190,6 +190,19 @@ type BatchIngredientLot struct {
 	UpdatedAt     time.Time
 }
 
+type BehaviorEvent struct {
+	ID          int64
+	EventID     string
+	Name        string
+	Version     int16
+	CustomerID  *string
+	AnonymousID *string
+	SessionID   *string
+	Properties  []byte
+	OccurredAt  time.Time
+	ReceivedAt  time.Time
+}
+
 type BillingCycle struct {
 	ID                  string
 	SubscriptionID      string
@@ -795,6 +808,110 @@ type FarmerProfile struct {
 	UpdatedAt              time.Time
 }
 
+type FinanceCashBalance struct {
+	ID           string
+	AsOf         pgtype.Date
+	AccountLabel string
+	AmountMinor  int64
+	Currency     string
+	Reference    string
+	RecordedBy   *string
+	CreatedAt    time.Time
+}
+
+type FinanceCoverageConfirmation struct {
+	CategoryKey string
+	Month       pgtype.Date
+	Note        string
+	ConfirmedBy *string
+	ConfirmedAt time.Time
+}
+
+type FinanceExpense struct {
+	ID          string
+	CategoryKey string
+	Description string
+	AmountMinor int64
+	Currency    string
+	Kind        string
+	ExpenseDate pgtype.Date
+	PaymentDate pgtype.Date
+	Reference   string
+	Status      string
+	RecurringID *string
+	CreatedBy   *string
+	UpdatedBy   *string
+	ApprovedBy  *string
+	ApprovedAt  *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type FinanceExpenseCategory struct {
+	Key         string
+	Name        string
+	CostClass   string
+	Description string
+	Position    int32
+}
+
+type FinanceExpenseEvent struct {
+	ID          int64
+	ExpenseID   *string
+	RecurringID *string
+	Action      string
+	FromStatus  string
+	ToStatus    string
+	Changes     []byte
+	Note        string
+	ActorID     *string
+	CreatedAt   time.Time
+}
+
+type FinanceRecurringExpense struct {
+	ID          string
+	CategoryKey string
+	Description string
+	AmountMinor int64
+	Currency    string
+	Cadence     string
+	StartsOn    pgtype.Date
+	EndsOn      pgtype.Date
+	Status      string
+	Reference   string
+	CreatedBy   *string
+	ApprovedBy  *string
+	ApprovedAt  *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type FinanceScenario struct {
+	ID          string
+	Name        string
+	Description string
+	Preset      string
+	ArchivedAt  *time.Time
+	CreatedBy   *string
+	CreatedAt   time.Time
+}
+
+type FinanceScenarioVersion struct {
+	ID            string
+	ScenarioID    string
+	Version       int32
+	HorizonDays   int32
+	Inputs        []byte
+	Changes       []byte
+	Observed      []byte
+	EngineVersion string
+	InputHash     string
+	Output        []byte
+	Note          string
+	CreatedBy     *string
+	CreatedAt     time.Time
+}
+
 type ForecastBacktest struct {
 	RunID    string
 	Method   string
@@ -950,6 +1067,41 @@ type GoodsReceiptLine struct {
 	Currency         string
 }
 
+type HelpArticle struct {
+	ID           string
+	Slug         string
+	CategorySlug string
+	Title        string
+	Summary      string
+	Body         string
+	Status       string
+	Version      int32
+	CreatedBy    *string
+	UpdatedBy    *string
+	SubmittedBy  *string
+	PublishedBy  *string
+	PublishedAt  *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Search       interface{}
+}
+
+type HelpArticleEvent struct {
+	ID        int64
+	ArticleID string
+	Action    string
+	Version   int32
+	Note      string
+	ActorID   *string
+	CreatedAt time.Time
+}
+
+type HelpCategory struct {
+	Slug     string
+	Name     string
+	Position int32
+}
+
 type Ingredient struct {
 	ID               string
 	Name             string
@@ -1023,6 +1175,157 @@ type IngredientUnitConversion struct {
 	Source       string
 	CreatedBy    *string
 	CreatedAt    time.Time
+}
+
+type IntelligenceAiSetting struct {
+	ID                          bool
+	Enabled                     bool
+	MonthlyBudgetUsdMicros      *int64
+	InputPriceUsdMicrosPerMtok  *int64
+	OutputPriceUsdMicrosPerMtok *int64
+	PriceReference              string
+	UserDailyRequests           int32
+	MaxOutputTokens             int32
+	MaxInputTokens              int32
+	MaxToolCalls                int32
+	MaxSeconds                  int32
+	RetentionDays               int32
+	ApprovalRef                 string
+	UpdatedBy                   *string
+	UpdatedAt                   time.Time
+}
+
+type IntelligenceBriefing struct {
+	ID             string
+	Cadence        string
+	PeriodFrom     pgtype.Date
+	PeriodTo       pgtype.Date
+	Version        int32
+	InputHash      string
+	Content        []byte
+	Narrative      []byte
+	NarrativeRunID *string
+	Source         string
+	CreatedBy      *string
+	CreatedAt      time.Time
+}
+
+type IntelligenceBriefingDelivery struct {
+	BriefingID string
+	UserID     string
+	Status     string
+	Reason     *string
+	UpdatedAt  time.Time
+}
+
+type IntelligenceBriefingSchedule struct {
+	Cadence        string
+	Enabled        bool
+	Recipients     []string
+	ApprovalRef    string
+	LastPeriodFrom pgtype.Date
+	UpdatedBy      *string
+	UpdatedAt      time.Time
+}
+
+type IntelligenceMealProposal struct {
+	ID                string
+	Origin            string
+	Name              string
+	Description       string
+	TargetAudience    string
+	Ingredients       []byte
+	Complexity        string
+	AvailabilityNotes []string
+	Limitations       []string
+	Evidence          []byte
+	Status            string
+	RecipeID          *string
+	RunID             *string
+	CreatedBy         *string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+type IntelligenceMealProposalEvent struct {
+	ID         int64
+	ProposalID string
+	Action     string
+	FromStatus string
+	ToStatus   string
+	Note       string
+	Actor      *string
+	CreatedAt  time.Time
+}
+
+type IntelligenceRecommendation struct {
+	ID         string
+	Kind       string
+	Basis      string
+	Domain     string
+	SourceKey  string
+	Title      string
+	Summary    string
+	Evidence   []byte
+	ReviewHref string
+	Status     string
+	AssignedTo *string
+	RunID      *string
+	CreatedBy  *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type IntelligenceRecommendationEvent struct {
+	ID               int64
+	RecommendationID string
+	Action           string
+	FromStatus       string
+	ToStatus         string
+	Note             string
+	Actor            *string
+	CreatedAt        time.Time
+}
+
+type IntelligenceRiskThreshold struct {
+	Key       string
+	Enabled   bool
+	Warn      pgtype.Numeric
+	Critical  pgtype.Numeric
+	IsDefault bool
+	Note      string
+	UpdatedBy *string
+	UpdatedAt time.Time
+}
+
+type IntelligenceRun struct {
+	ID            string
+	Kind          string
+	UserID        *string
+	Job           string
+	Provider      string
+	Model         string
+	PromptVersion string
+	Question      string
+	PeriodFrom    pgtype.Date
+	PeriodTo      pgtype.Date
+	Status        string
+	Output        []byte
+	ToolCalls     []byte
+	Evidence      []byte
+	Limitations   []string
+	Validation    []byte
+	ReviewStatus  string
+	ReviewNote    string
+	ReviewedBy    *string
+	ReviewedAt    *time.Time
+	ModelCalls    int32
+	InputTokens   int32
+	OutputTokens  int32
+	CostUsdMicros *int64
+	DurationMs    int32
+	Error         string
+	CreatedAt     time.Time
 }
 
 type InventoryLot struct {
@@ -1332,6 +1635,16 @@ type MfaTotp struct {
 	LastUsedStep     *int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+type MobileRefreshToken struct {
+	ID        string
+	SessionID string
+	TokenHash []byte
+	CreatedAt time.Time
+	ExpiresAt time.Time
+	UsedAt    *time.Time
+	RevokedAt *time.Time
 }
 
 type NotificationDelivery struct {
@@ -2181,19 +2494,22 @@ type ScheduledReport struct {
 }
 
 type Session struct {
-	ID            string
-	UserID        string
-	TokenHash     []byte
-	Audience      string
-	Client        string
-	MfaVerifiedAt *time.Time
-	UserAgent     *string
-	IpHash        *string
-	CreatedAt     time.Time
-	LastSeenAt    time.Time
-	ExpiresAt     time.Time
-	RevokedAt     *time.Time
-	RevokedReason *string
+	ID              string
+	UserID          string
+	TokenHash       []byte
+	Audience        string
+	Client          string
+	MfaVerifiedAt   *time.Time
+	UserAgent       *string
+	IpHash          *string
+	CreatedAt       time.Time
+	LastSeenAt      time.Time
+	ExpiresAt       time.Time
+	RevokedAt       *time.Time
+	RevokedReason   *string
+	AccessExpiresAt *time.Time
+	DeviceName      *string
+	InstallationID  *string
 }
 
 type StaffInvitation struct {
@@ -2550,6 +2866,126 @@ type SupportCaseEvent struct {
 	ToValue   *string
 	ActorID   *string
 	CreatedAt time.Time
+}
+
+type SupportChatNotification struct {
+	ID             int64
+	ConversationID string
+	DedupeKey      string
+	Seq            int64
+	Status         string
+	Reason         string
+	CreatedAt      time.Time
+	SentAt         *time.Time
+}
+
+type SupportChatSetting struct {
+	ID                   bool
+	Enabled              bool
+	Timezone             string
+	BusinessHours        []byte
+	OnlineMessage        string
+	OfflineMessage       string
+	ResponseExpectation  string
+	EmailCooldownMinutes int32
+	UpdatedBy            *string
+	UpdatedAt            time.Time
+}
+
+type SupportConversation struct {
+	ID                    string
+	Number                int64
+	CustomerID            *string
+	GuestID               *string
+	Source                string
+	Subject               string
+	Status                string
+	Priority              string
+	Tags                  []string
+	AssigneeID            *string
+	Team                  *string
+	CaseID                *string
+	OrderID               *string
+	SubscriptionID        *string
+	LastSeq               int64
+	LastMessageAt         *time.Time
+	LastCustomerMessageAt *time.Time
+	FirstHumanResponseAt  *time.Time
+	ResolvedAt            *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type SupportConversationEvent struct {
+	ID             int64
+	ConversationID string
+	Type           string
+	Detail         []byte
+	ActorID        *string
+	CreatedAt      time.Time
+}
+
+type SupportFeedback struct {
+	ConversationID string
+	Rating         int16
+	Comment        string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SupportGuestSession struct {
+	ID               string
+	TokenHash        []byte
+	Name             string
+	Email            string
+	LinkedCustomerID *string
+	LinkedAt         *time.Time
+	CreatedAt        time.Time
+	LastSeenAt       time.Time
+	ExpiresAt        time.Time
+}
+
+type SupportHoliday struct {
+	Day  pgtype.Date
+	Name string
+}
+
+type SupportInternalNote struct {
+	ID             int64
+	ConversationID string
+	AuthorID       *string
+	Body           string
+	CreatedAt      time.Time
+}
+
+type SupportMessage struct {
+	ID              int64
+	ConversationID  string
+	Seq             int64
+	AuthorKind      string
+	AuthorUserID    *string
+	Body            string
+	ClientMessageID *string
+	CreatedAt       time.Time
+}
+
+type SupportReadPosition struct {
+	ConversationID string
+	ReaderKind     string
+	ReaderID       string
+	LastReadSeq    int64
+	UpdatedAt      time.Time
+}
+
+type SupportSavedReply struct {
+	ID        string
+	Title     string
+	Body      string
+	Archived  bool
+	CreatedBy *string
+	UpdatedBy *string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TestpaySession struct {

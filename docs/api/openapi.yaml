@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.9.0
+  version: 1.10.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -367,6 +367,94 @@ paths:
         "200": { $ref: "#/components/responses/Done" }
         "401": { $ref: "#/components/responses/Error" }
 
+  /api/v1/auth/mobile/login:
+    post:
+      tags: [auth]
+      operationId: mobileLogin
+      summary: Customer sign-in for the Mise app (Sprint 10).
+      description: |
+        Returns a short-lived access token (send as `Authorization: Bearer`) and a refresh token. Keep both in the platform keystore.
+        Signing in again with the same `installation_id` ends that installation's earlier session. Same errors as `/auth/login`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              additionalProperties: false
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                device_name: { type: string, maxLength: 80, description: "Shown in the customer's list of signed-in devices." }
+                installation_id: { type: string, pattern: "^[A-Za-z0-9_-]{8,64}$", description: "Random id generated once per install. Not a hardware id." }
+      responses:
+        "200":
+          description: A token pair.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/MobileTokenGrant" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403":
+          description: "`email_not_verified`: a new verification link has been sent."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/auth/mobile/refresh:
+    post:
+      tags: [auth]
+      operationId: mobileRefresh
+      summary: Exchange a refresh token for a new token pair.
+      description: |
+        Each refresh token works once. The previous access token stops working. Presenting a refresh token that was already exchanged
+        revokes the device session (`401 refresh_invalid`); the app must sign in again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              additionalProperties: false
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: A new token pair (no `user`).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/MobileTokenGrant" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/auth/mobile/logout:
+    post:
+      tags: [auth]
+      operationId: mobileLogout
+      summary: End the device session that owns a refresh token.
+      description: Works when the access token has expired. Always answers `signed_out`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              additionalProperties: false
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Done" }
   /api/v1/auth/password/forgot:
     post:
       tags: [auth]
@@ -14655,15 +14743,28 @@ components:
         email_verified: { type: boolean }
     SessionInfo:
       type: object
-      required: [id, current, client, user_agent, created_at, last_seen_at, expires_at]
+      required: [id, current, client, user_agent, device_name, created_at, last_seen_at, expires_at]
       properties:
         id: { type: string, format: uuid }
         current: { type: boolean }
         client: { type: string, enum: [web, mobile] }
         user_agent: { type: string }
+        device_name: { type: string, description: "Set for app sign-ins; empty for web." }
         created_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time }
         expires_at: { type: string, format: date-time }
+    MobileTokenGrant:
+      type: object
+      required: [token_type, access_token, access_expires_at, expires_in, refresh_token, refresh_expires_at, session_id]
+      properties:
+        token_type: { type: string, enum: [Bearer] }
+        access_token: { type: string, description: "Valid for about 15 minutes." }
+        access_expires_at: { type: string, format: date-time }
+        expires_in: { type: integer, description: "Seconds until the access token expires." }
+        refresh_token: { type: string, description: "Single use; valid for up to 30 days." }
+        refresh_expires_at: { type: string, format: date-time }
+        session_id: { type: string, format: uuid, description: "The device session, as listed by GET /me/sessions." }
+        user: { $ref: "#/components/schemas/Customer" }
     MFAState:
       type: string
       enum: [verified, challenge, enrolment_required, not_enrolled, not_applicable]

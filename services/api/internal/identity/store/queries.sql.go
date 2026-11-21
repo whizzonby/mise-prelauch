@@ -171,11 +171,47 @@ func (q *Queries) CreateInvitation(ctx context.Context, arg CreateInvitationPara
 	return i, err
 }
 
+const createMobileSession = `-- name: CreateMobileSession :one
+
+INSERT INTO sessions (user_id, token_hash, audience, client, user_agent, ip_hash, expires_at, access_expires_at, device_name, installation_id)
+VALUES ($1, $2, 'customer', 'mobile', $3, $4, $5, $6,
+        $7, $8)
+RETURNING id
+`
+
+type CreateMobileSessionParams struct {
+	UserID          string
+	TokenHash       []byte
+	UserAgent       *string
+	IpHash          *string
+	ExpiresAt       time.Time
+	AccessExpiresAt *time.Time
+	DeviceName      *string
+	InstallationID  *string
+}
+
+// ---------------------------------------------------------------- mobile sessions (Sprint 10)
+func (q *Queries) CreateMobileSession(ctx context.Context, arg CreateMobileSessionParams) (string, error) {
+	row := q.db.QueryRow(ctx, createMobileSession,
+		arg.UserID,
+		arg.TokenHash,
+		arg.UserAgent,
+		arg.IpHash,
+		arg.ExpiresAt,
+		arg.AccessExpiresAt,
+		arg.DeviceName,
+		arg.InstallationID,
+	)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createSession = `-- name: CreateSession :one
 
 INSERT INTO sessions (user_id, token_hash, audience, client, mfa_verified_at, user_agent, ip_hash, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, token_hash, audience, client, mfa_verified_at, user_agent, ip_hash, created_at, last_seen_at, expires_at, revoked_at, revoked_reason
+RETURNING id, user_id, token_hash, audience, client, mfa_verified_at, user_agent, ip_hash, created_at, last_seen_at, expires_at, revoked_at, revoked_reason, access_expires_at, device_name, installation_id
 `
 
 type CreateSessionParams struct {
@@ -216,6 +252,9 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		&i.ExpiresAt,
 		&i.RevokedAt,
 		&i.RevokedReason,
+		&i.AccessExpiresAt,
+		&i.DeviceName,
+		&i.InstallationID,
 	)
 	return i, err
 }
@@ -261,6 +300,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteStaleRefreshTokens = `-- name: DeleteStaleRefreshTokens :exec
+DELETE FROM mobile_refresh_tokens WHERE expires_at < now() - interval '30 days'
+`
+
+func (q *Queries) DeleteStaleRefreshTokens(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteStaleRefreshTokens)
+	return err
 }
 
 const deleteStaleSessions = `-- name: DeleteStaleSessions :exec
@@ -315,7 +363,10 @@ WHERE s.token_hash = $1
   AND s.audience = $2
   AND s.revoked_at IS NULL
   AND s.expires_at > now()
-  AND s.last_seen_at > now() - make_interval(secs => $3::float8)
+  -- Mobile: the access token's own short expiry. Web: the idle limit. (A
+  -- mobile device's idle limit is its refresh token's expiry.)
+  AND (s.access_expires_at IS NULL OR s.access_expires_at > now())
+  AND (s.client = 'mobile' OR s.last_seen_at > now() - make_interval(secs => $3::float8))
   AND u.status = 'active'
 `
 
@@ -486,6 +537,21 @@ func (q *Queries) GrantRole(ctx context.Context, arg GrantRoleParams) error {
 	return err
 }
 
+const insertRefreshToken = `-- name: InsertRefreshToken :exec
+INSERT INTO mobile_refresh_tokens (session_id, token_hash, expires_at) VALUES ($1, $2, $3)
+`
+
+type InsertRefreshTokenParams struct {
+	SessionID string
+	TokenHash []byte
+	ExpiresAt time.Time
+}
+
+func (q *Queries) InsertRefreshToken(ctx context.Context, arg InsertRefreshTokenParams) error {
+	_, err := q.db.Exec(ctx, insertRefreshToken, arg.SessionID, arg.TokenHash, arg.ExpiresAt)
+	return err
+}
+
 const invalidateAuthTokens = `-- name: InvalidateAuthTokens :exec
 UPDATE auth_tokens SET consumed_at = now()
 WHERE user_id = $1 AND purpose = $2 AND consumed_at IS NULL
@@ -537,7 +603,7 @@ func (q *Queries) IsStaff(ctx context.Context, userID string) (bool, error) {
 }
 
 const listLiveSessions = `-- name: ListLiveSessions :many
-SELECT id, audience, client, user_agent, created_at, last_seen_at, expires_at
+SELECT id, audience, client, user_agent, device_name, created_at, last_seen_at, expires_at
 FROM sessions
 WHERE user_id = $1 AND audience = $2 AND revoked_at IS NULL AND expires_at > now()
 ORDER BY last_seen_at DESC
@@ -554,6 +620,7 @@ type ListLiveSessionsRow struct {
 	Audience   string
 	Client     string
 	UserAgent  *string
+	DeviceName *string
 	CreatedAt  time.Time
 	LastSeenAt time.Time
 	ExpiresAt  time.Time
@@ -573,6 +640,7 @@ func (q *Queries) ListLiveSessions(ctx context.Context, arg ListLiveSessionsPara
 			&i.Audience,
 			&i.Client,
 			&i.UserAgent,
+			&i.DeviceName,
 			&i.CreatedAt,
 			&i.LastSeenAt,
 			&i.ExpiresAt,
@@ -772,6 +840,47 @@ func (q *Queries) ListStaff(ctx context.Context) ([]ListStaffRow, error) {
 	return items, nil
 }
 
+const lockRefreshToken = `-- name: LockRefreshToken :one
+SELECT rt.id, rt.session_id, rt.expires_at, rt.used_at, rt.revoked_at,
+       s.user_id, s.revoked_at AS session_revoked_at, s.expires_at AS session_expires_at, u.status AS user_status
+FROM mobile_refresh_tokens rt
+JOIN sessions s ON s.id = rt.session_id
+JOIN users u ON u.id = s.user_id
+WHERE rt.token_hash = $1
+FOR UPDATE OF rt, s
+`
+
+type LockRefreshTokenRow struct {
+	ID               string
+	SessionID        string
+	ExpiresAt        time.Time
+	UsedAt           *time.Time
+	RevokedAt        *time.Time
+	UserID           string
+	SessionRevokedAt *time.Time
+	SessionExpiresAt time.Time
+	UserStatus       string
+}
+
+// The refresh token with its session, locked so two refreshes with the same
+// token cannot both succeed.
+func (q *Queries) LockRefreshToken(ctx context.Context, tokenHash []byte) (LockRefreshTokenRow, error) {
+	row := q.db.QueryRow(ctx, lockRefreshToken, tokenHash)
+	var i LockRefreshTokenRow
+	err := row.Scan(
+		&i.ID,
+		&i.SessionID,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.RevokedAt,
+		&i.UserID,
+		&i.SessionRevokedAt,
+		&i.SessionExpiresAt,
+		&i.UserStatus,
+	)
+	return i, err
+}
+
 const markEmailVerified = `-- name: MarkEmailVerified :one
 UPDATE users SET email_verified_at = COALESCE(email_verified_at, now()), updated_at = now()
 WHERE id = $1
@@ -796,6 +905,15 @@ func (q *Queries) MarkEmailVerified(ctx context.Context, id string) (User, error
 	return i, err
 }
 
+const markRefreshTokenUsed = `-- name: MarkRefreshTokenUsed :exec
+UPDATE mobile_refresh_tokens SET used_at = now() WHERE id = $1
+`
+
+func (q *Queries) MarkRefreshTokenUsed(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, markRefreshTokenUsed, id)
+	return err
+}
+
 const pendingEmailChange = `-- name: PendingEmailChange :one
 SELECT new_email::text FROM auth_tokens
 WHERE user_id = $1 AND purpose = 'change_email' AND consumed_at IS NULL AND expires_at > now()
@@ -809,6 +927,25 @@ func (q *Queries) PendingEmailChange(ctx context.Context, userID string) (string
 	var new_email string
 	err := row.Scan(&new_email)
 	return new_email, err
+}
+
+const revokeInstallationSessions = `-- name: RevokeInstallationSessions :execrows
+UPDATE sessions SET revoked_at = now(), revoked_reason = 'logout'
+WHERE user_id = $1 AND client = 'mobile' AND installation_id = $2 AND revoked_at IS NULL
+`
+
+type RevokeInstallationSessionsParams struct {
+	UserID         string
+	InstallationID *string
+}
+
+// Signing in again on the same install ends that install's earlier session.
+func (q *Queries) RevokeInstallationSessions(ctx context.Context, arg RevokeInstallationSessionsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeInstallationSessions, arg.UserID, arg.InstallationID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const revokeInvitation = `-- name: RevokeInvitation :execrows
@@ -860,6 +997,29 @@ func (q *Queries) RevokeSession(ctx context.Context, arg RevokeSessionParams) (i
 	return result.RowsAffected(), nil
 }
 
+const revokeSessionByID = `-- name: RevokeSessionByID :exec
+UPDATE sessions SET revoked_at = now(), revoked_reason = $1 WHERE id = $2 AND revoked_at IS NULL
+`
+
+type RevokeSessionByIDParams struct {
+	Reason *string
+	ID     string
+}
+
+func (q *Queries) RevokeSessionByID(ctx context.Context, arg RevokeSessionByIDParams) error {
+	_, err := q.db.Exec(ctx, revokeSessionByID, arg.Reason, arg.ID)
+	return err
+}
+
+const revokeSessionRefreshTokens = `-- name: RevokeSessionRefreshTokens :exec
+UPDATE mobile_refresh_tokens SET revoked_at = now() WHERE session_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeSessionRefreshTokens(ctx context.Context, sessionID string) error {
+	_, err := q.db.Exec(ctx, revokeSessionRefreshTokens, sessionID)
+	return err
+}
+
 const revokeUserSessions = `-- name: RevokeUserSessions :execrows
 UPDATE sessions SET revoked_at = now(), revoked_reason = $1
 WHERE user_id = $2 AND revoked_at IS NULL
@@ -890,6 +1050,25 @@ func (q *Queries) RoleExists(ctx context.Context, key string) (bool, error) {
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const rotateMobileAccess = `-- name: RotateMobileAccess :execrows
+UPDATE sessions SET token_hash = $1, access_expires_at = $2, last_seen_at = now()
+WHERE id = $3 AND client = 'mobile' AND revoked_at IS NULL
+`
+
+type RotateMobileAccessParams struct {
+	TokenHash       []byte
+	AccessExpiresAt *time.Time
+	ID              string
+}
+
+func (q *Queries) RotateMobileAccess(ctx context.Context, arg RotateMobileAccessParams) (int64, error) {
+	result, err := q.db.Exec(ctx, rotateMobileAccess, arg.TokenHash, arg.AccessExpiresAt, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const setInvitationToken = `-- name: SetInvitationToken :exec

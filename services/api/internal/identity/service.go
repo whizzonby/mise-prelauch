@@ -117,7 +117,13 @@ type Service struct {
 	now    func() time.Time
 	// mfaFailures counts wrong codes per session; past the limit the session ends.
 	mfaFailures *ratelimit.Limiter
+	// sessionEnded, when set, runs after a customer signs a session out (the
+	// push device registry forgets that device). Errors are the hook's own.
+	sessionEnded func(ctx context.Context, userID, sessionID string)
 }
+
+// OnSessionEnded registers a callback run after a customer signs out.
+func (s *Service) OnSessionEnded(f func(ctx context.Context, userID, sessionID string)) { s.sessionEnded = f }
 
 func NewService(pool *pgxpool.Pool, sealer *crypto.Sealer, hashIP func(string) string, hooks Hooks, opts Options) *Service {
 	return &Service{
@@ -268,10 +274,10 @@ func (s *Service) Authenticate(ctx context.Context, tok string, audience Audienc
 
 // ---------------------------------------------------------------- sign-in
 
-// Login checks a password and opens a session for one audience. For admins
-// with MFA, the session is short-lived and limited to the second-factor step
-// until a code is presented.
-func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, password string, meta ClientMeta) (*Grant, error) {
+// verifyCredentials verifies a password for one audience and returns the caller.
+// Every failure looks the same to the client (ErrBadCredentials), except an
+// unverified customer email, which re-sends the verification email.
+func (s *Service) verifyCredentials(ctx context.Context, audience Audience, rawEmail, password string) (*Principal, error) {
 	q := store.New(s.pool)
 	_, canonical, ok := platformemail.Normalize(rawEmail)
 	if !ok {
@@ -309,7 +315,6 @@ func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, passwo
 		return nil, err
 	}
 
-	ttl := s.sessionTTL(audience)
 	switch audience {
 	case AudienceAdmin:
 		// Someone without staff access gets the same answer as a wrong password.
@@ -319,9 +324,6 @@ func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, passwo
 		}
 		if p.MFA, err = s.adminMFAState(ctx, q, u.ID, nil); err != nil {
 			return nil, err
-		}
-		if !p.MFA.Complete() {
-			ttl = mfaPendingTTL
 		}
 	case AudienceCustomer:
 		if !p.HasRole(RoleCustomer) {
@@ -335,6 +337,22 @@ func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, passwo
 			return nil, errEmailNotVerified
 		}
 	}
+	return p, nil
+}
+
+// Login checks a password and opens a session for one audience. For admins
+// with MFA, the session is short-lived and limited to the second-factor step
+// until a code is presented.
+func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, password string, meta ClientMeta) (*Grant, error) {
+	p, err := s.verifyCredentials(ctx, audience, rawEmail, password)
+	if err != nil {
+		return nil, err
+	}
+	q := store.New(s.pool)
+	ttl := s.sessionTTL(audience)
+	if audience == AudienceAdmin && !p.MFA.Complete() {
+		ttl = mfaPendingTTL
+	}
 
 	raw, hashed, err := newToken()
 	if err != nil {
@@ -345,7 +363,7 @@ func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, passwo
 	err = db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		tq := store.New(tx)
 		sess, err := tq.CreateSession(ctx, store.CreateSessionParams{
-			UserID:    u.ID,
+			UserID:    p.UserID,
 			TokenHash: hashed,
 			Audience:  string(audience),
 			Client:    "web",
@@ -356,13 +374,13 @@ func (s *Service) Login(ctx context.Context, audience Audience, rawEmail, passwo
 		if err != nil {
 			return err
 		}
-		if err := tq.TouchLogin(ctx, u.ID); err != nil {
+		if err := tq.TouchLogin(ctx, p.UserID); err != nil {
 			return err
 		}
 		p.SessionID = sess.ID
 		grant = &Grant{Token: raw, ExpiresAt: expires, Principal: p}
 		return audit.Record(ctx, tx, audit.Entry{
-			ActorUserID: u.ID, Action: "auth.login", TargetType: "user", TargetID: u.ID,
+			ActorUserID: p.UserID, Action: "auth.login", TargetType: "user", TargetID: p.UserID,
 			Metadata: map[string]any{"audience": string(audience), "mfa": string(p.MFA)},
 		})
 	})
@@ -414,6 +432,9 @@ func (s *Service) Logout(ctx context.Context, p *Principal) error {
 	_, err := store.New(s.pool).RevokeSession(ctx, store.RevokeSessionParams{ID: p.SessionID, UserID: p.UserID, Reason: ptr("logout")})
 	if err != nil {
 		return err
+	}
+	if s.sessionEnded != nil && p.Audience == AudienceCustomer {
+		s.sessionEnded(ctx, p.UserID, p.SessionID)
 	}
 	return audit.Record(ctx, s.pool, audit.Entry{
 		ActorUserID: p.UserID, Action: "auth.logout", TargetType: "session", TargetID: p.SessionID,
@@ -797,6 +818,8 @@ type SessionInfo struct {
 	Current    bool      `json:"current"`
 	Client     string    `json:"client"`
 	UserAgent  string    `json:"user_agent"`
+	// DeviceName is set for app sign-ins ("Pixel 7", "Kavita's iPhone").
+	DeviceName string    `json:"device_name"`
 	CreatedAt  time.Time `json:"created_at"`
 	LastSeenAt time.Time `json:"last_seen_at"`
 	ExpiresAt  time.Time `json:"expires_at"`
@@ -812,6 +835,9 @@ func (s *Service) ListSessions(ctx context.Context, p *Principal) ([]SessionInfo
 		info := SessionInfo{ID: r.ID, Current: r.ID == p.SessionID, Client: r.Client, CreatedAt: r.CreatedAt, LastSeenAt: r.LastSeenAt, ExpiresAt: r.ExpiresAt}
 		if r.UserAgent != nil {
 			info.UserAgent = *r.UserAgent
+		}
+		if r.DeviceName != nil {
+			info.DeviceName = *r.DeviceName
 		}
 		out = append(out, info)
 	}

@@ -55,7 +55,10 @@ WHERE s.token_hash = @token_hash
   AND s.audience = @audience
   AND s.revoked_at IS NULL
   AND s.expires_at > now()
-  AND s.last_seen_at > now() - make_interval(secs => sqlc.arg(idle_seconds)::float8)
+  -- Mobile: the access token's own short expiry. Web: the idle limit. (A
+  -- mobile device's idle limit is its refresh token's expiry.)
+  AND (s.access_expires_at IS NULL OR s.access_expires_at > now())
+  AND (s.client = 'mobile' OR s.last_seen_at > now() - make_interval(secs => sqlc.arg(idle_seconds)::float8))
   AND u.status = 'active';
 
 -- name: TouchSession :exec
@@ -81,11 +84,54 @@ WHERE user_id = @user_id AND revoked_at IS NULL
   AND (sqlc.narg(keep_id)::uuid IS NULL OR id <> sqlc.narg(keep_id)::uuid);
 
 -- name: ListLiveSessions :many
-SELECT id, audience, client, user_agent, created_at, last_seen_at, expires_at
+SELECT id, audience, client, user_agent, device_name, created_at, last_seen_at, expires_at
 FROM sessions
 WHERE user_id = @user_id AND audience = @audience AND revoked_at IS NULL AND expires_at > now()
 ORDER BY last_seen_at DESC
 LIMIT 50;
+
+-- ---------------------------------------------------------------- mobile sessions (Sprint 10)
+
+-- name: CreateMobileSession :one
+INSERT INTO sessions (user_id, token_hash, audience, client, user_agent, ip_hash, expires_at, access_expires_at, device_name, installation_id)
+VALUES (@user_id, @token_hash, 'customer', 'mobile', sqlc.narg(user_agent), sqlc.narg(ip_hash), @expires_at, @access_expires_at,
+        sqlc.narg(device_name), sqlc.narg(installation_id))
+RETURNING id;
+
+-- name: RevokeInstallationSessions :execrows
+-- Signing in again on the same install ends that install's earlier session.
+UPDATE sessions SET revoked_at = now(), revoked_reason = 'logout'
+WHERE user_id = @user_id AND client = 'mobile' AND installation_id = @installation_id AND revoked_at IS NULL;
+
+-- name: InsertRefreshToken :exec
+INSERT INTO mobile_refresh_tokens (session_id, token_hash, expires_at) VALUES (@session_id, @token_hash, @expires_at);
+
+-- name: LockRefreshToken :one
+-- The refresh token with its session, locked so two refreshes with the same
+-- token cannot both succeed.
+SELECT rt.id, rt.session_id, rt.expires_at, rt.used_at, rt.revoked_at,
+       s.user_id, s.revoked_at AS session_revoked_at, s.expires_at AS session_expires_at, u.status AS user_status
+FROM mobile_refresh_tokens rt
+JOIN sessions s ON s.id = rt.session_id
+JOIN users u ON u.id = s.user_id
+WHERE rt.token_hash = @token_hash
+FOR UPDATE OF rt, s;
+
+-- name: MarkRefreshTokenUsed :exec
+UPDATE mobile_refresh_tokens SET used_at = now() WHERE id = @id;
+
+-- name: RotateMobileAccess :execrows
+UPDATE sessions SET token_hash = @token_hash, access_expires_at = @access_expires_at, last_seen_at = now()
+WHERE id = @id AND client = 'mobile' AND revoked_at IS NULL;
+
+-- name: RevokeSessionByID :exec
+UPDATE sessions SET revoked_at = now(), revoked_reason = @reason WHERE id = @id AND revoked_at IS NULL;
+
+-- name: RevokeSessionRefreshTokens :exec
+UPDATE mobile_refresh_tokens SET revoked_at = now() WHERE session_id = @session_id AND revoked_at IS NULL;
+
+-- name: DeleteStaleRefreshTokens :exec
+DELETE FROM mobile_refresh_tokens WHERE expires_at < now() - interval '30 days';
 
 -- name: DeleteStaleSessions :exec
 -- Keeps ended sessions for 30 days (they show in investigations), then drops them.

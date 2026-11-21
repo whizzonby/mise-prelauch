@@ -69,8 +69,8 @@ actual SDKs and data used. Nothing is published.
 ## Progress
 
 - [x] Stage 1 — audit (`SPRINT_10_AUDIT.md`) and this plan
-- [ ] Stage 2 — Flutter project, design system, navigation shell, environments
-- [ ] Stage 3 — mobile auth backend + auth screens and session handling
+- [x] Stage 2 — Flutter project, design system, navigation shell, environments (analyze clean, unit tests 15/15)
+- [x] Stage 3 — mobile auth backend (migration 00023, Go tests pass) + auth screens and session handling
 - [ ] Stage 4 — home, catalogue, meal detail, favorites
 - [ ] Stage 5 — plans, subscriptions, weekly selection, My Box
 - [ ] Stage 6 — checkout and payments (app return URL)

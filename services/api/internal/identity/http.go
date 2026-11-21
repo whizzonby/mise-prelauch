@@ -131,6 +131,12 @@ func (h *Handler) Routes(mux httpx.Router, l Limits) {
 	mux.Handle("POST /api/v1/auth/verify-email", l.Token(http.HandlerFunc(h.verifyEmail)))
 	mux.Handle("POST /api/v1/auth/login", l.Auth(http.HandlerFunc(h.customerLogin)))
 	mux.Handle("POST /api/v1/auth/logout", s.RequireCustomer(h.logout))
+	// Mobile app token flow (Sprint 10, mobile.go).
+	mux.Handle("POST /api/v1/auth/mobile/login", l.Auth(http.HandlerFunc(h.mobileLogin)))
+	// Refresh and logout take a 256-bit random token, so only the general
+	// limit applies: many phones can share one carrier address.
+	mux.Handle("POST /api/v1/auth/mobile/refresh", http.HandlerFunc(h.mobileRefresh))
+	mux.Handle("POST /api/v1/auth/mobile/logout", http.HandlerFunc(h.mobileLogout))
 	mux.Handle("POST /api/v1/auth/password/forgot", l.Auth(http.HandlerFunc(h.forgotPassword)))
 	mux.Handle("POST /api/v1/auth/password/reset", l.Token(http.HandlerFunc(h.resetPassword)))
 	mux.Handle("GET /api/v1/me", s.RequireCustomer(h.customerMe))

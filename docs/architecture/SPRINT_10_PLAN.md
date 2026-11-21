@@ -71,9 +71,9 @@ actual SDKs and data used. Nothing is published.
 - [x] Stage 1 — audit (`SPRINT_10_AUDIT.md`) and this plan
 - [x] Stage 2 — Flutter project, design system, navigation shell, environments (analyze clean, unit tests 15/15)
 - [x] Stage 3 — mobile auth backend (migration 00023, Go tests pass) + auth screens and session handling
-- [ ] Stage 4 — home, catalogue, meal detail, favorites
-- [ ] Stage 5 — plans, subscriptions, weekly selection, My Box
-- [ ] Stage 6 — checkout and payments (app return URL)
+- [x] Stage 4 — home, catalogue (search, filters, pagination, offline copy), meal detail, server favourites (favourites list screen lands with Account in Stage 9)
+- [x] Stage 5 — plans, subscription management (server-allowed actions only), weekly selection (version conflicts, cutoff), My Box
+- [x] Stage 6 — checkout and payments: `client: "app"` with server-set MOBILE_PAYMENT_RETURN_URL (Go tests pass), hosted page in system browser session, server-verified outcome polling
 - [ ] Stage 7 — orders, delivery tracking, cooking (recipe endpoint)
 - [ ] Stage 8 — support chat (SSE) and help centre
 - [ ] Stage 9 — notifications (devices, in-app centre, push sender) and deep links; account deletion request

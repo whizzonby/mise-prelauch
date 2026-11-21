@@ -2,6 +2,7 @@
 package config
 
 import (
+	"regexp"
 	"crypto/hkdf"
 	"crypto/sha256"
 	"encoding/base64"
@@ -52,6 +53,11 @@ type Config struct {
 	CustomerAppURL string
 	// AdminAppURL is the admin console origin, used in staff invitations.
 	AdminAppURL string
+	// MobilePaymentReturnURL is where hosted checkout sends the customer back
+	// to the Mise app (Sprint 10), e.g. mise://checkout/return. Set by the
+	// server only; the app never supplies a return URL. Empty: checkout from
+	// the app is unavailable.
+	MobilePaymentReturnURL string
 	// CustomerRegistrationEnabled opens POST /api/v1/auth/register. Off by
 	// default outside local: opening sign-ups is a business decision.
 	CustomerRegistrationEnabled bool
@@ -171,6 +177,9 @@ type MailConfig struct {
 	From     string
 }
 
+// A custom app scheme with the fixed checkout path, or an https URL.
+var mobileReturnRe = regexp.MustCompile(`^([a-z][a-z0-9+.-]{1,30}://checkout/return|https://[A-Za-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9/_-]*)$`)
+
 func (c Config) IsProduction() bool { return c.Env == "production" }
 
 // Load reads configuration and fails loudly on anything missing or unsafe, so a
@@ -199,6 +208,7 @@ func Load() (Config, error) {
 		BFFSharedKey:   strings.TrimSpace(os.Getenv("BFF_SHARED_KEY")),
 		CustomerAppURL: strings.TrimRight(get("CUSTOMER_APP_URL", "http://localhost:3102"), "/"),
 		AdminAppURL:    strings.TrimRight(get("ADMIN_APP_URL", "http://localhost:3101"), "/"),
+		MobilePaymentReturnURL: get("MOBILE_PAYMENT_RETURN_URL", ""),
 
 		Mail: MailConfig{
 			Driver:   get("MAIL_DRIVER", "log"),
@@ -339,6 +349,16 @@ func Load() (Config, error) {
 	}
 	if cfg.Mail.Driver != "smtp" && cfg.Mail.Driver != "log" {
 		errs = append(errs, fmt.Errorf("MAIL_DRIVER must be smtp or log, got %q", cfg.Mail.Driver))
+	}
+	if cfg.MobilePaymentReturnURL == "" && cfg.Env == "local" {
+		cfg.MobilePaymentReturnURL = "mise-local://checkout/return"
+	}
+	if u := cfg.MobilePaymentReturnURL; u != "" {
+		if !mobileReturnRe.MatchString(u) {
+			errs = append(errs, errors.New("MOBILE_PAYMENT_RETURN_URL must be <app-scheme>://checkout/return or an https URL"))
+		} else if cfg.IsProduction() && !strings.HasPrefix(u, "mise://") && !strings.HasPrefix(u, "https://") {
+			errs = append(errs, errors.New("MOBILE_PAYMENT_RETURN_URL in production must use the production app scheme (mise://) or https"))
+		}
 	}
 	if cfg.Env != "local" && cfg.RateLimitsDisabled {
 		errs = append(errs, errors.New("RATE_LIMITS_DISABLED is only allowed when MISE_ENV=local"))

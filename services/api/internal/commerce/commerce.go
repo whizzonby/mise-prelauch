@@ -40,6 +40,9 @@ import (
 type Options struct {
 	// CustomerAppURL builds the links in emails and the checkout return URL.
 	CustomerAppURL string
+	// MobileReturnURL is the checkout return for the Mise app (client "app").
+	// Empty: the app cannot start a checkout.
+	MobileReturnURL string
 	// PendingTTL: a subscription still waiting for its first payment after
 	// this long is expired.
 	PendingTTL time.Duration

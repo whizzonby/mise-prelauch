@@ -96,6 +96,9 @@ type SubscribeInput struct {
 	PromotionCode string `json:"promotion_code"`
 	// Provider is the payment method the customer chose ("" = the first available).
 	Provider string `json:"provider"`
+	// Client is "web" (default) or "app": where the provider returns the
+	// customer. The return URL itself is always set by the server.
+	Client string `json:"client"`
 }
 
 type SubscribeResult struct {
@@ -109,6 +112,10 @@ type SubscribeResult struct {
 // provider's checkout for its first week. The subscription becomes active
 // only when the provider confirms the payment (PaymentSucceeded).
 func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in SubscribeInput) (*SubscribeResult, error) {
+	// Checked before anything is created, so a refused return leaves nothing behind.
+	if _, err := s.returnURL(in.Client); err != nil {
+		return nil, err
+	}
 	if _, _, _, ok := s.Payments.Available(); !ok {
 		return nil, payments.ErrNoProvider
 	}
@@ -189,7 +196,7 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 		res.Activated = true
 		return res, nil
 	}
-	res.Checkout, err = s.startCheckout(ctx, cid, bc, in.Provider)
+	res.Checkout, err = s.startCheckout(ctx, cid, bc, in.Provider, in.Client)
 	var he *httpx.Error
 	if errors.As(err, &he) && he.Code == "nothing_to_pay" {
 		// A newer attempt (a second tab, a double click) replaced this one while it was starting.
@@ -198,7 +205,29 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 	return res, err
 }
 
-func (s *Service) startCheckout(ctx context.Context, customerID string, bc *billing.Cycle, provider string) (*payments.Checkout, error) {
+var errAppCheckoutUnavailable = httpx.NewError(http.StatusServiceUnavailable, "app_checkout_unavailable",
+	"Paying in the app is not available yet. Please pay on the Mise website.")
+
+// returnURL is where the provider sends the customer back. Never taken from
+// the request: only "web" or "app" is chosen by the client.
+func (s *Service) returnURL(client string) (string, error) {
+	switch client {
+	case "", "web":
+		return s.link("/subscribe/result"), nil
+	case "app":
+		if s.Opts.MobileReturnURL == "" {
+			return "", errAppCheckoutUnavailable
+		}
+		return s.Opts.MobileReturnURL, nil
+	}
+	return "", httpx.ValidationError([]httpx.FieldError{{Field: "client", Code: "invalid", Message: "Use web or app."}})
+}
+
+func (s *Service) startCheckout(ctx context.Context, customerID string, bc *billing.Cycle, provider, client string) (*payments.Checkout, error) {
+	ret, err := s.returnURL(client)
+	if err != nil {
+		return nil, err
+	}
 	// In a transaction, so MarkDue's row lock holds: on the bare pool it read "pending", and a
 	// replacement that voided the bill a moment later was overwritten back to "due".
 	if err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error { return s.Billing.MarkDue(ctx, tx, bc.ID) }); err != nil {
@@ -207,7 +236,7 @@ func (s *Service) startCheckout(ctx context.Context, customerID string, bc *bill
 	desc := "Mise subscription, week of " + bc.PeriodStart
 	return s.Payments.StartCheckout(ctx, payments.CheckoutInput{
 		CustomerID: customerID, BillingCycleID: bc.ID, AmountMinor: bc.TotalMinor, Currency: bc.Currency,
-		Description: desc, ReturnURL: s.link("/subscribe/result"), Provider: provider,
+		Description: desc, ReturnURL: ret, Provider: provider,
 	})
 }
 
@@ -223,12 +252,17 @@ func (s *Service) settleFree(ctx context.Context, billingCycleID string) error {
 type PayInput struct {
 	BillingCycleID string `json:"billing_cycle_id"`
 	Provider       string `json:"provider"`
+	// Client: "web" (default) or "app", as in SubscribeInput.
+	Client string `json:"client"`
 }
 
 // Pay opens a checkout for one of the customer's unpaid weeks: an
 // unfinished first payment, or a renewal that is due or failed. Only weeks
 // whose selection has not closed can be paid.
 func (s *Service) Pay(ctx context.Context, p *identity.Principal, in PayInput) (*payments.Checkout, error) {
+	if _, err := s.returnURL(in.Client); err != nil {
+		return nil, err
+	}
 	cid, err := s.customerID(ctx, p)
 	if err != nil {
 		return nil, err
@@ -251,7 +285,7 @@ func (s *Service) Pay(ctx context.Context, p *identity.Principal, in PayInput) (
 	if !subscriptions.Status(sub.Status).Live() || cycle.State != "scheduled" || !s.Now().Before(cycle.CutoffAt) {
 		return nil, billing.ErrNotPayable()
 	}
-	return s.startCheckout(ctx, cid, bc, in.Provider)
+	return s.startCheckout(ctx, cid, bc, in.Provider, in.Client)
 }
 
 // CheckoutResult is what the result page shows. It reports what the

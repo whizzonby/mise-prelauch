@@ -8,6 +8,7 @@ class Environment {
     required this.env,
     required this.apiBaseUrl,
     required this.siteUrl,
+    required this.mediaBaseUrl,
     required this.appScheme,
     required this.deepLinkHost,
     required this.pushEnabled,
@@ -22,6 +23,9 @@ class Environment {
 
   /// The public website, for legal pages and links that live there.
   final String siteUrl;
+
+  /// Where relative catalogue image paths (`/catalog/...`) are served from.
+  final String mediaBaseUrl;
 
   /// Custom URL scheme for payment returns and links (`mise`, `mise-dev`).
   final String appScheme;
@@ -48,6 +52,7 @@ class Environment {
     const base = String.fromEnvironment('MISE_API_BASE_URL');
     const host = String.fromEnvironment('MISE_DEEP_LINK_HOST');
     const site = String.fromEnvironment('MISE_SITE_URL');
+    const media = String.fromEnvironment('MISE_MEDIA_BASE_URL');
     const scheme = String.fromEnvironment('MISE_APP_SCHEME');
     const push = bool.fromEnvironment('MISE_PUSH');
     const crash = bool.fromEnvironment('MISE_CRASH_REPORTING');
@@ -56,6 +61,7 @@ class Environment {
       // Android emulator reaches the host machine's API (port 8090) at 10.0.2.2.
       apiBaseUrl: base.isNotEmpty ? base : 'http://10.0.2.2:8090/api/v1',
       siteUrl: site.isNotEmpty ? site : 'http://10.0.2.2:3100',
+      mediaBaseUrl: media.isNotEmpty ? media : 'http://10.0.2.2:3102',
       appScheme: scheme.isNotEmpty ? scheme : switch (env) { MiseEnv.production => 'mise', MiseEnv.staging => 'mise-staging', _ => 'mise-local' },
       deepLinkHost: host.isEmpty ? null : host,
       pushEnabled: push,

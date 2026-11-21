@@ -194,6 +194,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		CustomerSessionIdleTTL:      24 * time.Hour,
 		CustomerRegistrationEnabled: true,
 		CustomerAppURL:              "http://app.test",
+		MobilePaymentReturnURL:      "mise-local://checkout/return",
 		AdminAppURL:                 "http://admin.test",
 		TermsVersion:                "test-terms",
 		DataEncryptionKey:           []byte("0123456789abcdef0123456789abcdef"),

@@ -116,6 +116,7 @@ void main() {
       env: e,
       apiBaseUrl: url,
       siteUrl: 'https://mise.tt',
+      mediaBaseUrl: 'https://mise.tt',
       appScheme: 'mise',
       deepLinkHost: null,
       pushEnabled: false,

@@ -160,6 +160,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(parentNavigatorKey: _rootKey, path: '/subscription', builder: (_, _) => const SubscriptionScreen()),
       GoRoute(
         parentNavigatorKey: _rootKey,
+        path: '/checkout/pay/:billingCycleId',
+        builder: (_, s) => PayWeekScreen(billingCycleId: s.pathParameters['billingCycleId']!),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootKey,
         path: '/checkout/result/:id',
         builder: (_, s) => CheckoutResultScreen(checkoutId: s.pathParameters['id']!),
       ),

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.10.0
+  version: 1.11.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -15662,6 +15662,7 @@ components:
         address_id: { type: string, format: uuid }
         promotion_code: { type: string }
         provider: { type: string, description: "Payment method chosen from /payment-options (empty means the first available)." }
+        client: { type: string, enum: [web, app], description: "Where the provider returns the customer (Sprint 10). The return URL itself is set by the server. `app` answers 503 app_checkout_unavailable when no app return is configured." }
     Checkout:
       type: object
       required: [id, status, expires_at, billing_cycle_id, amount_minor, currency, provider, test]
@@ -15700,6 +15701,7 @@ components:
       properties:
         billing_cycle_id: { type: string, format: uuid }
         provider: { type: string, description: "Payment method chosen from /payment-options (empty means the first available)." }
+        client: { type: string, enum: [web, app], description: "Where the provider returns the customer (Sprint 10). The return URL itself is set by the server. `app` answers 503 app_checkout_unavailable when no app return is configured." }
     PlanRef:
       type: object
       required: [id, name, meals_per_week]

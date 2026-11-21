@@ -216,7 +216,7 @@ func NewCommerce(cfg config.Config, pool *pgxpool.Pool, ids *identity.Service) (
 			return err
 		}
 	}
-	svc := commerce.New(pool, commerce.Options{CustomerAppURL: cfg.CustomerAppURL, PendingTTL: cfg.Commerce.PendingTTL})
+	svc := commerce.New(pool, commerce.Options{CustomerAppURL: cfg.CustomerAppURL, MobileReturnURL: cfg.MobilePaymentReturnURL, PendingTTL: cfg.Commerce.PendingTTL})
 	svc.Plans, svc.Menus, svc.Subs, svc.Billing, svc.Payments, svc.Orders = c.Plans, c.Menus, c.Subs, c.Billing, c.Payments, c.Orders
 	svc.Catalog, svc.Customers, svc.Identity, svc.Delivery = catalogService, customers.NewService(pool, ids), ids, delivery.Zones{DB: pool}
 	c.Service = svc

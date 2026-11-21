@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"mise.tt/api/internal/appnotify"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -25,6 +26,8 @@ type ChatSender struct {
 	Identity *identity.Service
 	Sender   *Sender
 	AppURL   string
+	// Inbox, when set, also records the reply in the app's notification centre.
+	Inbox *appnotify.Service
 }
 
 func (c *ChatSender) Register(r *jobs.Runner) { r.Register(supportchat.JobEmail, c.handle) }
@@ -54,6 +57,12 @@ func (c *ChatSender) handle(ctx context.Context, payload json.RawMessage) error 
 		}
 		if !who.Active {
 			return supportchat.MarkEmail(ctx, c.DB, f.NotificationID, "skipped", "The customer's account is not active.")
+		}
+		if err := record(ctx, c.Inbox, c.DB, uid, appnotify.Note{
+			Type: "chat.reply", Title: "New reply from Mise", Body: fmt.Sprintf("Our team replied in conversation %d.", f.Number),
+			Link: "/support/conversations/" + f.ConversationID, PushTitle: "Mise", PushBody: pushChat, DedupKey: fmt.Sprintf("chat:%08d", f.NotificationID),
+		}); err != nil {
+			return err
 		}
 		to, data.FirstName = who.Email, who.FirstName
 		data.Paragraphs = []string{fmt.Sprintf("Our team replied to your conversation %d. Sign in to read it and reply.", f.Number)}

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"mise.tt/api/internal/appnotify"
 	"context"
 	"log/slog"
 	"os"
@@ -75,7 +76,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender}).Register(runner)
+	// Sprint 10: the app's notification centre and push. Push stays off until
+	// a Firebase service account is configured (FCM_SERVICE_ACCOUNT_FILE).
+	inbox := appnotify.New(pool, nil)
+	if fcm, err := appnotify.LoadFCM(cfg.FCMServiceAccountFile); err != nil {
+		return err
+	} else if fcm != nil {
+		inbox.Pusher = fcm
+	}
+	inbox.Register(runner)
+	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender, Inbox: inbox}).Register(runner)
 	server.RegisterCommerceJobs(runner, com)
 	// The commerce scheduler: weekly cycles, renewals, cutoffs, reminders.
 	// Safe on several workers (it takes a database advisory lock).
@@ -95,9 +105,9 @@ func run() error {
 	// obligations (idempotent per order, retried, failures visible).
 	ff := server.NewFulfilment(cfg, pool, com, bo, prod)
 	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
-	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
+	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL, Inbox: inbox}).Register(runner)
 	// Sprint 9.1: "you have a reply" chat emails (one per conversation per window).
-	(&notifications.ChatSender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
+	(&notifications.ChatSender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL, Inbox: inbox}).Register(runner)
 	go ff.Fulfillment.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
 	// Sprint 8: analytics snapshots (hourly, on events, idempotent).
 	an := server.NewAnalytics(pool, com)

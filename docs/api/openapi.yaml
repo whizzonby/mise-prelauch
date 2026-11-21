@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.12.0
+  version: 1.13.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -2046,6 +2046,203 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/SelectionInput" }
+  /api/v1/me/notifications:
+    get:
+      tags: [me]
+      operationId: listMyNotifications
+      summary: The app's notification centre (Sprint 10), newest first, up to 100.
+      description: Written from the same events as customer emails. Authoritative; push only points here.
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Notifications.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, unread], properties: { items: { type: array, items: { $ref: "#/components/schemas/AppNotification" } }, unread: { type: integer } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/notifications/read-all:
+    post:
+      tags: [me]
+      operationId: readAllMyNotifications
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Marked.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [updated], properties: { updated: { type: integer } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/notifications/{id}/read:
+    post:
+      tags: [me]
+      operationId: readMyNotification
+      security: [{ customerSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: Marked.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [read], properties: { read: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/me/devices:
+    post:
+      tags: [me]
+      operationId: registerPushDevice
+      summary: Register this installation's push token (Sprint 10).
+      description: |
+        Tied to the signed-in device session; signing out of it removes the device. Re-registering the same installation or token
+        replaces the earlier registration (token rotation). `push_available` is false while the server has no push credentials.
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [installation_id, platform, push_token]
+              additionalProperties: false
+              properties:
+                installation_id: { type: string, pattern: "^[A-Za-z0-9_-]{8,64}$" }
+                platform: { type: string, enum: [android, ios] }
+                push_token: { type: string, minLength: 16, maxLength: 4096 }
+                app_version: { type: string, maxLength: 40 }
+      responses:
+        "200":
+          description: Registered.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [registered, push_available], properties: { registered: { type: boolean }, push_available: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/devices/{installationId}:
+    delete:
+      tags: [me]
+      operationId: removePushDevice
+      security: [{ customerSession: [] }]
+      parameters: [{ name: installationId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Removed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [removed], properties: { removed: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/me/account/deletion-request:
+    get:
+      tags: [me]
+      operationId: getMyDeletionRequest
+      summary: The customer's latest account deletion request, and what a request does.
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: The request (or null) and the notice.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeletionRequestEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [me]
+      operationId: requestAccountDeletion
+      summary: Ask Mise to delete the account (Sprint 10).
+      description: |
+        Records the request; it deletes nothing by itself. Erasure follows the approved retention policy (records that must be kept,
+        such as invoices, are kept). Needs `acknowledged: true`. `409 deletion_already_requested` while one is open.
+      security: [{ customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acknowledged]
+              additionalProperties: false
+              properties:
+                reason: { type: string, maxLength: 1000 }
+                acknowledged: { type: boolean }
+      responses:
+        "201":
+          description: Recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/DeletionRequestEnvelope" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [me]
+      operationId: withdrawAccountDeletion
+      summary: Withdraw a request the team has not started.
+      security: [{ customerSession: [] }]
+      responses:
+        "200":
+          description: Withdrawn.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [withdrawn], properties: { withdrawn: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/account-deletion-requests:
+    get:
+      tags: [admin]
+      operationId: listAccountDeletionRequests
+      summary: Customers' account deletion requests, open first. Read-only (Sprint 10).
+      description: Needs customers.read. Erasure is not automated until the retention policy is approved.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Requests.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/DeletionRequest" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
   /api/v1/me/orders:
     get:
       tags: [orders]
@@ -14802,6 +14999,36 @@ components:
         cross_contact_note: { type: string }
         published_at: { type: [string, "null"], format: date-time }
         effective_from: { type: string, format: date }
+    AppNotification:
+      type: object
+      required: [id, type, title, body, link, read_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, description: "payment.succeeded, payment.failed, payment.due, subscription.renewal, subscription.changed, selection.reminder, selection.deadline, selection.confirmed, delivery.update, delivery.delivered, chat.reply" }
+        title: { type: string }
+        body: { type: string }
+        link: { type: [string, "null"], description: "In-app path; the app validates it before navigating." }
+        read_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    DeletionRequest:
+      type: object
+      required: [id, status, reason, requested_at, withdrawn_at, handled_at]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [requested, withdrawn, in_progress, completed, declined] }
+        reason: { type: string }
+        requested_at: { type: string, format: date-time }
+        withdrawn_at: { type: [string, "null"], format: date-time }
+        handled_at: { type: [string, "null"], format: date-time }
+        email: { type: string, description: "Admin listing only." }
+        name: { type: string, description: "Admin listing only." }
+        source: { type: string, description: "Admin listing only." }
+    DeletionRequestEnvelope:
+      type: object
+      required: [request, notice]
+      properties:
+        request: { oneOf: [{ $ref: "#/components/schemas/DeletionRequest" }, { type: "null" }] }
+        notice: { type: string }
     MobileTokenGrant:
       type: object
       required: [token_type, access_token, access_expires_at, expires_in, refresh_token, refresh_expires_at, session_id]

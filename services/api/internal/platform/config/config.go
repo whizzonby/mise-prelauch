@@ -58,6 +58,9 @@ type Config struct {
 	// server only; the app never supplies a return URL. Empty: checkout from
 	// the app is unavailable.
 	MobilePaymentReturnURL string
+	// FCMServiceAccountFile is the path of a Google service account JSON used
+	// by the worker to send push notifications. Server-side only; empty: no push.
+	FCMServiceAccountFile string
 	// CustomerRegistrationEnabled opens POST /api/v1/auth/register. Off by
 	// default outside local: opening sign-ups is a business decision.
 	CustomerRegistrationEnabled bool
@@ -209,6 +212,7 @@ func Load() (Config, error) {
 		CustomerAppURL: strings.TrimRight(get("CUSTOMER_APP_URL", "http://localhost:3102"), "/"),
 		AdminAppURL:    strings.TrimRight(get("ADMIN_APP_URL", "http://localhost:3101"), "/"),
 		MobilePaymentReturnURL: get("MOBILE_PAYMENT_RETURN_URL", ""),
+		FCMServiceAccountFile:  get("FCM_SERVICE_ACCOUNT_FILE", ""),
 
 		Mail: MailConfig{
 			Driver:   get("MAIL_DRIVER", "log"),

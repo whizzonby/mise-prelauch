@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"mise.tt/api/internal/appnotify"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -23,6 +24,8 @@ type CommerceSender struct {
 	DB       db.Querier
 	Identity *identity.Service
 	Sender   *Sender
+	// Inbox, when set, also records the event in the app's notification centre.
+	Inbox *appnotify.Service
 }
 
 func (c *CommerceSender) Register(r *jobs.Runner) { r.Register(commerce.JobEmail, c.handle) }
@@ -147,6 +150,11 @@ func (c *CommerceSender) handle(ctx context.Context, payload json.RawMessage) er
 	if !who.Active {
 		slog.InfoContext(ctx, "email skipped", "template", "commerce", "kind", job.Kind)
 		return nil
+	}
+	if note, ok := commerceNote(job.Kind, job.Data, data); ok {
+		if err := record(ctx, c.Inbox, c.DB, uid, note); err != nil {
+			return err
+		}
 	}
 	data.FirstName, data.SiteURL = who.FirstName, c.Sender.SiteURL
 	var html, text bytes.Buffer

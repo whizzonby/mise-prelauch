@@ -2,6 +2,7 @@
 package server
 
 import (
+	"mise.tt/api/internal/appnotify"
 	"context"
 	"errors"
 	"fmt"
@@ -473,6 +474,10 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	box, asst := NewToolbox(cfg, pool, com, an, fin, bx, fc)
 	(&intelligence.Handler{Box: box, Assistant: asst, Identity: ids}).Routes(mux)
 	(&behavior.Handler{S: bx, Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
+	// Sprint 10: the app's notification centre, push devices and deletion requests.
+	inbox := appnotify.New(pool, nil) // the API never sends push; the worker does
+	ids.OnSessionEnded(func(ctx context.Context, _, sessionID string) { inbox.RevokeSessionDevices(ctx, sessionID) })
+	(&appnotify.Handler{S: inbox, Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

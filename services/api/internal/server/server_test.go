@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"mise.tt/api/internal/appnotify"
 	"bytes"
 	"context"
 	"encoding/csv"
@@ -88,6 +89,8 @@ type harness struct {
 	sc *server.SupplyChain
 	// The Sprint 7 services, for tests that drive the readiness consumer.
 	ff *server.Fulfilment
+	// Sprint 10: push messages the worker would have sent.
+	push *fakePusher
 }
 
 // testClock is the time the commerce services read. Tests move it forward
@@ -228,7 +231,10 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	}
 	clock := &testClock{now: time.Now()}
 	com.SetClock(clock.Now)
-	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender}).Register(runner)
+	push := &fakePusher{}
+	inbox := appnotify.New(pool, push)
+	inbox.Register(runner)
+	(&notifications.CommerceSender{DB: pool, Identity: ids, Sender: sender, Inbox: inbox}).Register(runner)
 	server.RegisterCommerceJobs(runner, com)
 	bo := server.NewBackoffice(cfg, pool, ids, com)
 	runner.Register(backoffice.JobExport, bo.HandleExport)
@@ -242,14 +248,14 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	ff := server.NewFulfilment(cfg, pool, com, bo, prod)
 	ff.Fulfillment.SettleDelay = 0
 	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
-	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
-	(&notifications.ChatSender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
+	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL, Inbox: inbox}).Register(runner)
+	(&notifications.ChatSender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL, Inbox: inbox}).Register(runner)
 
 	handler, routes, err := server.BuildWith(cfg, pool, limits, ids, com)
 	if err != nil {
 		t.Fatalf("build server: %v", err)
 	}
-	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo, sc: sc, ff: ff}
+	return &harness{t: t, pool: pool, handler: handler, routes: routes, ids: ids, runner: runner, mailer: mailer, cfg: cfg, com: com, clock: clock, bo: bo, sc: sc, ff: ff, push: push}
 }
 
 // drainJobs runs queued jobs until none are ready, like the worker would.

@@ -76,6 +76,6 @@ actual SDKs and data used. Nothing is published.
 - [x] Stage 6 — checkout and payments: `client: "app"` with server-set MOBILE_PAYMENT_RETURN_URL (Go tests pass), hosted page in system browser session, server-verified outcome polling
 - [x] Stage 7 — orders, delivery tracking (real milestones, no GPS), cooking mode; backend `GET /me/orders/{id}/meals/{mealId}/recipe` (owner + confirmed order + published version only; Go tests pass)
 - [x] Stage 8 — support chat (existing inbox; SSE with Last-Event-ID replay, backoff, closed in background; dedup by seq and client id) and help centre (plain text only)
-- [ ] Stage 9 — notifications (devices, in-app centre, push sender) and deep links; account deletion request
+- [x] Stage 9 — migration 00024 + internal/appnotify (in-app centre from email events, push devices, FCM v1 adapter tested on a fake, deletion requests + admin queue; Go tests pass), app notification centre, push service (off until Firebase), account screens, validated deep links
 - [ ] Stage 10 — security, performance, accessibility review
 - [ ] Stage 11 — tests, screenshots, Android build, docs, report, commit

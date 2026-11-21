@@ -1,6 +1,8 @@
 package notifications
 
 import (
+	"strings"
+	"mise.tt/api/internal/appnotify"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -25,6 +27,8 @@ type DeliverySender struct {
 	Identity *identity.Service
 	Sender   *Sender
 	AppURL   string
+	// Inbox, when set, also records the update in the app's notification centre.
+	Inbox *appnotify.Service
 }
 
 func (d *DeliverySender) Register(r *jobs.Runner) { r.Register(delivery.JobEmail, d.handle) }
@@ -91,6 +95,16 @@ func (d *DeliverySender) handle(ctx context.Context, payload json.RawMessage) er
 		return delivery.MarkEmail(ctx, d.DB, f.ID, "skipped", "The customer's account is not active.")
 	}
 	data := deliveryCompose(f)
+	typ := "delivery.update"
+	if f.Kind == "delivered" {
+		typ = "delivery.delivered"
+	}
+	if err := record(ctx, d.Inbox, d.DB, uid, appnotify.Note{
+		Type: typ, Title: data.Heading, Body: strings.Join(data.Paragraphs, " "), Link: "/orders/" + f.OrderID + "/delivery",
+		PushTitle: "Mise", PushBody: pushDelivery, DedupKey: "delivery:" + f.ID,
+	}); err != nil {
+		return err
+	}
 	data.FirstName, data.SiteURL = who.FirstName, d.Sender.SiteURL
 	data.ButtonURL = fmt.Sprintf("%s/orders/%s", d.AppURL, f.OrderID)
 	var html, text bytes.Buffer

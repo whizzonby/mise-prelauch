@@ -47,6 +47,7 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("POST /api/v1/me/meal-selections/{cycleId}/finalize", req(h.finalizeSelection))
 	mux.Handle("GET /api/v1/me/orders", req(h.orders))
 	mux.Handle("GET /api/v1/me/orders/{id}", req(h.order))
+	mux.Handle("GET /api/v1/me/orders/{id}/meals/{mealId}/recipe", req(h.recipe))
 	mux.Handle("GET /api/v1/me/billing", req(h.billing))
 	mux.Handle("GET /api/v1/me/invoices", req(h.invoices))
 	mux.Handle("GET /api/v1/me/invoices/{id}", req(h.invoice))

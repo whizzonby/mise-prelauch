@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.11.0
+  version: 1.12.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -10830,6 +10830,34 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/me/orders/{id}/meals/{mealId}/recipe:
+    get:
+      tags: [orders]
+      operationId: getOrderMealRecipe
+      summary: Approved cooking steps for a meal in one of the customer's boxes (Sprint 10).
+      description: |
+        Only for the customer's own order, once confirmed (paid) and not cancelled, and only for a meal in it. The content is the
+        customer-facing part of the published recipe version production uses for that delivery week. Kitchen steps, costs and
+        suppliers are never included. `403 recipe_not_available_yet` before the order is confirmed; `404 recipe_unavailable` when no
+        published customer instructions exist.
+      security: [{ customerSession: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: mealId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The recipe.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/CustomerRecipe" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /api/v1/me/orders/{id}/delivery:
     get:
       tags: [customer-delivery]
@@ -14753,6 +14781,27 @@ components:
         created_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time }
         expires_at: { type: string, format: date-time }
+    CustomerRecipe:
+      type: object
+      required: [order_id, meal_id, meal_name, meal_slug, week, version, servings, serving_size, cook_minutes, ingredients, steps, storage, allergens, may_contain, cross_contact_note, published_at, effective_from]
+      properties:
+        order_id: { type: string, format: uuid }
+        meal_id: { type: string, format: uuid }
+        meal_name: { type: string }
+        meal_slug: { type: string }
+        week: { type: string, format: date }
+        version: { type: integer }
+        servings: { type: integer }
+        serving_size: { type: string }
+        cook_minutes: { type: [integer, "null"] }
+        ingredients: { type: array, items: { type: string }, description: "What is in the box for this meal: quantity, unit, name, preparation." }
+        steps: { type: array, items: { type: string }, description: "Approved customer instructions, one step each, words unchanged." }
+        storage: { type: string }
+        allergens: { type: array, items: { type: string } }
+        may_contain: { type: array, items: { type: string } }
+        cross_contact_note: { type: string }
+        published_at: { type: [string, "null"], format: date-time }
+        effective_from: { type: string, format: date }
     MobileTokenGrant:
       type: object
       required: [token_type, access_token, access_expires_at, expires_in, refresh_token, refresh_expires_at, session_id]

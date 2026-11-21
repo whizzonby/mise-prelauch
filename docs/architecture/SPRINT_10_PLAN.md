@@ -74,7 +74,7 @@ actual SDKs and data used. Nothing is published.
 - [x] Stage 4 — home, catalogue (search, filters, pagination, offline copy), meal detail, server favourites (favourites list screen lands with Account in Stage 9)
 - [x] Stage 5 — plans, subscription management (server-allowed actions only), weekly selection (version conflicts, cutoff), My Box
 - [x] Stage 6 — checkout and payments: `client: "app"` with server-set MOBILE_PAYMENT_RETURN_URL (Go tests pass), hosted page in system browser session, server-verified outcome polling
-- [ ] Stage 7 — orders, delivery tracking, cooking (recipe endpoint)
+- [x] Stage 7 — orders, delivery tracking (real milestones, no GPS), cooking mode; backend `GET /me/orders/{id}/meals/{mealId}/recipe` (owner + confirmed order + published version only; Go tests pass)
 - [ ] Stage 8 — support chat (SSE) and help centre
 - [ ] Stage 9 — notifications (devices, in-app centre, push sender) and deep links; account deletion request
 - [ ] Stage 10 — security, performance, accessibility review

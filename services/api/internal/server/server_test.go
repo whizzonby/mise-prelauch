@@ -134,7 +134,7 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria,
 		delivery_counters, delivery_service_zones, delivery_partners,
 		analytics_refresh_runs, analytics_snapshots, analytics_quality_results, automation_executions, automation_tasks, report_runs, forecast_runs,
-		launch_signoffs, worker_heartbeats RESTART IDENTITY CASCADE`); err != nil {
+		launch_signoffs, worker_heartbeats, payment_provider_events RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	// Supply-chain policies start unset, and event consumers start at the beginning.
@@ -152,6 +152,9 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		// Sprint 8 rules, schedules and forecast criteria ship unconfigured.
 		`UPDATE automation_rules SET enabled = false, params = '{}', cooldown_minutes = NULL, approval_ref = '', last_evaluated_at = NULL, enabled_at = NULL`,
 		`UPDATE scheduled_reports SET enabled = false, recipients = '{}', approval_ref = ''`,
+		// Sprint 9.1: only the simulator is enabled, in test mode, as shipped.
+		`UPDATE payment_provider_settings SET enabled = (provider = 'testpay'), mode = 'test', merchant_status = 'not_started',
+			merchant_reference = '', live_approved_by = NULL, live_approved_at = NULL, live_approval_reference = '', updated_by = NULL`,
 		`UPDATE forecast_settings SET min_weeks = NULL, max_missing_share = NULL, min_improvement = NULL, min_interval_residuals = NULL, season_weeks = NULL,
 			horizon_weeks = 4, approval_ref = ''`,
 	} {

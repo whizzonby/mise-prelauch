@@ -29,7 +29,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
         Payments
       </Heading>
       <Text className="mt-3 max-w-[48rem]" tone="muted">
-        No payment provider has been chosen: every payment here went through the test provider and no real money moved.
+        Payments as each provider reported them. Payments marked test moved no real money. Which providers are offered, and in which
+        mode, is set on the payment providers page.
       </Text>
       <div className="mt-6 flex gap-3">
         <Link href="/payments" className={buttonClasses(attention ? "secondary" : "primary")}>

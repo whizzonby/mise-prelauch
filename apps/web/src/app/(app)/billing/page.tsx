@@ -2,7 +2,7 @@ import { buttonClasses, Tag } from "@mise/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { TestModeNotice } from "@/components/commerce-bits";
+import { PaymentChoice, TestModeNotice } from "@/components/commerce-bits";
 import { Form, FormMessage, SubmitButton } from "@/components/forms";
 import { EmptyState } from "@/components/meal-card";
 import { deadline, formatMoney, shortDate } from "@/lib/commerce";
@@ -18,6 +18,8 @@ const statusTone = (s: string) => (s === "paid" ? "success" : s === "failed" ? "
 export default async function BillingPage() {
   const { token } = await requireCustomer();
   const billing = await api.commerce.billing(token);
+  const owed = billing.outstanding?.billing;
+  const options = owed ? ((await api.commerce.paymentOptions(owed.currency).catch(() => null))?.items ?? []) : [];
   return (
     <>
       <h1 className="type-h2">Billing</h1>
@@ -42,6 +44,7 @@ export default async function BillingPage() {
           </p>
           <Form action={payWeek} className="mt-4">
             <input type="hidden" name="billing_cycle_id" value={billing.outstanding.billing.id} />
+            <PaymentChoice options={options} className="mb-4" />
             <FormMessage />
             <SubmitButton pending="Opening checkout…">Pay now</SubmitButton>
           </Form>

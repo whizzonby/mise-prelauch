@@ -20,6 +20,7 @@ export async function startSubscription(_: FormState, form: FormData): Promise<F
       plan_id: text(form, "plan_id"),
       address_id: text(form, "address_id"),
       ...(text(form, "promotion_code") ? { promotion_code: text(form, "promotion_code") } : {}),
+      ...(text(form, "provider") ? { provider: text(form, "provider") } : {}),
     });
     target = res.checkout?.redirect_url ?? `/subscribe/result?activated=1`;
   } catch (error) {
@@ -33,7 +34,7 @@ export async function payWeek(_: FormState, form: FormData): Promise<FormState> 
   const { token } = await requireCustomer();
   let target: string;
   try {
-    const c = await api.commerce.pay(token, text(form, "billing_cycle_id"));
+    const c = await api.commerce.pay(token, text(form, "billing_cycle_id"), text(form, "provider") || undefined);
     if (!c.redirect_url) return { error: "Checkout could not be opened. Try again in a moment." };
     target = c.redirect_url;
   } catch (error) {

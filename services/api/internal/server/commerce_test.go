@@ -13,6 +13,8 @@ import (
 	"mise.tt/api/internal/commerce"
 	"mise.tt/api/internal/menus"
 	"mise.tt/api/internal/payments/testpay"
+	"mise.tt/api/internal/platform/config"
+	"mise.tt/api/internal/server"
 )
 
 // Sprint 3 integration tests: plans, subscriptions, weekly menus, meal
@@ -47,9 +49,9 @@ type shop struct {
 	unknown  string // allergens not declared
 }
 
-func newShop(t *testing.T) *shop {
+func newShop(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *shop {
 	t.Helper()
-	h := newHarness(t)
+	h := newHarness(t, mutate...)
 	h.clock.Set(at("2026-11-11 10:00"))
 	if _, err := h.pool.Exec(context.Background(), `INSERT INTO delivery_zones (country, region, status) VALUES ('TT', 'port-of-spain', 'active')`); err != nil {
 		t.Fatal(err)

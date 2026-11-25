@@ -193,6 +193,10 @@ export type AdminSubscriptionRow = S["AdminSubscriptionRow"];
 export type AdminSubscription = S["AdminSubscription"];
 export type Payment = S["Payment"];
 export type PaymentDetail = S["PaymentDetail"];
+export type PaymentOption = S["PaymentOption"];
+export type PaymentProviderStatus = S["PaymentProviderStatus"];
+export type PaymentProviderSettingsInput = S["PaymentProviderSettingsInput"];
+export type PaymentProviderModeInput = S["PaymentProviderModeInput"];
 export type RefundInput = S["RefundInput"];
 export type StoredWebhook = S["StoredWebhook"];
 export type Demand = S["Demand"];
@@ -1020,6 +1024,13 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<PaymentDetail>(`/admin/payments/${encodeURIComponent(id)}/refunds`, { method: "POST", body: input, token, cache: "no-store" }),
       webhooks: (token: string, status?: string) =>
         request<{ items: StoredWebhook[] }>("/admin/payment-webhooks", { token, query: { status }, cache: "no-store" }),
+      // Sprint 9.1: payment providers.
+      paymentProviders: (token: string) =>
+        request<{ items: PaymentProviderStatus[] }>("/admin/payment-providers", { token, cache: "no-store" }),
+      updatePaymentProvider: (token: string, provider: string, input: PaymentProviderSettingsInput) =>
+        request<PaymentProviderStatus>(`/admin/payment-providers/${encodeURIComponent(provider)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      setPaymentProviderMode: (token: string, provider: string, input: PaymentProviderModeInput) =>
+        request<PaymentProviderStatus>(`/admin/payment-providers/${encodeURIComponent(provider)}/mode`, { method: "POST", body: input, token, cache: "no-store" }),
       promotions: (token: string) => request<{ items: Promotion[] }>("/admin/promotions", { token, cache: "no-store" }),
       createPromotion: (token: string, input: PromotionInput) =>
         request<Promotion>("/admin/promotions", { method: "POST", body: input, token, cache: "no-store" }),
@@ -1629,8 +1640,16 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
       /** The raw PDF response, to stream to the browser. */
       invoicePdf: (token: string, id: string) =>
         send(`/me/invoices/${encodeURIComponent(id)}/pdf`, { token, cache: "no-store" }),
-      pay: (token: string, billingCycleId: string) =>
-        request<Checkout>("/checkout/sessions", { method: "POST", body: { billing_cycle_id: billingCycleId }, token, cache: "no-store" }),
+      pay: (token: string, billingCycleId: string, provider?: string) =>
+        request<Checkout>("/checkout/sessions", {
+          method: "POST",
+          body: { billing_cycle_id: billingCycleId, ...(provider ? { provider } : {}) },
+          token,
+          cache: "no-store",
+        }),
+      /** Sprint 9.1: the ways to pay open now for a currency (public). */
+      paymentOptions: (currency = "TTD") =>
+        request<{ currency: string; items: PaymentOption[] }>("/payment-options", { query: { currency }, cache: "no-store" }),
       checkout: (token: string, id: string) =>
         request<CheckoutResult>(`/checkout/sessions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
       /** Sprint 7: the order's delivery (milestones, confirmed date, code while out). */

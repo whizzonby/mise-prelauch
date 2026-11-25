@@ -126,7 +126,14 @@ func Minor(value, currency string) (int64, error) {
 	if zeroDecimal[currency] {
 		return strconv.ParseInt(value, 10, 64)
 	}
+	sign := int64(1)
+	if rest, neg := strings.CutPrefix(value, "-"); neg {
+		sign, value = -1, rest
+	}
 	whole, frac, _ := strings.Cut(value, ".")
+	if whole == "" || strings.HasPrefix(whole, "+") || strings.HasPrefix(whole, "-") {
+		return 0, fmt.Errorf("paypal: %q is not an amount", value)
+	}
 	if len(frac) > 2 {
 		return 0, fmt.Errorf("paypal: %q has more than two decimals", value)
 	}
@@ -139,7 +146,7 @@ func Minor(value, currency string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return w*100 + f, nil
+	return sign * (w*100 + f), nil
 }
 
 type amount struct {
@@ -206,7 +213,11 @@ func (p *Provider) call(ctx context.Context, method, path string, in any, reques
 		return err
 	}
 	var body io.Reader
-	if in != nil {
+	switch v := in.(type) {
+	case nil:
+	case []byte: // already-encoded JSON, sent exactly as given
+		body = bytes.NewReader(v)
+	default:
 		b, err := json.Marshal(in)
 		if err != nil {
 			return err
@@ -492,13 +503,22 @@ func (p *Provider) ParseWebhook(header http.Header, body []byte) (*payments.Webh
 		"transmission_sig":  header.Get("PAYPAL-TRANSMISSION-SIG"),
 		"transmission_time": header.Get("PAYPAL-TRANSMISSION-TIME"),
 		"webhook_id":        p.cfg.WebhookID,
-		// Posted back exactly as received.
-		"webhook_event": json.RawMessage(body),
 	}
+	// The event is posted back byte for byte as received: re-encoding it
+	// (even only removing whitespace) would make PayPal's check fail.
+	head, err := json.Marshal(verify)
+	if err != nil {
+		return nil, err
+	}
+	postback := make([]byte, 0, len(head)+len(body)+20)
+	postback = append(postback, head[:len(head)-1]...)
+	postback = append(postback, `,"webhook_event":`...)
+	postback = append(postback, body...)
+	postback = append(postback, '}')
 	var res struct {
 		VerificationStatus string `json:"verification_status"`
 	}
-	if err := p.call(ctx, http.MethodPost, "/v1/notifications/verify-webhook-signature", verify, "", &res); err != nil {
+	if err := p.call(ctx, http.MethodPost, "/v1/notifications/verify-webhook-signature", postback, "", &res); err != nil {
 		return nil, fmt.Errorf("paypal webhook verification unavailable: %w", err)
 	}
 	if res.VerificationStatus != "SUCCESS" {

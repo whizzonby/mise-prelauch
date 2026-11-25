@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AmountTable, Steps, TestModeNotice } from "@/components/commerce-bits";
+import { AmountTable, PaymentChoice, Steps, TestModeNotice } from "@/components/commerce-bits";
 import { Form, FormMessage, SubmitButton } from "@/components/forms";
 import { deadline, formatMoney } from "@/lib/commerce";
 import { api, requireCustomer } from "@/lib/session";
@@ -35,6 +35,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
     else throw e;
   }
   const back = `/subscribe?plan=${encodeURIComponent(slug)}`;
+  const options = quote ? (await api.commerce.paymentOptions(quote.due_now.currency).catch(() => null))?.items ?? [] : [];
 
   return (
     <Container className="py-10 md:py-14">
@@ -98,6 +99,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
               <input type="hidden" name="plan_id" value={quote.plan.id} />
               <input type="hidden" name="address_id" value={addr.id} />
               <input type="hidden" name="promotion_code" value={code?.trim() ?? ""} />
+              <PaymentChoice options={options} className="mb-4" />
               <FormMessage />
               <SubmitButton pending="Opening secure checkout…" className="w-full">
                 Continue to payment

@@ -43,6 +43,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
         ...item(admin, "subscriptions.read", "/subscriptions", "Subscriptions"),
         ...item(admin, "orders.read", "/orders", "Orders"),
         ...item(admin, "payments.read", "/payments", "Payments"),
+        ...item(admin, "payment_providers.read", "/payments/providers", "Payment providers"),
         ...item(admin, "payments.read", "/invoices", "Invoices"),
         ...item(admin, "promotions.manage", "/promotions", "Promotions"),
       ],

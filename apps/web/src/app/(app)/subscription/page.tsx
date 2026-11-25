@@ -3,7 +3,7 @@ import { buttonClasses, Tag } from "@mise/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { TestModeNotice } from "@/components/commerce-bits";
+import { PaymentChoice, TestModeNotice } from "@/components/commerce-bits";
 import { Form, FormMessage, SubmitButton } from "@/components/forms";
 import { EmptyState } from "@/components/meal-card";
 import { cycleTone, deadline, formatMoney, selectHref, statusTone } from "@/lib/commerce";
@@ -155,8 +155,9 @@ function StatusNotice({ sub }: { sub: Subscription }) {
   );
 }
 
-function PayNow({ week, pending }: { week: SubscriptionCycle; pending: boolean }) {
+async function PayNow({ week, pending }: { week: SubscriptionCycle; pending: boolean }) {
   if (!week.billing) return null;
+  const options = (await api.commerce.paymentOptions(week.billing.currency).catch(() => null))?.items ?? [];
   return (
     <aside aria-labelledby="pay-now" className="mt-8 max-w-[44rem] border border-error bg-surface p-5">
       <h2 id="pay-now" className="type-h4">
@@ -168,6 +169,7 @@ function PayNow({ week, pending }: { week: SubscriptionCycle; pending: boolean }
       </p>
       <Form action={payWeek} className="mt-4">
         <input type="hidden" name="billing_cycle_id" value={week.billing.id} />
+        <PaymentChoice options={options} className="mb-4" />
         <FormMessage />
         <SubmitButton pending="Opening checkout…">Pay now</SubmitButton>
       </Form>

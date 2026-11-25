@@ -1,4 +1,4 @@
-import type { Amounts } from "@mise/api-client";
+import type { Amounts, PaymentOption } from "@mise/api-client";
 import { cx } from "@mise/ui";
 import { FlaskConical } from "lucide-react";
 
@@ -10,11 +10,63 @@ export function TestModeNotice({ className }: { className?: string }) {
     <p role="note" className={cx("type-body-sm flex items-start gap-3 border border-warning bg-surface p-4", className)}>
       <FlaskConical aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warning" strokeWidth={1.75} />
       <span>
-        <strong>Test mode.</strong> Mise has not chosen its payment provider yet, so checkout uses a test page. No card is asked for and
-        no real money moves.
+        <strong>Test mode.</strong> Payments are not live yet, so checkout uses a test page. No real card is charged and no real money
+        moves.
       </span>
     </p>
   );
+}
+
+/**
+ * How the customer pays: the server's list of methods open now for this
+ * currency. One method is chosen silently; several are offered as a choice.
+ * The API checks the choice again, so this list is only a convenience.
+ */
+export function PaymentChoice({ options, className }: { options: PaymentOption[]; className?: string }) {
+  if (options.length === 0) {
+    return (
+      <p role="alert" className={cx("type-body-sm border-l-4 border-warning pl-4", className)}>
+        Online payment is not available right now. Please try again later.
+      </p>
+    );
+  }
+  if (options.length === 1) {
+    const only = options[0]!;
+    return (
+      <div className={className}>
+        <input type="hidden" name="provider" value={only.provider} />
+        {only.recurring ? null : <ManualRenewalNote />}
+      </div>
+    );
+  }
+  return (
+    <fieldset className={className}>
+      <legend className="type-h4">Pay with</legend>
+      <div className="mt-3 grid gap-2">
+        {options.map((o, i) => (
+          <label
+            key={o.provider}
+            className="flex min-h-11 cursor-pointer items-start gap-3 border border-border bg-background p-3 has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary"
+          >
+            <input type="radio" name="provider" value={o.provider} defaultChecked={i === 0} required className="mt-0.5 size-5 accent-[var(--color-primary)]" />
+            <span>
+              <span className="type-body-sm block font-semibold">
+                {o.label}
+                {o.test ? <span className="type-caption ml-2 font-normal text-muted">(test)</span> : null}
+              </span>
+              <span className="type-caption block text-muted">
+                {o.recurring ? "Saved securely by the provider for your weekly payments." : "You'll pay each week yourself."}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function ManualRenewalNote() {
+  return <p className="type-caption text-muted">This method can&apos;t be charged automatically: you&apos;ll pay each week from your subscription page.</p>;
 }
 
 /** The breakdown of what is charged, every line from the server. */

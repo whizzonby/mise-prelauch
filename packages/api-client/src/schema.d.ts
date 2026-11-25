@@ -6356,6 +6356,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payment-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The ways to pay that are open now for a currency (Sprint 9.1). Only providers that are configured, enabled by staff, able to charge this exact currency and in the right mode are listed. Public; no account data. */
+        get: operations["paymentOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs payment_providers.read. Every provider with readiness, mode, merchant status, currencies, recurring capability, reconciliation and webhook health, masked credential reference and recent audited changes. */
+        get: operations["adminPaymentProviders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-providers/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Needs payment_providers.manage. Enables or disables a provider and records merchant status. Enabling is refused while the adapter is not ready. Never switches to live mode. Audited. */
+        patch: operations["adminUpdatePaymentProvider"];
+        trace?: never;
+    };
+    "/api/v1/admin/payment-providers/{provider}/mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs payment_providers.activate. Switches a provider to live (needs live credentials, a verified merchant account and a written approval reference; records who approved) or back to test. Audited. */
+        post: operations["adminSetPaymentProviderMode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6586,7 +6654,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure" | "launch.read" | "launch.signoff")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure" | "launch.read" | "launch.signoff" | "payment_providers.read" | "payment_providers.manage" | "payment_providers.activate")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -7343,6 +7411,8 @@ export interface components {
             /** Format: uuid */
             address_id: string;
             promotion_code?: string;
+            /** @description Payment method chosen from /payment-options (empty means the first available). */
+            provider?: string;
         };
         Checkout: {
             /** Format: uuid */
@@ -7381,6 +7451,8 @@ export interface components {
         PayInput: {
             /** Format: uuid */
             billing_cycle_id: string;
+            /** @description Payment method chosen from /payment-options (empty means the first available). */
+            provider?: string;
         };
         PlanRef: {
             /** Format: uuid */
@@ -12155,6 +12227,81 @@ export interface components {
             label: string;
             needs: components["schemas"]["ForecastIngredientNeed"][];
             meals_without_recipe: string[];
+        };
+        PaymentOption: {
+            provider: string;
+            label: string;
+            /** @enum {string} */
+            method: "card" | "paypal";
+            /** @description True when the provider is in test mode: no real money moves. */
+            test: boolean;
+            /** @description The method can be saved and charged by Mise for later weeks. */
+            recurring: boolean;
+        };
+        PaymentProviderSetting: {
+            provider: string;
+            enabled: boolean;
+            /** @enum {string} */
+            mode: "test" | "live";
+            /** @enum {string} */
+            merchant_status: "not_started" | "applied" | "verified" | "rejected";
+            merchant_reference: string;
+            live_approved_by: string | null;
+            /** Format: date-time */
+            live_approved_at: string | null;
+            live_approval_reference: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PaymentProviderEvent: {
+            action: string;
+            from: string;
+            to: string;
+            note: string;
+            actor_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PaymentProviderStatus: {
+            provider: string;
+            name: string;
+            registered: boolean;
+            ready: boolean;
+            readiness_reason: string;
+            /** @description Masked reference to the credentials in the secret store; never the secret. */
+            credential_ref: string;
+            live: boolean;
+            currencies: string[];
+            method: string;
+            recurring_billing: boolean;
+            refunds: boolean;
+            setting: components["schemas"]["PaymentProviderSetting"];
+            taking_payments: boolean;
+            not_taking_reason: string;
+            /** Format: date-time */
+            last_reconciled_at: string | null;
+            /** Format: date-time */
+            last_succeeded_at: string | null;
+            failures_24h: number;
+            webhooks_failed: number;
+            webhooks_received_24h: number;
+            /** Format: date-time */
+            last_webhook_at: string | null;
+            recent_events: components["schemas"]["PaymentProviderEvent"][];
+        };
+        PaymentProviderSettingsInput: {
+            enabled?: boolean;
+            /** @enum {string} */
+            merchant_status?: "not_started" | "applied" | "verified" | "rejected";
+            merchant_reference?: string;
+            note?: string;
+        };
+        PaymentProviderModeInput: {
+            /** @enum {string} */
+            mode: "test" | "live";
+            /** @description Written approval reference; required for live. */
+            reference?: string;
+            note?: string;
         };
     };
     responses: {
@@ -25568,6 +25715,130 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    paymentOptions: {
+        parameters: {
+            query?: {
+                currency?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Options in display order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            currency: string;
+                            items: components["schemas"]["PaymentOption"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    adminPaymentProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Providers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["PaymentProviderStatus"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdatePaymentProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentProviderSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description The provider after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentProviderStatus"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    adminSetPaymentProviderMode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentProviderModeInput"];
+            };
+        };
+        responses: {
+            /** @description The provider after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PaymentProviderStatus"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];

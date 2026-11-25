@@ -800,6 +800,10 @@ DELETE FROM permissions WHERE key IN ('suppliers.read', 'suppliers.manage', 'sup
     'purchase_orders.approve_above_limit', 'purchase_orders.issue', 'receiving.read', 'receiving.manage', 'receiving.inspect',
     'inventory.read', 'inventory.reserve', 'inventory.issue', 'inventory.adjust', 'inventory.count', 'inventory.configure',
     'traceability.read', 'supplier_reports.read');
+-- Rolling back removes the roles, so pending invitations to them go too (Sprint 9 fix:
+-- an outstanding invitation used to block the rollback).
+DELETE FROM staff_invitations WHERE role_key IN ('procurement_manager', 'procurement_officer', 'inventory_manager', 'receiving_staff',
+    'supplier_coordinator');
 DELETE FROM user_roles WHERE role_key IN ('procurement_manager', 'procurement_officer', 'inventory_manager', 'receiving_staff',
     'supplier_coordinator');
 DELETE FROM roles WHERE key IN ('procurement_manager', 'procurement_officer', 'inventory_manager', 'receiving_staff',

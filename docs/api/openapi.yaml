@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Mise API
-  version: 1.8.0
+  version: 1.9.0
   summary: The REST API behind the Mise marketing site, customer app and admin console.
   description: |
     Conventions (envelope, errors, pagination, rate limits, idempotency, versioning)
@@ -93,6 +93,8 @@ tags:
     description: "Scheduled reports: generated once per period, recorded email outcomes (Sprint 8)."
   - name: admin-forecasting
     description: "Forecasting: readiness, baseline models, backtests and versioned runs (Sprint 8). Advisory only."
+  - name: admin-launch
+    description: "Launch readiness (Sprint 9): system status, evidence-backed launch gates and append-only sign-offs."
 paths:
   /api/v1/health:
     get:
@@ -11597,6 +11599,91 @@ paths:
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
 
+  /api/v1/version:
+    get:
+      tags: [health]
+      operationId: version
+      summary: The build serving this request (version and commit stamped at build time; "dev" when unstamped).
+      responses:
+        "200":
+          description: Build identity.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/BuildVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+  /api/v1/admin/system/status:
+    get:
+      tags: [admin-launch]
+      operationId: adminSystemStatus
+      description: Needs launch.read. Worker heartbeats, job queues and failures, consumer lag, payment webhook failures, database latency.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: System status.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/SystemStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/launch:
+    get:
+      tags: [admin-launch]
+      operationId: adminLaunchGates
+      description: Needs launch.read. Every launch gate with the system's evidence, the latest sign-off and a status. Never "ready" while a critical gate is not verified or not applicable.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Launch gates.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/LaunchOverview" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/launch/gates/{gate}/signoffs:
+    post:
+      tags: [admin-launch]
+      operationId: adminLaunchSignoff
+      description: Needs launch.signoff. Records approved, not_applicable (with a reason) or revoked. Approving is refused while the gate's own evidence does not hold. Audited.
+      security: [{ adminSession: [] }]
+      parameters:
+        - { name: gate, in: path, required: true, schema: { type: string, pattern: "^[a-z][a-z_]{1,59}$" } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LaunchSignoffInput" }
+      responses:
+        "200":
+          description: The gate after the sign-off.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/LaunchGate" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     leadProfileToken:
@@ -11716,6 +11803,100 @@ components:
               meta: { $ref: "#/components/schemas/Meta" }
 
   schemas:
+    BuildVersion:
+      type: object
+      required: [version, commit]
+      properties:
+        version: { type: string }
+        commit: { type: string }
+    SystemStatus:
+      type: object
+      required: [api, environment, database_ms, workers, worker_healthy, jobs, failed_jobs_24h, email_failures_24h, consumers, latest_event_id, payment_webhook_failures, payment_webhooks_pending, checked_at]
+      properties:
+        api: { $ref: "#/components/schemas/BuildVersion" }
+        environment: { type: string }
+        database_ms: { type: number }
+        workers:
+          type: array
+          items:
+            type: object
+            required: [worker, version, started_at, beat_at, stale]
+            properties:
+              worker: { type: string }
+              version: { type: string }
+              started_at: { type: string, format: date-time }
+              beat_at: { type: string, format: date-time }
+              stale: { type: boolean }
+        worker_healthy: { type: boolean }
+        jobs:
+          type: array
+          items:
+            type: object
+            required: [kind, waiting, failed_24h, oldest_waiting]
+            properties:
+              kind: { type: string }
+              waiting: { type: integer }
+              failed_24h: { type: integer }
+              oldest_waiting: { type: [string, "null"], format: date-time }
+        failed_jobs_24h: { type: integer }
+        email_failures_24h: { type: integer }
+        consumers:
+          type: array
+          items:
+            type: object
+            required: [consumer, last_event_id, lag, updated_at]
+            properties:
+              consumer: { type: string }
+              last_event_id: { type: integer }
+              lag: { type: integer, description: "Events after the offset (an upper bound: a consumer routes only some types)." }
+              updated_at: { type: string, format: date-time }
+        latest_event_id: { type: integer }
+        payment_webhook_failures: { type: integer }
+        payment_webhooks_pending: { type: integer }
+        checked_at: { type: string, format: date-time }
+    LaunchSignoff:
+      type: object
+      required: [id, decision, reference, note, by, at]
+      properties:
+        id: { type: integer }
+        decision: { type: string, enum: [approved, not_applicable] }
+        reference: { type: string }
+        note: { type: string }
+        by: { type: string }
+        at: { type: string, format: date-time }
+    LaunchGate:
+      type: object
+      required: [key, name, category, owner, critical, evidence, evidence_ok, signoff, status]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        category: { type: string, enum: [business, commercial, operations, content, engineering, security, infrastructure] }
+        owner: { type: string }
+        critical: { type: boolean }
+        evidence: { type: [string, "null"], description: "What the system observed; null when the gate cannot be observed." }
+        evidence_ok: { type: [boolean, "null"] }
+        signoff:
+          oneOf:
+            - { $ref: "#/components/schemas/LaunchSignoff" }
+            - { type: "null" }
+        status: { type: string, enum: [verified, configured, blocked, not_applicable] }
+    LaunchOverview:
+      type: object
+      required: [ready, summary, critical_blockers, gates, checked_at]
+      properties:
+        ready: { type: boolean }
+        summary: { type: string }
+        critical_blockers: { type: integer }
+        gates: { type: array, items: { $ref: "#/components/schemas/LaunchGate" } }
+        checked_at: { type: string, format: date-time }
+    LaunchSignoffInput:
+      type: object
+      additionalProperties: false
+      required: [decision, reference]
+      properties:
+        decision: { type: string, enum: [approved, not_applicable, revoked] }
+        reference: { type: string, minLength: 3, maxLength: 300 }
+        note: { type: string, maxLength: 2000 }
     Meta:
       type: object
       required: [request_id]
@@ -11906,7 +12087,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure, launch.read, launch.signoff]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin

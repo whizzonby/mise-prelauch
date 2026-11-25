@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DemoTag, EmptyState, MealCard, MealGrid, SectionHeading } from "@/components/meal-card";
 import { savedMealIds } from "@/lib/data";
-import { api, requireCustomer } from "@/lib/session";
+import { api, optionalSession } from "@/lib/session";
 
 type Params = Promise<{ slug: string }>;
 
@@ -14,13 +14,13 @@ export const metadata: Metadata = { title: "Chef" };
 
 /** A published chef profile: only what the chef has approved, and their meals. */
 export default async function ChefPage({ params }: { params: Params }) {
-  const { token } = await requireCustomer();
+  const token = (await optionalSession())?.token ?? null;
   const { slug } = await params;
   const chef = await api.catalog.chef(slug).catch((error) => {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   });
-  const saved = await savedMealIds(token);
+  const saved = token ? await savedMealIds(token) : null;
   return (
     <Container className="py-10 md:py-14">
       <div className="grid gap-8 md:grid-cols-[1fr_1.4fr] md:gap-14">
@@ -46,7 +46,7 @@ export default async function ChefPage({ params }: { params: Params }) {
         {chef.meals.length ? (
           <MealGrid className="mt-8">
             {chef.meals.map((m) => (
-              <MealCard key={m.id} meal={m} saved={saved.has(m.id)} />
+              <MealCard key={m.id} meal={m} saved={saved ? saved.has(m.id) : null} />
             ))}
           </MealGrid>
         ) : (

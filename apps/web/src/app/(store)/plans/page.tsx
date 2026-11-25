@@ -5,14 +5,22 @@ import Link from "next/link";
 import { TestModeNotice } from "@/components/commerce-bits";
 import { EmptyState } from "@/components/meal-card";
 import { PlanCard } from "@/components/plan-card";
-import { api, requireCustomer } from "@/lib/session";
+import { api, optionalSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Plans" };
+export const metadata: Metadata = {
+  title: "Plans",
+  description: "Mise meal-kit plans: how many Caribbean meal kits a week, what each week costs, and how pausing and cancelling work.",
+  alternates: { canonical: "/plans" },
+};
 
 /** Compare plans. Every figure comes from the API; nothing is hard-coded here. */
 export default async function PlansPage() {
-  const { token } = await requireCustomer();
-  const [{ items }, info, { subscription }] = await Promise.all([api.shop.plans(), api.shop.info(), api.commerce.subscription(token)]);
+  const token = (await optionalSession())?.token ?? null;
+  const [{ items }, info, { subscription }] = await Promise.all([
+    api.shop.plans(),
+    api.shop.info(),
+    token ? api.commerce.subscription(token) : Promise.resolve({ subscription: null }),
+  ]);
   const live = subscription && subscription.status !== "pending_payment" ? subscription : null;
 
   return (

@@ -57,14 +57,25 @@ jobs:
       - name: Build and push images
         run: |
           set -euo pipefail
-          docker build -f infrastructure/docker/api.Dockerfile -t "$ECR_REGISTRY/$NAME_PREFIX-api:$IMAGE_TAG" .
+          # VERSION/COMMIT appear in GET /api/v1/version and the worker heartbeat.
+          docker build -f infrastructure/docker/api.Dockerfile \
+            --build-arg VERSION="${{ vars.RELEASE_VERSION || 'unversioned' }}" --build-arg COMMIT="$IMAGE_TAG" \
+            -t "$ECR_REGISTRY/$NAME_PREFIX-api:$IMAGE_TAG" .
+          # SITE_MODE stays "waitlist" until go-live is approved (docs/launch/GO_LIVE_CHECKLIST.md).
           docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=marketing \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_SITE_URL="${{ vars.PUBLIC_SITE_URL }}" \
+            --build-arg NEXT_PUBLIC_APP_URL="${{ vars.APP_URL }}" \
+            --build-arg NEXT_PUBLIC_SITE_MODE="${{ vars.SITE_MODE || 'waitlist' }}" \
+            --build-arg CATALOG_IMAGE_HOSTS="${{ vars.CATALOG_IMAGE_HOSTS }}" \
             -t "$ECR_REGISTRY/$NAME_PREFIX-marketing:$IMAGE_TAG" .
           docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=admin \
             -t "$ECR_REGISTRY/$NAME_PREFIX-admin:$IMAGE_TAG" .
-          for image in api marketing admin; do docker push "$ECR_REGISTRY/$NAME_PREFIX-$image:$IMAGE_TAG"; done
+          docker build -f infrastructure/docker/web.Dockerfile --build-arg APP=web \
+            --build-arg NEXT_PUBLIC_SITE_URL="${{ vars.PUBLIC_SITE_URL }}" \
+            --build-arg CATALOG_IMAGE_HOSTS="${{ vars.CATALOG_IMAGE_HOSTS }}" \
+            -t "$ECR_REGISTRY/$NAME_PREFIX-web:$IMAGE_TAG" .
+          for image in api marketing admin web; do docker push "$ECR_REGISTRY/$NAME_PREFIX-$image:$IMAGE_TAG"; done
 
       - name: Run database migrations
         run: infrastructure/scripts/ecs-deploy.sh migrate
@@ -77,3 +88,5 @@ jobs:
           set -euo pipefail
           curl --fail --silent --show-error --retry 10 --retry-delay 6 "${{ vars.PUBLIC_API_URL }}/api/v1/ready"
           curl --fail --silent --show-error --retry 10 --retry-delay 6 --output /dev/null "${{ vars.PUBLIC_SITE_URL }}/"
+          curl --fail --silent --show-error --retry 10 --retry-delay 6 --output /dev/null "${{ vars.APP_URL }}/meals"
+          curl --fail --silent --show-error "${{ vars.PUBLIC_API_URL }}/api/v1/version"

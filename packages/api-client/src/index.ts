@@ -730,6 +730,11 @@ export type ForecastReadiness = S["ForecastReadiness"];
 export type ForecastValue = S["ForecastValue"];
 export type ForecastBacktest = S["ForecastBacktest"];
 export type ForecastRun = S["ForecastRun"];
+export type BuildVersion = S["BuildVersion"];
+export type SystemStatus = S["SystemStatus"];
+export type LaunchGate = S["LaunchGate"];
+export type LaunchOverview = S["LaunchOverview"];
+export type LaunchSignoffInput = S["LaunchSignoffInput"];
 export type ForecastIngredientNeed = S["ForecastIngredientNeed"];
 export type ForecastIngredients = S["ForecastIngredients"];
 
@@ -1530,6 +1535,15 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
       forecastRun: (token: string, id: string) => request<ForecastRun>(`/admin/forecasting/runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
       forecastIngredients: (token: string, id: string, week: string) =>
         request<ForecastIngredients>(`/admin/forecasting/runs/${encodeURIComponent(id)}/ingredients`, { token, query: { week }, cache: "no-store" }),
+    },
+
+    /** Launch readiness (Sprint 9): system status, gates and sign-offs. Admin, server-side only. */
+    launch: {
+      version: () => request<BuildVersion>("/version", { cache: "no-store" }),
+      system: (token: string) => request<SystemStatus>("/admin/system/status", { token, cache: "no-store" }),
+      gates: (token: string) => request<LaunchOverview>("/admin/launch", { token, cache: "no-store" }),
+      signoff: (token: string, gate: string, input: LaunchSignoffInput) =>
+        request<LaunchGate>(`/admin/launch/gates/${encodeURIComponent(gate)}/signoffs`, { method: "POST", token, body: input, cache: "no-store" }),
     },
 
     /** Plans and published menus. Public: the same for everyone. */

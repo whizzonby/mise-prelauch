@@ -81,7 +81,7 @@ resource "aws_lb_listener" "https" {
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = aws_acm_certificate_validation.regional.certificate_arn
 
-  # Anything that is not one of our three hosts gets nothing.
+  # Anything that is not one of our hosts gets nothing.
   default_action {
     type = "fixed-response"
     fixed_response {
@@ -98,6 +98,7 @@ locals {
     api       = { port = 8080, health = "/api/v1/health", hosts = [local.api_host] }
     admin     = { port = 3101, health = "/login", hosts = [local.admin_host] }
     marketing = { port = 3100, health = "/robots.txt", hosts = [local.origin_host] }
+    web       = { port = 3102, health = "/robots.txt", hosts = [local.app_host] }
   }
 }
 
@@ -351,7 +352,7 @@ resource "aws_route53_record" "site" {
 }
 
 resource "aws_route53_record" "alb" {
-  for_each = toset([local.api_host, local.admin_host, local.origin_host])
+  for_each = toset([local.api_host, local.admin_host, local.app_host, local.origin_host])
   zone_id  = var.route53_zone_id
   name     = each.key
   type     = "A"

@@ -10,7 +10,8 @@
 //	misectl analytics catalog                  (prints the metric catalogue)
 //	misectl analytics backfill -from 2026-11-01 -to 2026-11-30   (recompute daily snapshots; idempotent)
 //	misectl delivery seed-demo [-ready]        (demo zone, days, partner and courier; -ready also completes the newest demo plan; local only)
-//	misectl events replay -consumer procurement|fulfillment -from 0   (re-deliver domain events after an id; consumers are idempotent)
+//	misectl events replay -consumer procurement|fulfillment|analytics|automation -from 0   (re-deliver domain events after an id; consumers are idempotent)
+//	misectl events backfill-commerce          (publish commerce facts recorded before commerce emitted events; idempotent)
 //	misectl admin create -email a@b.c -name "Ada" -role admin
 //	misectl admin grant  -email a@b.c -role marketing
 //	misectl admin revoke -email a@b.c -role marketing
@@ -32,9 +33,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 	"time"
 
 	"mise.tt/api/internal/analytics"
+	"mise.tt/api/internal/commerce"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/consumer"
 	"mise.tt/api/internal/platform/db"
@@ -53,7 +56,7 @@ func run(args []string) error {
 		args = append(args, "")
 	}
 	if len(args) < 2 {
-		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl delivery seed-demo [-ready] | misectl analytics catalog|backfill | misectl events replay | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
+		return errors.New("usage: misectl migrate up|status|down | misectl catalog seed-demo | misectl commerce seed-demo|tick | misectl production seed-demo | misectl delivery seed-demo [-ready] | misectl analytics catalog|backfill | misectl events replay|backfill-commerce | misectl admin create|grant|revoke|reset-mfa|disable|enable|signout -email … | misectl doctor")
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -216,18 +219,28 @@ func run(args []string) error {
 
 	case "events replay":
 		fs := flag.NewFlagSet("events replay", flag.ContinueOnError)
-		consumerName := fs.String("consumer", "", "the consumer to move back (procurement or fulfillment)")
+		consumerName := fs.String("consumer", "", "the consumer to move back (procurement, fulfillment, analytics or automation)")
 		from := fs.Int64("from", -1, "deliver again every event after this id")
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
-		if *consumerName != "procurement" && *consumerName != "fulfillment" {
-			return errors.New("-consumer must be procurement or fulfillment")
+		if !slices.Contains([]string{"procurement", "fulfillment", "analytics", "automation"}, *consumerName) {
+			return errors.New("-consumer must be procurement, fulfillment, analytics or automation")
 		}
 		if err := consumer.Replay(ctx, pool, *consumerName, *from); err != nil {
 			return err
 		}
 		fmt.Printf("%s will receive events after %d again on the worker's next dispatch\n", *consumerName, *from)
+		return nil
+
+	case "events backfill-commerce":
+		// Publishes commerce facts recorded before commerce emitted events.
+		// Idempotent: a second run adds nothing.
+		n, err := commerce.BackfillEvents(ctx, pool)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("commerce events backfilled: %d added\n", n)
 		return nil
 
 	case "doctor ":

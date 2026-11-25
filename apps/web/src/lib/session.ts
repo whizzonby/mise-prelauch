@@ -82,6 +82,22 @@ export const requireCustomer = cache(async (): Promise<Session> => {
   }
 });
 
+/**
+ * The session, or null for a visitor. For public pages that add things when
+ * someone is signed in. An expired session counts as a visitor; it is not
+ * cleared here (cookies cannot be changed while rendering).
+ */
+export const optionalSession = cache(async (): Promise<Session | null> => {
+  const token = await sessionToken();
+  if (!token) return null;
+  try {
+    return { token, customer: await api.auth.me(token) };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  }
+});
+
 /** The signed-in customer, or null. For pages that change when someone is signed in. */
 export async function currentCustomer(): Promise<Customer | null> {
   const token = await sessionToken();

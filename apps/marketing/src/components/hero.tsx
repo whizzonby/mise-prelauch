@@ -3,6 +3,8 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { hero } from "@/content/home";
+import { primaryCta } from "@/content/site";
+import { env } from "@/lib/env";
 
 import { TrackedLink } from "./tracked-link";
 
@@ -40,12 +42,12 @@ export function Hero() {
 
             <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
               <TrackedLink
-                href="#waitlist"
+                href={primaryCta.href}
                 event="hero_cta_clicked"
                 metadata={{ cta: "primary" }}
                 className={buttonClasses("primary", "lg")}
               >
-                {hero.primaryCta}
+                {primaryCta.label}
               </TrackedLink>
               <TrackedLink
                 href={hero.secondaryCta.href}
@@ -58,7 +60,7 @@ export function Hero() {
             </div>
 
             <Text size="sm" tone="muted" className="mt-6 max-w-[36ch]">
-              {hero.note}
+              {env.siteMode === "launch" ? hero.noteLaunch : hero.note}
             </Text>
           </div>
         </div>

@@ -6288,10 +6288,157 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The build serving this request (version and commit stamped at build time; "dev" when unstamped). */
+        get: operations["version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs launch.read. Worker heartbeats, job queues and failures, consumer lag, payment webhook failures, database latency. */
+        get: operations["adminSystemStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/launch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs launch.read. Every launch gate with the system's evidence, the latest sign-off and a status. Never "ready" while a critical gate is not verified or not applicable. */
+        get: operations["adminLaunchGates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/launch/gates/{gate}/signoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs launch.signoff. Records approved, not_applicable (with a reason) or revoked. Approving is refused while the gate's own evidence does not hold. Audited. */
+        post: operations["adminLaunchSignoff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BuildVersion: {
+            version: string;
+            commit: string;
+        };
+        SystemStatus: {
+            api: components["schemas"]["BuildVersion"];
+            environment: string;
+            database_ms: number;
+            workers: {
+                worker: string;
+                version: string;
+                /** Format: date-time */
+                started_at: string;
+                /** Format: date-time */
+                beat_at: string;
+                stale: boolean;
+            }[];
+            worker_healthy: boolean;
+            jobs: {
+                kind: string;
+                waiting: number;
+                failed_24h: number;
+                /** Format: date-time */
+                oldest_waiting: string | null;
+            }[];
+            failed_jobs_24h: number;
+            email_failures_24h: number;
+            consumers: {
+                consumer: string;
+                last_event_id: number;
+                /** @description Events after the offset (an upper bound: a consumer routes only some types). */
+                lag: number;
+                /** Format: date-time */
+                updated_at: string;
+            }[];
+            latest_event_id: number;
+            payment_webhook_failures: number;
+            payment_webhooks_pending: number;
+            /** Format: date-time */
+            checked_at: string;
+        };
+        LaunchSignoff: {
+            id: number;
+            /** @enum {string} */
+            decision: "approved" | "not_applicable";
+            reference: string;
+            note: string;
+            by: string;
+            /** Format: date-time */
+            at: string;
+        };
+        LaunchGate: {
+            key: string;
+            name: string;
+            /** @enum {string} */
+            category: "business" | "commercial" | "operations" | "content" | "engineering" | "security" | "infrastructure";
+            owner: string;
+            critical: boolean;
+            /** @description What the system observed; null when the gate cannot be observed. */
+            evidence: string | null;
+            evidence_ok: boolean | null;
+            signoff: components["schemas"]["LaunchSignoff"] | null;
+            /** @enum {string} */
+            status: "verified" | "configured" | "blocked" | "not_applicable";
+        };
+        LaunchOverview: {
+            ready: boolean;
+            summary: string;
+            critical_blockers: number;
+            gates: components["schemas"]["LaunchGate"][];
+            /** Format: date-time */
+            checked_at: string;
+        };
+        LaunchSignoffInput: {
+            /** @enum {string} */
+            decision: "approved" | "not_applicable" | "revoked";
+            reference: string;
+            note?: string;
+        };
         Meta: {
             request_id: string;
         };
@@ -6439,7 +6586,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure" | "launch.read" | "launch.signoff")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -25313,6 +25460,114 @@ export interface operations {
                     };
                 };
             };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Build identity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BuildVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+        };
+    };
+    adminSystemStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description System status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SystemStatus"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminLaunchGates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Launch gates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LaunchOverview"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminLaunchSignoff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gate: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LaunchSignoffInput"];
+            };
+        };
+        responses: {
+            /** @description The gate after the sign-off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LaunchGate"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];

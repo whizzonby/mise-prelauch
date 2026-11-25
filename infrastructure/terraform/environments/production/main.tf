@@ -105,7 +105,7 @@ module "platform" {
   db_multi_az              = true
   db_backup_retention_days = 14
   log_retention_days       = 90
-  desired_count            = { api = 2, worker = 1, marketing = 2, admin = 1 }
+  desired_count            = { api = 2, worker = 1, marketing = 2, admin = 1, web = 2 }
 }
 
 output "github_environment_variables" {

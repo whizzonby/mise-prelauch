@@ -29,6 +29,7 @@ import (
 	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/inventory"
+	"mise.tt/api/internal/launch"
 	"mise.tt/api/internal/leads"
 	"mise.tt/api/internal/menus"
 	"mise.tt/api/internal/orders"
@@ -100,6 +101,18 @@ type Commerce struct {
 	Service  *commerce.Service
 	// Testpay is the payment simulator, when PAYMENTS_TEST_PROVIDER is on.
 	Testpay *testpay.Provider
+}
+
+// NewLaunch builds the launch readiness service from configuration.
+func NewLaunch(cfg config.Config, pool *pgxpool.Pool, com *Commerce) *launch.Service {
+	name, live, _, ok := com.Payments.Available()
+	if !ok {
+		name = ""
+	}
+	l := launch.NewService(pool, launch.Facts{Env: cfg.Env, PaymentProvider: name, PaymentsLive: live, MailDriver: cfg.Mail.Driver,
+		MailHost: cfg.Mail.Host, CustomerAppURL: cfg.CustomerAppURL, PublicSiteURL: cfg.PublicSiteURL, DemoContentShown: cfg.CatalogDemoEnabled})
+	l.Now = func() time.Time { return com.Service.Now() }
+	return l
 }
 
 // NewCommerce builds the commerce services from configuration.
@@ -386,6 +399,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	au, reports := NewAutomation(cfg, pool, com, bo, ids, an, nil)
 	(&automation.Handler{S: au, R: reports, Identity: ids}).Routes(mux)
 	(&forecasting.Handler{S: NewForecasting(pool, com), Identity: ids}).Routes(mux)
+	(&launch.Handler{S: NewLaunch(cfg, pool, com), Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

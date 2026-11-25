@@ -10,12 +10,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SupplyStory } from "@/components/supply-story";
 import { WaitlistSection } from "@/components/waitlist-section";
-import { faq } from "@/content/home";
 import { site } from "@/content/site";
 import { env } from "@/lib/env";
+import { faqItems } from "@/lib/faq";
+import { featuredMeals, livePlans } from "@/lib/storefront";
+import { FinalCta } from "@/components/final-cta";
 
 /** Structured data: who Mise is, and the FAQ, in a form search engines can read. */
-function structuredData() {
+function structuredData(questions: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -38,7 +40,7 @@ function structuredData() {
       },
       {
         "@type": "FAQPage",
-        mainEntity: faq.items.map((item) => ({
+        mainEntity: questions.map((item) => ({
           "@type": "Question",
           name: item.question,
           acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -48,13 +50,17 @@ function structuredData() {
   };
 }
 
-export default function HomePage() {
+/** Meals and plans are read from the API and refreshed every five minutes. */
+export const revalidate = 300;
+
+export default async function HomePage() {
+  const [meals, plans, questions] = await Promise.all([featuredMeals(), livePlans(), faqItems()]);
   return (
     <>
       <script
         type="application/ld+json"
         // The content is our own static copy; "<" is escaped so it cannot close the script element.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData(questions)).replace(/</g, "\\u003c") }}
       />
       <SiteHeader />
       <main id="main">
@@ -66,10 +72,10 @@ export default function HomePage() {
           <HowItWorks />
         </SectionView>
         <SectionView section="meals">
-          <MealShowcase />
+          <MealShowcase meals={meals} />
         </SectionView>
         <SectionView section="plans">
-          <Plans />
+          <Plans plans={plans} />
         </SectionView>
         <SectionView section="chefs">
           <ChefFeature />
@@ -78,11 +84,15 @@ export default function HomePage() {
           <IngredientStory />
         </SectionView>
         <SectionView section="faq">
-          <FAQ />
+          <FAQ items={questions} />
         </SectionView>
-        <SectionView section="waitlist">
-          <WaitlistSection />
-        </SectionView>
+        {env.siteMode === "launch" ? (
+          <FinalCta />
+        ) : (
+          <SectionView section="waitlist">
+            <WaitlistSection />
+          </SectionView>
+        )}
       </main>
       <SiteFooter />
     </>

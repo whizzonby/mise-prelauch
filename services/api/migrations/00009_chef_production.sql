@@ -804,6 +804,9 @@ DELETE FROM permissions WHERE key IN ('ingredients.read', 'ingredients.manage', 
     'nutrition.approve', 'chefs.manage', 'production.read', 'production.plan', 'production.approve', 'production.execute',
     'production.configure', 'quality.read', 'quality.inspect', 'quality.release_hold', 'packaging.manage', 'waste.record',
     'production_reports.read');
+-- Rolling back removes the roles, so pending invitations to them go too (Sprint 9 fix:
+-- an outstanding invitation used to block the rollback).
+DELETE FROM staff_invitations WHERE role_key IN ('culinary_director', 'production_manager', 'quality_inspector');
 DELETE FROM user_roles WHERE role_key IN ('culinary_director', 'production_manager', 'quality_inspector');
 DELETE FROM roles WHERE key IN ('culinary_director', 'production_manager', 'quality_inspector');
 

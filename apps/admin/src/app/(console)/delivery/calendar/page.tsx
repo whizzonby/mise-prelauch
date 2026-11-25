@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, StatusTag } from "@/components/admin-ui";
 import { Empty, Labelled, Panel, SelectInput, TextInput } from "@/components/commerce-ui";
 import { KForm } from "@/components/kitchen-form";
-import { formatDay } from "@/lib/format";
+import { businessDay, formatDay } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 import { saveServiceDay, setCapacity } from "../../delivery-actions";
@@ -20,7 +20,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const { token, admin } = await requireAdmin();
   if (!can(admin, "delivery_zones.read")) notFound();
   const sp = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   const from = sp.from && /^\d{4}-\d{2}-\d{2}$/.test(sp.from) ? sp.from : today;
   const [cal, zones, partners] = await Promise.all([api.delivery.calendar(token, from, 42), api.delivery.zones(token), api.delivery.partners(token)]);
   const dates = [...new Set(cal.items.map((d) => d.date))];

@@ -40,6 +40,11 @@ output "admin_url" {
   value = "https://${local.admin_host}"
 }
 
+output "app_url" {
+  description = "The customer app."
+  value       = "https://${local.app_host}"
+}
+
 output "database_endpoint" {
   value = aws_db_instance.main.address
 }

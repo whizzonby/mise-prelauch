@@ -405,6 +405,13 @@ func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	}
 	err := db.InTx(r.Context(), h.Pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
+		// Ownership first: someone else's address is "not found", never "in use"
+		// (which would confirm that it exists and is being delivered to).
+		if _, err := q.GetAddress(r.Context(), store.GetAddressParams{ID: id, CustomerID: cid}); errors.Is(err, pgx.ErrNoRows) {
+			return httpx.ErrNotFound
+		} else if err != nil {
+			return err
+		}
 		if h.InUse != nil {
 			used, err := h.InUse.AddressInUse(r.Context(), tx, id)
 			if err != nil {

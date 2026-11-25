@@ -463,6 +463,9 @@ func TestDispatchCustodyTrackingProofAndCompletion(t *testing.T) {
 	if tot["deliveries"] != float64(2) || tot["delivered"] != float64(2) || tot["first_attempt_delivered"] != float64(2) || tot["proof_completeness"] != float64(1) {
 		t.Fatalf("report totals = %v", tot)
 	}
+	h.reconcileWithDashboard("delivery", "2026-11-16", "2026-11-22", map[string]float64{"delivery.scheduled": tot["deliveries"].(float64),
+		"delivery.delivered": tot["delivered"].(float64), "delivery.failed_attempts": tot["failed_attempts"].(float64),
+		"delivery.returned": tot["returned"].(float64), "delivery.first_attempt_rate": tot["first_attempt_rate"].(float64)})
 	// Traceability still runs from order package to batch, now with the outcome.
 	res = h.do("GET", "/api/v1/admin/fulfillment/"+w.deliveryData(a, w.ops.dispatcher)["obligation_id"].(string)+"/trace", nil, w.ops.fmgr)
 	h.wantStatus(res, http.StatusOK)
@@ -786,6 +789,9 @@ func TestCorrectedOutcomeIsADisputeInCommerceAndReports(t *testing.T) {
 	if rep["corrected_outcomes"] != float64(1) || rep["disputed_outcomes"] != float64(1) || rep["delivered"] != float64(0) {
 		t.Fatalf("report after correction = %v", rep)
 	}
+	// A corrected (disputed) delivery is not "delivered" on the dashboard either.
+	h.reconcileWithDashboard("delivery", "2026-11-16", "2026-11-29", map[string]float64{"delivery.delivered": rep["delivered"].(float64),
+		"delivery.scheduled": rep["deliveries"].(float64), "delivery.failed_attempts": rep["failed_attempts"].(float64)})
 	if ov := h.do("GET", "/api/v1/admin/delivery/overview", nil, w.ops.dmgr).Data; ov["disputed_outcomes"] != float64(1) {
 		t.Errorf("overview disputed = %v", ov["disputed_outcomes"])
 	}

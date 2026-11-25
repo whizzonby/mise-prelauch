@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { EmptyState, PageHeader, StatusTag } from "@/components/admin-ui";
 import { DataTable, Panel } from "@/components/commerce-ui";
-import { formatDateTime, formatDay } from "@/lib/format";
+import { businessDay, formatDateTime, formatDay } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Goods receiving" };
@@ -18,7 +18,7 @@ export default async function ReceivingPage() {
   if (!can(admin, "receiving.read")) notFound();
   const [expected, receipts] = await Promise.all([api.supply.purchaseOrders(token, { receivable: true }), api.supply.receipts(token)]);
   const manage = can(admin, "receiving.manage") && can(admin, "receiving.inspect");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   return (
     <>
       <PageHeader

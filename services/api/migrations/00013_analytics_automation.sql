@@ -331,6 +331,9 @@ DELETE FROM role_permissions WHERE permission_key IN ('analytics_executive.read'
     'analytics_production.read', 'analytics_procurement.read', 'analytics_inventory.read', 'analytics_delivery.read', 'analytics.export',
     'automation.read', 'automation.manage', 'automation.execute', 'automation.approve', 'forecasting.read', 'forecasting.run', 'forecasting.configure');
 DELETE FROM role_permissions WHERE role_key = 'analyst';
+-- Rolling back removes the roles, so pending invitations to them go too (Sprint 9 fix:
+-- an outstanding invitation used to block the rollback).
+DELETE FROM staff_invitations WHERE role_key = 'analyst';
 DELETE FROM user_roles WHERE role_key = 'analyst';
 DELETE FROM roles WHERE key = 'analyst';
 DROP TABLE forecast_backtests;

@@ -129,7 +129,7 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 const createChef = `-- name: CreateChef :one
 INSERT INTO chef_profiles (slug, display_name, role_title, bio, image_src, image_alt, status, is_demo)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at
+RETURNING id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status
 `
 
 type CreateChefParams struct {
@@ -167,6 +167,9 @@ func (q *Queries) CreateChef(ctx context.Context, arg CreateChefParams) (ChefPro
 		&i.IsDemo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
+		&i.Specialities,
+		&i.WorkStatus,
 	)
 	return i, err
 }
@@ -305,7 +308,7 @@ func (q *Queries) GetCategoryBySlug(ctx context.Context, slug string) (MealCateg
 }
 
 const getChef = `-- name: GetChef :one
-SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at FROM chef_profiles WHERE id = $1
+SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status FROM chef_profiles WHERE id = $1
 `
 
 func (q *Queries) GetChef(ctx context.Context, id string) (ChefProfile, error) {
@@ -323,12 +326,15 @@ func (q *Queries) GetChef(ctx context.Context, id string) (ChefProfile, error) {
 		&i.IsDemo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
+		&i.Specialities,
+		&i.WorkStatus,
 	)
 	return i, err
 }
 
 const getChefBySlug = `-- name: GetChefBySlug :one
-SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at FROM chef_profiles WHERE slug = $1
+SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status FROM chef_profiles WHERE slug = $1
 `
 
 func (q *Queries) GetChefBySlug(ctx context.Context, slug string) (ChefProfile, error) {
@@ -346,6 +352,9 @@ func (q *Queries) GetChefBySlug(ctx context.Context, slug string) (ChefProfile, 
 		&i.IsDemo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
+		&i.Specialities,
+		&i.WorkStatus,
 	)
 	return i, err
 }
@@ -444,7 +453,7 @@ func (q *Queries) GetNutrition(ctx context.Context, mealID string) (MealNutritio
 }
 
 const getPublishedChefBySlug = `-- name: GetPublishedChefBySlug :one
-SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at FROM chef_profiles
+SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status FROM chef_profiles
 WHERE slug = $1 AND status = 'published' AND (NOT is_demo OR $2::bool)
 `
 
@@ -468,6 +477,9 @@ func (q *Queries) GetPublishedChefBySlug(ctx context.Context, arg GetPublishedCh
 		&i.IsDemo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
+		&i.Specialities,
+		&i.WorkStatus,
 	)
 	return i, err
 }
@@ -730,7 +742,7 @@ func (q *Queries) ListCategoriesWithCounts(ctx context.Context, allowDemo bool) 
 }
 
 const listChefs = `-- name: ListChefs :many
-SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at FROM chef_profiles ORDER BY display_name
+SELECT id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status FROM chef_profiles ORDER BY display_name
 `
 
 func (q *Queries) ListChefs(ctx context.Context) ([]ChefProfile, error) {
@@ -754,6 +766,9 @@ func (q *Queries) ListChefs(ctx context.Context) ([]ChefProfile, error) {
 			&i.IsDemo,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.UserID,
+			&i.Specialities,
+			&i.WorkStatus,
 		); err != nil {
 			return nil, err
 		}
@@ -1115,7 +1130,7 @@ UPDATE chef_profiles SET
     image_src = $5, image_alt = $6, status = $7,
     is_demo = $8, updated_at = now()
 WHERE id = $9
-RETURNING id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at
+RETURNING id, slug, display_name, role_title, bio, image_src, image_alt, status, is_demo, created_at, updated_at, user_id, specialities, work_status
 `
 
 type UpdateChefParams struct {
@@ -1155,6 +1170,9 @@ func (q *Queries) UpdateChef(ctx context.Context, arg UpdateChefParams) (ChefPro
 		&i.IsDemo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
+		&i.Specialities,
+		&i.WorkStatus,
 	)
 	return i, err
 }

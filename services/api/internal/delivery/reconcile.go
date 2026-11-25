@@ -417,6 +417,15 @@ type CostTotal struct {
 	Records     int    `json:"records"`
 }
 
+// notDisputed: the order's latest delivery outcome is not disputed (a
+// corrected delivery is counted under its corrected status).
+const notDisputed = `coalesce((SELECT x.state FROM order_delivery_outcomes x WHERE x.order_id = d.order_id ORDER BY x.id DESC LIMIT 1), '') <> 'disputed'`
+
+// MetricReader computes analytics registry metrics for a date range.
+type MetricReader interface {
+	Values(ctx context.Context, ids []string, from, to string) (map[string]*float64, error)
+}
+
 func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) {
 	f, ok1 := parseDay(from)
 	t, ok2 := parseDay(to)
@@ -426,12 +435,12 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 	tz := s.Location.String()
 	rep := &Report{From: from, To: to, TimeZone: tz, Totals: map[string]any{}, Definitions: map[string]string{
 		"deliveries":              "Deliveries with a confirmed service date in the range (cancelled excluded).",
-		"delivered":               "Of those, deliveries completed with accepted proof.",
-		"first_attempt_delivered": "Delivered on attempt 1.",
+		"delivered":               "Of those, deliveries completed with accepted proof and not disputed (metric delivery.delivered).",
+		"first_attempt_delivered": "Delivered on attempt 1, not disputed (metric delivery.first_attempt_rate is this ÷ deliveries).",
 		"failed_attempts":         "Recorded failed attempts (a delivery can fail more than once).",
 		"reattempts":              "Deliveries that needed more than one attempt.",
 		"returned":                "Deliveries whose packages came back to Mise.",
-		"on_time":                 "Delivered on the confirmed date and, where an approved window was promised, inside it. Deliveries without a confirmed date are not measurable and are not counted as on time.",
+		"on_time":                 "Of delivered deliveries with an approved promised window, those delivered on the date and inside the window (metric delivery.on_time_rate). Without a promised window a delivery is not measurable.",
 		"proof_completeness":      "Delivered deliveries that have accepted proof (should always be all of them).",
 		"unresolved_exceptions":   "Exceptions on these deliveries still open or in progress.",
 		"costs":                   "Recorded partner cost records by kind; estimated, contracted and actual are never mixed.",
@@ -441,13 +450,13 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 	base := `FROM deliveries d LEFT JOIN delivery_windows w ON w.id = d.window_id
 		WHERE d.schedule_confirmed_at IS NOT NULL AND d.service_date BETWEEN $1 AND $2 AND d.status <> 'cancelled'`
 	var deliveries, delivered, first, reattempts, returned, failedAttempts, measurable, onTime, withProof, openExc, corrected, disputed int
-	if err := s.pool.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE d.status = 'delivered'),
-		count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1), count(*) FILTER (WHERE d.attempt > 1),
+	if err := s.pool.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE d.status = 'delivered' AND `+notDisputed+`),
+		count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1 AND `+notDisputed+`), count(*) FILTER (WHERE d.attempt > 1),
 		count(*) FILTER (WHERE d.status = 'returned'),
 		COALESCE(sum((SELECT count(*) FROM delivery_tracking_events t WHERE t.delivery_id = d.id AND t.to_status = 'delivery_failed')), 0)::int,
-		count(*) FILTER (WHERE d.status = 'delivered'),
-		count(*) FILTER (WHERE d.status = 'delivered' AND (d.delivered_at AT TIME ZONE $3)::date = d.service_date
-			AND (w.id IS NULL OR (d.delivered_at AT TIME ZONE $3)::time BETWEEN w.starts_at AND w.ends_at)),
+		count(*) FILTER (WHERE d.status = 'delivered' AND w.status = 'approved'),
+		count(*) FILTER (WHERE d.status = 'delivered' AND w.status = 'approved' AND (d.delivered_at AT TIME ZONE $3)::date = d.service_date
+			AND (d.delivered_at AT TIME ZONE $3)::time BETWEEN w.starts_at AND w.ends_at),
 		count(*) FILTER (WHERE d.status = 'delivered' AND EXISTS (SELECT 1 FROM delivery_proofs p WHERE p.delivery_id = d.id
 			AND p.attempt = d.attempt AND p.status = 'accepted')),
 		COALESCE(sum((SELECT count(*) FROM delivery_exceptions e WHERE e.delivery_id = d.id AND e.status IN ('open', 'in_progress'))), 0)::int,
@@ -462,18 +471,36 @@ func (s *Service) Report(ctx context.Context, from, to string) (*Report, error) 
 		}
 		return float64(n) / float64(d)
 	}
+	// The figures the analytics registry also defines come from the registry,
+	// so this report and the delivery dashboard can never disagree. The
+	// counts above stay for the breakdowns and the report-only figures.
+	if s.Metrics != nil {
+		v, err := s.Metrics.Values(ctx, []string{"delivery.scheduled", "delivery.delivered", "delivery.failed_attempts", "delivery.returned"}, from, to)
+		if err != nil {
+			return nil, err
+		}
+		n := func(id string, local *int) {
+			if x := v[id]; x != nil {
+				*local = int(*x)
+			}
+		}
+		n("delivery.scheduled", &deliveries)
+		n("delivery.delivered", &delivered)
+		n("delivery.failed_attempts", &failedAttempts)
+		n("delivery.returned", &returned)
+	}
 	rep.Totals = map[string]any{"deliveries": deliveries, "delivered": delivered, "first_attempt_delivered": first,
 		"first_attempt_rate": rate(first, deliveries), "failed_attempts": failedAttempts, "reattempts": reattempts, "returned": returned,
 		"on_time_measurable": measurable, "on_time": onTime, "on_time_rate": rate(onTime, measurable),
 		"proof_completeness": rate(withProof, delivered), "unresolved_exceptions": openExc, "corrected_outcomes": corrected,
 		"disputed_outcomes": disputed}
 	breakdown := func(keyCol, labelCol, join string) ([]Breakdown, error) {
-		rows, err := s.pool.Query(ctx, `SELECT `+keyCol+`, `+labelCol+`, count(*), count(*) FILTER (WHERE d.status = 'delivered'),
-			count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1),
+		rows, err := s.pool.Query(ctx, `SELECT `+keyCol+`, `+labelCol+`, count(*), count(*) FILTER (WHERE d.status = 'delivered' AND `+notDisputed+`),
+			count(*) FILTER (WHERE d.status = 'delivered' AND d.attempt = 1 AND `+notDisputed+`),
 			COALESCE(sum((SELECT count(*) FROM delivery_tracking_events t WHERE t.delivery_id = d.id AND t.to_status = 'delivery_failed')), 0)::int,
-			count(*) FILTER (WHERE d.status = 'delivered'),
-			count(*) FILTER (WHERE d.status = 'delivered' AND (d.delivered_at AT TIME ZONE $3)::date = d.service_date
-				AND (w.id IS NULL OR (d.delivered_at AT TIME ZONE $3)::time BETWEEN w.starts_at AND w.ends_at)), NULL::float8 `+
+			count(*) FILTER (WHERE d.status = 'delivered' AND w.status = 'approved'),
+			count(*) FILTER (WHERE d.status = 'delivered' AND w.status = 'approved' AND (d.delivered_at AT TIME ZONE $3)::date = d.service_date
+				AND (d.delivered_at AT TIME ZONE $3)::time BETWEEN w.starts_at AND w.ends_at), NULL::float8 `+
 			strings.Replace(base, "WHERE", join+" WHERE", 1)+` GROUP BY 1, 2 ORDER BY 2`, f, t, tz)
 		if err != nil {
 			return nil, err

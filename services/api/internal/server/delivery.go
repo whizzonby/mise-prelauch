@@ -28,6 +28,7 @@ func NewFulfilment(cfg config.Config, pool *pgxpool.Pool, com *Commerce, bo *bac
 	// Confirmation codes are derived from the token signing key; they are
 	// never stored.
 	dl.CodeKey = cfg.TokenSigningKey
+	dl.Metrics = NewAnalytics(pool, com)
 	fl := fulfillment.NewService(pool)
 	fl.Orders, fl.Production, fl.Delivery, fl.Now, fl.Location = com.Orders, prod, dl, now, menus.Location()
 	dl.Fulfillment = fl

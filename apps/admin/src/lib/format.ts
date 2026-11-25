@@ -7,6 +7,16 @@ export function humanize(value: string): string {
 const TIME_ZONE = "America/Port_of_Spain";
 const dateTime = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: TIME_ZONE });
 const dateOnly = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: TIME_ZONE });
+const isoDay = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: TIME_ZONE });
+
+/**
+ * The calendar date (YYYY-MM-DD) in Trinidad and Tobago at an instant, now by
+ * default. Never toISOString().slice(0, 10): that is the UTC date, which is
+ * already tomorrow from 8 pm local time.
+ */
+export function businessDay(at: Date = new Date()): string {
+  return isoDay.format(at);
+}
 const shortDate = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
 /** Timestamps are shown in Trinidad & Tobago time, where the team works. */
@@ -119,6 +129,7 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "arriving":
     case "queued":
     case "requested":
+    case "configured":
       return "accent";
     case "exception":
     case "delivery_failed":
@@ -127,6 +138,8 @@ export function commerceTone(status: string): "neutral" | "success" | "warning" 
     case "critical":
     case "high":
     case "missing":
+    // Sprint 9: launch gates.
+    case "blocked":
       return "error";
     case "pending_assignment":
     case "unzoned":

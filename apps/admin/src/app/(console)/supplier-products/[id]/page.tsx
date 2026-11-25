@@ -7,7 +7,7 @@ import { PageHeader, StatusTag } from "@/components/admin-ui";
 import { DataTable, Labelled, Panel, SelectInput, TextArea, TextInput } from "@/components/commerce-ui";
 import { KForm } from "@/components/kitchen-form";
 import { Field, Options } from "@/components/kitchen-ui";
-import { formatDate, formatDateTime, humanize, money, quantity } from "@/lib/format";
+import { businessDay, formatDate, formatDateTime, humanize, money, quantity } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 import { addPrice, reviewMapping, updateProduct } from "../../supply-actions";
@@ -23,7 +23,7 @@ export default async function SupplierProductPage({ params }: { params: Promise<
     throw e;
   });
   const manage = can(admin, "supplier_products.manage");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   return (
     <>
       <PageHeader

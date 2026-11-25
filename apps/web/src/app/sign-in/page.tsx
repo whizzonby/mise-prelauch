@@ -25,7 +25,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
           </Link>
           <span>
             New to Mise?{" "}
-            <Link href="/register" className="underline underline-offset-4">
+            <Link href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="underline underline-offset-4">
               Create an account
             </Link>
           </span>

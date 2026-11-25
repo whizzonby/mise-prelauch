@@ -32,8 +32,16 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_SITE_URL
 # Optional: serve the API from the site's own address (see apps/marketing/next.config.ts).
 ARG API_PROXY_TARGET
+# The customer app's address, and waitlist or launch mode (marketing site).
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_SITE_MODE=waitlist
+# https hosts catalogue photographs may come from (image optimisation and CSP).
+ARG CATALOG_IMAGE_HOSTS
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
+    NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
+    NEXT_PUBLIC_SITE_MODE=${NEXT_PUBLIC_SITE_MODE} \
+    CATALOG_IMAGE_HOSTS=${CATALOG_IMAGE_HOSTS} \
     API_PROXY_TARGET=${API_PROXY_TARGET} \
     NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter "@mise/${APP}" build

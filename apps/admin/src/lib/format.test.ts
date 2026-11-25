@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDateTime, formatDay, humanize, niceMax, percent, statusTone } from "./format";
+import { businessDay, formatDateTime, formatDay, humanize, niceMax, percent, statusTone } from "./format";
 
 describe("format", () => {
   it("turns stored option values into labels", () => {
@@ -33,5 +33,13 @@ describe("format", () => {
 describe("chart axis", () => {
   it("rounds the axis top up to a clean number", () => {
     expect([0, 3, 4, 5, 17, 27, 41, 99, 100, 101, 870].map(niceMax)).toEqual([4, 4, 4, 5, 20, 40, 50, 100, 100, 200, 1000]);
+  });
+});
+
+describe("businessDay", () => {
+  it("is the Trinidad and Tobago date, not the UTC date", () => {
+    // 22:12 on 13 November in Trinidad is already 14 November in UTC.
+    expect(businessDay(new Date("2026-11-14T02:12:00Z"))).toBe("2026-11-13");
+    expect(businessDay(new Date("2026-11-14T04:00:00Z"))).toBe("2026-11-14");
   });
 });

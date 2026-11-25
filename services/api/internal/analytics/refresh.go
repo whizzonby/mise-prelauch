@@ -171,7 +171,13 @@ func (s *Service) Dispatcher(settle time.Duration) *consumer.Dispatcher {
 var EventTypes = []string{"production.plan_released", "production.batch_completed", "quality.hold_created", "quality.hold_released",
 	"procurement.shortage_identified", "purchase_order.approved", "purchase_order.issued", "receiving.inspection_failed", "inventory.stock_issued",
 	"inventory.stock_adjusted", "fulfillment.verified", "delivery.assigned", "delivery.handed_over", "delivery.delivered", "delivery.failed",
-	"delivery.returned", "delivery.reconciled"}
+	"delivery.returned", "delivery.reconciled",
+	// Commerce (Sprint 9): money, orders and subscription movements refresh the day they happened.
+	"payment.succeeded", "payment.failed", "payment.cancelled", "refund.succeeded", "order.confirmed", "order.status_changed",
+	"subscription.created", "subscription.activated", "subscription.renewed", "subscription.renewal_failed", "subscription.week_unpaid",
+	"subscription.payment_recovered", "subscription.pause_scheduled", "subscription.paused", "subscription.pause_ended",
+	"subscription.resumed", "subscription.cancel_scheduled", "subscription.cancellation_withdrawn", "subscription.cancelled",
+	"subscription.expired", "subscription.plan_changed"}
 
 func (s *Service) HandleEvent(ctx context.Context, payload json.RawMessage) error {
 	var p eventPayload

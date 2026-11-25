@@ -5,7 +5,12 @@ WORKDIR /src
 COPY services/api/go.mod services/api/go.sum ./
 RUN go mod download
 COPY services/api/ ./
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/ ./cmd/...
+# The release identity shown by GET /api/v1/version and the worker heartbeat.
+ARG VERSION=dev
+ARG COMMIT=
+RUN CGO_ENABLED=0 go build -trimpath \
+    -ldflags="-s -w -X mise.tt/api/internal/platform/buildinfo.Version=${VERSION} -X mise.tt/api/internal/platform/buildinfo.Commit=${COMMIT}" \
+    -o /out/ ./cmd/...
 
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app

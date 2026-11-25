@@ -419,3 +419,30 @@ func SafeCSV(v string) string {
 }
 
 var errForbidden = httpx.NewError(http.StatusForbidden, "forbidden", "You do not have access to this.")
+
+// Values computes registry metrics for an inclusive local date range, for
+// reports outside the analytics dashboards that show the same figures. They
+// read the registry instead of keeping their own SQL, so one figure has one
+// definition everywhere. A nil value is undefined, never zero.
+func (s *Service) Values(ctx context.Context, ids []string, from, to string) (map[string]*float64, error) {
+	r, err := s.ParseRange(from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]*float64, len(ids))
+	err = s.readTx(ctx, func(tx pgx.Tx) error {
+		for _, id := range ids {
+			m, ok := Get(id)
+			if !ok {
+				return fmt.Errorf("analytics: unknown metric %q", id)
+			}
+			v, err := s.Value(ctx, tx, m, r, Filters{})
+			if err != nil {
+				return err
+			}
+			out[id] = v
+		}
+		return nil
+	})
+	return out, err
+}

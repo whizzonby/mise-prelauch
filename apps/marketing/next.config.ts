@@ -9,6 +9,9 @@ if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 const isDev = process.env.NODE_ENV !== "production";
 const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8090";
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3102").replace(/\/$/, "");
+// Catalogue photographs: hosted on approved hosts, or (demo content) served by the customer app.
+const imageHosts = (process.env.CATALOG_IMAGE_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean);
 
 /*
  * The site is static, so scripts cannot carry a per-request nonce; inline
@@ -19,7 +22,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src 'self' data: blob: ${new URL(appUrl).origin}${imageHosts.map((h) => ` https://${h}`).join("")}`,
   "font-src 'self'",
   `connect-src 'self' ${apiOrigin}${isDev ? " ws: http://localhost:*" : ""}`,
   "frame-ancestors 'none'",
@@ -57,6 +60,19 @@ const nextConfig: NextConfig = {
     // The photographs are imported files with content-hashed names: a given
     // URL never changes, so an optimised copy can be kept for a year.
     minimumCacheTTL: 31536000,
+    remotePatterns: imageHosts.map((hostname) => ({ protocol: "https" as const, hostname })),
+  },
+  /** One catalogue: meal kits and plans live in the customer app. */
+  async redirects() {
+    if (process.env.NEXT_PUBLIC_SITE_MODE !== "launch") return [];
+    return [
+      { source: "/meal-kits", destination: `${appUrl}/meals`, permanent: false },
+      { source: "/meal-kits/:slug", destination: `${appUrl}/meals/:slug`, permanent: false },
+      { source: "/plans", destination: `${appUrl}/plans`, permanent: false },
+      { source: "/login", destination: `${appUrl}/sign-in`, permanent: false },
+      { source: "/signup", destination: `${appUrl}/register`, permanent: false },
+      { source: "/checkout", destination: `${appUrl}/plans`, permanent: false },
+    ];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

@@ -14,7 +14,9 @@ import (
 	"mise.tt/api/internal/automation"
 	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/fulfillment"
+	"mise.tt/api/internal/launch"
 	"mise.tt/api/internal/notifications"
+	"mise.tt/api/internal/platform/buildinfo"
 	"mise.tt/api/internal/platform/config"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
@@ -129,7 +131,11 @@ func run() error {
 		}
 	}()
 
-	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider)
+	// Liveness for the system status page: a worker that stops beating is shown as stopped.
+	host, _ := os.Hostname()
+	go launch.RunHeartbeat(ctx, pool, "worker@"+host)
+
+	slog.Info("worker started", "mail_driver", cfg.Mail.Driver, "test_payments", cfg.Commerce.TestProvider, "version", buildinfo.Version)
 	err = runner.Run(ctx)
 	slog.Info("worker stopped")
 	return err

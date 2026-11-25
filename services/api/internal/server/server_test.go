@@ -133,7 +133,8 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 	if _, err := pool.Exec(ctx, `TRUNCATE leads, jobs, lead_events, admin_users, audit_log, users, meal_categories, chef_profiles, delivery_zones, testpay_transactions, testpay_sessions, payment_webhook_events, admin_alerts, domain_events,
 		supply_counters, storage_locations, inventory_policies, receiving_checklist_items, supplier_qualification_criteria,
 		delivery_counters, delivery_service_zones, delivery_partners,
-		analytics_refresh_runs, analytics_snapshots, analytics_quality_results, automation_executions, automation_tasks, report_runs, forecast_runs RESTART IDENTITY CASCADE`); err != nil {
+		analytics_refresh_runs, analytics_snapshots, analytics_quality_results, automation_executions, automation_tasks, report_runs, forecast_runs,
+		launch_signoffs, worker_heartbeats RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
 	// Supply-chain policies start unset, and event consumers start at the beginning.

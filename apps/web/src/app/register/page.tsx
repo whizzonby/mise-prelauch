@@ -4,17 +4,19 @@ import Link from "next/link";
 import { register } from "@/app/actions";
 import { ActionForm } from "@/components/action-form";
 import { AuthShell } from "@/components/auth-shell";
+import { safeNext } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = { title: "Create an account" };
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const next = safeNext((await searchParams).next, "");
   return (
     <AuthShell
       title="Create your Mise account"
       footer={
         <span>
           Already have one?{" "}
-          <Link href="/sign-in" className="underline underline-offset-4">
+          <Link href={next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in"} className="underline underline-offset-4">
             Sign in
           </Link>
         </span>
@@ -25,6 +27,7 @@ export default function RegisterPage() {
       </p>
       <ActionForm
         action={register}
+        hidden={next ? { next } : undefined}
         submit="Create account"
         pending="Creating your account…"
         fields={[

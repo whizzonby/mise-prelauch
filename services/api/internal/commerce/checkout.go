@@ -18,6 +18,7 @@ import (
 	"mise.tt/api/internal/plans"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/outbox"
 	"mise.tt/api/internal/subscriptions"
 )
 
@@ -366,6 +367,16 @@ func (s *Service) paid(ctx context.Context, q db.Querier, o payments.Outcome) er
 	paidCycle, _, err := s.Billing.MarkPaid(ctx, q, bc.ID, s.contactSnapshot(ctx, q, sub))
 	if err != nil {
 		return err
+	}
+	if status != subscriptions.PendingPayment {
+		// A further week paid on a running subscription: a renewal. (The
+		// first week is the activation, published by the status change.)
+		if err := outbox.Record(ctx, q, outbox.Event{Type: "subscription.renewed", AggregateType: "subscription", AggregateID: sub.ID,
+			DedupeKey: bc.ID, Payload: map[string]any{"subscription_id": sub.ID, "customer_id": sub.CustomerID, "billing_cycle_id": bc.ID,
+				"week": menus.FormatWeek(cycle.WeekStart), "payment_id": o.PaymentID, "total_minor": paidCycle.TotalMinor,
+				"currency": paidCycle.Currency}}); err != nil {
+			return err
+		}
 	}
 	if o.PaymentMethodID != "" && (sub.PaymentMethodID == nil || *sub.PaymentMethodID != o.PaymentMethodID) {
 		if err := s.Subs.SetPaymentMethod(ctx, q, sub, o.PaymentMethodID); err != nil {

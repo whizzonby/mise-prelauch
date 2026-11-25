@@ -78,8 +78,11 @@ type Service struct {
 	Orders      Orders
 	Alerts      Alerts
 	Cases       Cases
-	Location    *time.Location
-	Now         func() time.Time
+	// Metrics supplies the figures the delivery report shares with the
+	// analytics registry (nil only in narrow unit tests).
+	Metrics  MetricReader
+	Location *time.Location
+	Now      func() time.Time
 	// CodeKey derives delivery confirmation codes.
 	CodeKey []byte
 	// Carriers by integration mode; "manual" is always present.

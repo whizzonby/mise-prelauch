@@ -5,7 +5,7 @@ import { FilterBar, MetricTile, WeeklyBars } from "@/components/admin-ui";
 import { BarList } from "@/components/charts";
 import { Labelled, TextInput } from "@/components/commerce-ui";
 import { Panel } from "@/components/panel";
-import { formatDay, humanize } from "@/lib/format";
+import { businessDay, formatDay, humanize } from "@/lib/format";
 
 export const SUPPLIER_TYPES = ["farmer", "cooperative", "producer", "distributor", "packaging", "other"];
 export const CHANNELS = ["phone", "whatsapp", "email", "in_person", "other"];
@@ -17,7 +17,7 @@ export const DISCREPANCIES = ["none", "short", "over", "damaged", "wrong_item", 
 export const ADJUST_CATEGORIES = ["count_discrepancy", "damage", "spoilage", "measurement_correction", "other"];
 
 /** Today and a range, as YYYY-MM-DD, for report filters. */
-export const iso = (d: Date) => d.toISOString().slice(0, 10);
+export const iso = (d: Date) => businessDay(d);
 export const validDay = (s: string | undefined) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined);
 
 /** A whole supply-chain report: totals, series and breakdowns, each defined. */

@@ -18,3 +18,14 @@ export function labelFor(list: { key: string; label: string }[], key: string | n
   if (!key) return "";
   return list.find((t) => t.key === key)?.label ?? key;
 }
+
+/**
+ * The published weekly menus still open for choosing, with their meals. A
+ * meal's availability is read from these: being published in the catalogue
+ * does not mean it is on a menu anyone can order from this week.
+ */
+export const openMenus = cache(async () => {
+  const { items } = await api.shop.menus();
+  const open = items.filter((m) => m.status === "published" && m.is_open).slice(0, 4);
+  return Promise.all(open.map((m) => api.shop.menu(m.week)));
+});

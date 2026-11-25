@@ -14,6 +14,7 @@ import (
 	"mise.tt/api/internal/payments/store"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/outbox"
 )
 
 // RefundInput is a refund staff ask for. Refunds are never automatic: the
@@ -120,6 +121,12 @@ func (s *Service) Refund(ctx context.Context, actor, paymentID string, in Refund
 		if _, err := q.SetRefundResult(ctx, store.SetRefundResultParams{ID: refund.ID, Status: status, ProviderRef: ref}); errors.Is(err, pgx.ErrNoRows) {
 			return nil // recorded by a concurrent retry
 		} else if err != nil {
+			return err
+		}
+		// A refund reaches its final state once; that is the event.
+		if err := outbox.Record(ctx, tx, outbox.Event{Type: "refund." + status, AggregateType: "refund", AggregateID: refund.ID,
+			DedupeKey: "final", Payload: map[string]any{"refund_id": refund.ID, "payment_id": paymentID, "customer_id": pay.CustomerID,
+				"amount_minor": refund.AmountMinor, "currency": refund.Currency, "provider": pay.Provider}}); err != nil {
 			return err
 		}
 		if !res.Succeeded {

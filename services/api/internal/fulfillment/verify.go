@@ -284,18 +284,18 @@ func (s *Service) FlagBatch(ctx context.Context, actor, batchID, why string) (st
 // storage or shelf-life claims (those come from production's batch label)
 // and only the recipient's first name and last initial.
 type Label struct {
-	PackageCode  string  `json:"package_code"`
-	ScanCode     string  `json:"scan_code"`
-	OrderNumber  string  `json:"order_number"`
-	Recipient    string  `json:"recipient"`
-	Region       string  `json:"region"`
-	ZoneCode     *string `json:"zone_code"`
-	DeliveryDate *string `json:"delivery_date"`
-	Kits         int     `json:"kits"`
+	PackageCode  string   `json:"package_code"`
+	ScanCode     string   `json:"scan_code"`
+	OrderNumber  string   `json:"order_number"`
+	Recipient    string   `json:"recipient"`
+	Region       string   `json:"region"`
+	ZoneCode     *string  `json:"zone_code"`
+	DeliveryDate *string  `json:"delivery_date"`
+	Kits         int      `json:"kits"`
 	Contents     []string `json:"contents"`
-	Handling     string  `json:"handling"`
-	Certified    bool    `json:"certified"`
-	Notice       string  `json:"notice,omitempty"`
+	Handling     string   `json:"handling"`
+	Certified    bool     `json:"certified"`
+	Notice       string   `json:"notice,omitempty"`
 }
 
 func (s *Service) Labels(ctx context.Context, id string) ([]Label, error) {
@@ -448,9 +448,9 @@ func (s *Service) Cancel(ctx context.Context, tx pgx.Tx, id, actor, why string) 
 // Trace is the batch-level chain for one order: package → item → batch,
 // and the ingredient lots Sprint 6 linked to each batch.
 type Trace struct {
-	OrderNumber string       `json:"order_number"`
-	Level       string       `json:"level"`
-	Items       []TraceItem  `json:"items"`
+	OrderNumber string        `json:"order_number"`
+	Level       string        `json:"level"`
+	Items       []TraceItem   `json:"items"`
 	Delivery    *TraceOutcome `json:"delivery"`
 }
 
@@ -472,10 +472,10 @@ type TraceLot struct {
 }
 
 type TraceOutcome struct {
-	Number  string     `json:"number"`
-	Status  string     `json:"status"`
-	Proof   *string    `json:"proof_method"`
-	At      *time.Time `json:"delivered_at"`
+	Number string     `json:"number"`
+	Status string     `json:"status"`
+	Proof  *string    `json:"proof_method"`
+	At     *time.Time `json:"delivered_at"`
 }
 
 func (s *Service) Trace(ctx context.Context, id string) (*Trace, error) {

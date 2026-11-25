@@ -520,6 +520,11 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	if reportBreakdown(t, res, "value_by_supplier")["Hosein Family Farm"] != poTotal {
 		t.Errorf("value by supplier = %v", reportBreakdown(t, res, "value_by_supplier"))
 	}
+	// Figure-level reconciliation: the report and the procurement dashboard
+	// agree wherever they show the same definition. (Report "po_value" is the
+	// value *approved*; the registry's procurement.po_value is the value
+	// *issued*; they are different figures and labelled so.)
+	h.reconcileWithDashboard("procurement", "2026-11-01", "2026-11-30", map[string]float64{"procurement.po_count": tot["pos_issued"]})
 	res = h.do("GET", "/api/v1/admin/reports/inventory?from=2026-11-01&to=2026-11-30", nil, team.stores)
 	h.wantStatus(res, http.StatusOK)
 	tot = reportTotals(t, res)
@@ -546,6 +551,11 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	if reportBreakdown(t, res, "rejected_packs")["Hosein Family Farm"] != 1 || reportBreakdown(t, res, "orders_delivered")["Hosein Family Farm"] != 1 {
 		t.Errorf("supplier breakdowns = %v / %v", reportBreakdown(t, res, "rejected_packs"), reportBreakdown(t, res, "orders_delivered"))
 	}
+	var rejected float64
+	for _, v := range reportBreakdown(t, res, "rejected_packs") {
+		rejected += v
+	}
+	h.reconcileWithDashboard("procurement", "2026-11-01", "2026-11-30", map[string]float64{"procurement.rejected_packs": rejected})
 	if _, ok := res.Data["definitions"].(map[string]any)["lead_time_days"]; !ok {
 		t.Error("lead time is not defined")
 	}

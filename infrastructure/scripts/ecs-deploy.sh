@@ -39,7 +39,7 @@ case "${1:-}" in
     ;;
 
   services)
-    for service in api worker marketing admin; do
+    for service in api worker marketing admin web; do
       # The worker runs the API image with a different command.
       image="$service"; [ "$service" = worker ] && image=api
       arn=$(register "$NAME_PREFIX-$service" "$ECR_REGISTRY/$NAME_PREFIX-$image:$IMAGE_TAG")

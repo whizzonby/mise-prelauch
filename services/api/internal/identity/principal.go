@@ -137,6 +137,10 @@ const (
 	PermForecastingRead          Permission = "forecasting.read"
 	PermForecastingRun           Permission = "forecasting.run"
 	PermForecastingConfigure     Permission = "forecasting.configure"
+
+	// Sprint 9: launch readiness.
+	PermLaunchRead    Permission = "launch.read"
+	PermLaunchSignoff Permission = "launch.signoff"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -166,6 +170,7 @@ var AllPermissions = []Permission{
 	PermAnalyticsExecutiveRead, PermAnalyticsRevenueRead, PermAnalyticsCustomersRead, PermAnalyticsProductionRead, PermAnalyticsProcurementRead,
 	PermAnalyticsInventoryRead, PermAnalyticsDeliveryRead, PermAnalyticsExport, PermAutomationRead, PermAutomationManage, PermAutomationExecute,
 	PermAutomationApprove, PermForecastingRead, PermForecastingRun, PermForecastingConfigure,
+	PermLaunchRead, PermLaunchSignoff,
 }
 
 // RoleCustomer is the role every registered customer holds.

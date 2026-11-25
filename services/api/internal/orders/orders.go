@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"mise.tt/api/internal/orders/store"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/outbox"
 )
 
 type Service struct {
@@ -141,6 +143,12 @@ func (s *Service) Create(ctx context.Context, q db.Querier, in NewOrder) (*Order
 		}
 	}
 	if err := st.AddOrderStatus(ctx, store.AddOrderStatusParams{OrderID: row.ID, ToStatus: "confirmed", Reason: ptr("selection finalised at cutoff")}); err != nil {
+		return nil, false, err
+	}
+	if err := outbox.Record(ctx, q, outbox.Event{Type: "order.confirmed", AggregateType: "order", AggregateID: row.ID, DedupeKey: "confirmed",
+		Payload: map[string]any{"order_id": row.ID, "number": row.Number, "customer_id": in.CustomerID, "subscription_id": in.SubscriptionID,
+			"billing_cycle_id": in.BillingCycleID, "week": in.Week.Format("2006-01-02"), "meals": count, "total_minor": in.TotalMinor,
+			"currency": in.Currency}}); err != nil {
 		return nil, false, err
 	}
 	o, err := s.view(ctx, q, row)
@@ -467,16 +475,40 @@ func (s *Service) Advance(ctx context.Context, q db.Querier, orderIDs []string, 
 			UPDATE orders o SET status = $3, updated_at = now() FROM moved WHERE o.id = moved.id RETURNING o.id, moved.status AS from_status
 		)
 		INSERT INTO order_status_history (order_id, from_status, to_status, reason, actor_user_id)
-		SELECT id, from_status, $3, $4, $5::uuid FROM upd RETURNING order_id`, orderIDs, from, to, reason, nilIfEmpty(actor))
+		SELECT id, from_status, $3, $4, $5::uuid FROM upd RETURNING order_id, id, from_status`, orderIDs, from, to, reason, nilIfEmpty(actor))
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-	n := 0
-	for rows.Next() {
-		n++
+	type moved struct {
+		orderID, from string
+		historyID     int64
 	}
-	return n, rows.Err()
+	var list []moved
+	for rows.Next() {
+		var m moved
+		var fromStatus *string
+		if err := rows.Scan(&m.orderID, &m.historyID, &fromStatus); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if fromStatus != nil {
+			m.from = *fromStatus
+		}
+		list = append(list, m)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	// Each recorded status change is one event, keyed by its history row.
+	for _, m := range list {
+		if err := outbox.Record(ctx, q, outbox.Event{Type: "order.status_changed", AggregateType: "order", AggregateID: m.orderID,
+			DedupeKey: strconv.FormatInt(m.historyID, 10), Payload: map[string]any{"order_id": m.orderID, "from_status": m.from,
+				"to_status": to, "reason": reason}}); err != nil {
+			return 0, err
+		}
+	}
+	return len(list), nil
 }
 
 // FulfillmentFacts is what fulfillment needs to decide whether an order may

@@ -108,7 +108,7 @@ var transitions = map[string][]string{
 	"verified":                 {"ready_for_dispatch", "exception", "cancelled"},
 	"ready_for_dispatch":       {"handed_over", "exception", "cancelled"},
 	"handed_over":              {"fulfilled", "exception"},
-	"exception":                {"cancelled"}, // plus Resume to resume_status
+	"exception":                {"cancelled"},   // plus Resume to resume_status
 	"fulfilled":                {"handed_over"}, // only through an audited delivery correction (Reopen)
 	"cancelled":                {},
 }

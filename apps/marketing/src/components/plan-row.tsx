@@ -3,11 +3,18 @@
 import { Heading, Text } from "@mise/ui";
 import { useEffect, useRef } from "react";
 
-import type { Plan } from "@/content/plans";
-
 import { useTrack } from "./providers";
 
-export function PlanRow({ plan, pricePending }: { plan: Plan; pricePending: string }) {
+interface Props {
+  id: string;
+  name: string;
+  summary: string;
+  detail: string;
+  price: string;
+  href?: string;
+}
+
+export function PlanRow({ id, name, summary, detail, price, href }: Props) {
   const ref = useRef<HTMLLIElement>(null);
   const track = useTrack();
 
@@ -17,7 +24,7 @@ export function PlanRow({ plan, pricePending }: { plan: Plan; pricePending: stri
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          track("plan_viewed", { plan: plan.id });
+          track("plan_viewed", { plan: id });
           observer.disconnect();
         }
       },
@@ -25,18 +32,26 @@ export function PlanRow({ plan, pricePending }: { plan: Plan; pricePending: stri
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [plan.id, track]);
+  }, [id, track]);
 
   return (
-    <li ref={ref} className="grid gap-x-8 gap-y-2 border-b border-border py-6 sm:grid-cols-[minmax(0,13rem)_1fr]">
-      <Heading as="h3">{plan.name}</Heading>
+    <li ref={ref} className="relative grid gap-x-8 gap-y-2 border-b border-border py-6 sm:grid-cols-[minmax(0,13rem)_1fr]">
+      <Heading as="h3">
+        {href ? (
+          <a href={href} className="after:absolute after:inset-0 after:content-[''] hover:underline hover:underline-offset-4">
+            {name}
+          </a>
+        ) : (
+          name
+        )}
+      </Heading>
       <div>
-        <Text>{plan.summary}</Text>
+        <Text>{summary}</Text>
         <Text size="sm" tone="muted" className="mt-1.5">
-          For: {plan.audience.charAt(0).toLowerCase() + plan.audience.slice(1)}
+          {detail}
         </Text>
         <Text size="sm" className="type-figures mt-3 font-semibold">
-          {plan.price ?? pricePending}
+          {price}
         </Text>
       </div>
     </li>

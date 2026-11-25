@@ -36,8 +36,9 @@ async function signIn(page: import("@playwright/test").Page, email: string, pw =
 
 test("a visitor registers, confirms their email, signs in and out", async ({ page, request }) => {
   const email = uniqueEmail("account");
+  // A visitor arriving at the app sees the meal kits (Sprint 9), not a sign-in wall.
   await page.goto(urls.web);
-  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page).toHaveURL(/\/meals$/);
 
   await register(page, email);
   await confirmFromEmail(page, request, email);
@@ -56,8 +57,8 @@ test("a visitor registers, confirms their email, signs in and out", async ({ pag
 
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
-  await page.goto(urls.web);
-  await expect(page).toHaveURL(/\/sign-in$/);
+  await page.goto(`${urls.web}/dashboard`);
+  await expect(page).toHaveURL(/\/sign-in\?next=%2Fdashboard$/);
 });
 
 test("wrong passwords and unconfirmed addresses are refused", async ({ page }) => {

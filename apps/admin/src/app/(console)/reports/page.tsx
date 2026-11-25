@@ -6,7 +6,7 @@ import { FilterBar, MetricTile, PageHeader, Tabs, WeeklyBars } from "@/component
 import { BarList } from "@/components/charts";
 import { Labelled, TextInput } from "@/components/commerce-ui";
 import { Panel } from "@/components/panel";
-import { formatDay, humanize } from "@/lib/format";
+import { businessDay, formatDay, humanize } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Reports" };
@@ -19,7 +19,7 @@ const KINDS = [
   { key: "marketing", label: "Marketing" },
 ];
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = (d: Date) => businessDay(d);
 const valid = (s: string | undefined) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined);
 
 /**

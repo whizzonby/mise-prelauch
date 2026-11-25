@@ -163,6 +163,8 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
         ...item(admin, "users.read", "/staff", "Staff"),
         ...item(admin, "users.read", "/roles", "Roles and permissions"),
         ...item(admin, "audit.read", "/audit", "Audit log"),
+        ...item(admin, "launch.read", "/launch", "Launch readiness"),
+        ...item(admin, "launch.read", "/system", "System status"),
         { href: "/settings", label: "Settings" },
       ],
     },

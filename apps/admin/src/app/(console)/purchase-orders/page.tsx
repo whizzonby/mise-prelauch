@@ -6,7 +6,7 @@ import { EmptyState, FilterBar, PageHeader, StatusTag } from "@/components/admin
 import { DataTable, Labelled, Panel, SelectInput, TextInput } from "@/components/commerce-ui";
 import { KForm } from "@/components/kitchen-form";
 import { Options } from "@/components/kitchen-ui";
-import { formatDay, money } from "@/lib/format";
+import { businessDay, formatDay, money } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 import { createPO } from "../supply-actions";
@@ -26,7 +26,7 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
     create ? api.supply.locations(token) : Promise.resolve(null),
   ]);
   const prices = can(admin, "purchase_orders.read");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   return (
     <>
       <PageHeader

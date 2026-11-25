@@ -8,7 +8,9 @@
 	# The public API endpoints go straight to the API, so it sees each visitor's
 	# own address (rate limits and referral checks depend on that). The admin API
 	# is not exposed on the public domain.
-	@api path /api/v1/leads /api/v1/leads/* /api/v1/referrals/* /api/v1/events /api/v1/health /api/v1/ready
+	# Payment provider webhooks reach the API directly (signed, verified there).
+	# Customer and admin APIs are reached only through their apps' servers.
+	@api path /api/v1/leads /api/v1/leads/* /api/v1/referrals/* /api/v1/events /api/v1/health /api/v1/ready /api/v1/version /api/v1/webhooks/payments/*
 	handle @api {
 		reverse_proxy api:8080
 	}
@@ -19,6 +21,11 @@
 
 www.{$DOMAIN} {
 	redir https://{$DOMAIN}{uri} permanent
+}
+
+app.{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3102
 }
 
 admin.{$DOMAIN} {

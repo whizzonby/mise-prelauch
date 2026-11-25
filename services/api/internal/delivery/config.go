@@ -18,20 +18,20 @@ import (
 // Settings are the business policies. They ship unset, and the API says
 // plainly which capabilities are blocked until they are configured.
 type Settings struct {
-	ProofMethods               []string  `json:"proof_methods"`
-	ProofPolicyRef             string    `json:"proof_policy_ref"`
-	RescheduleCutoffHours      *int      `json:"reschedule_cutoff_hours"`
-	FailureReasons             []string  `json:"failure_reasons"`
-	AllowUnapprovedPartners    bool      `json:"allow_unapproved_partners"`
-	UnapprovedPartnerPolicyRef string    `json:"unapproved_partner_policy_ref"`
-	LabelCertified             bool      `json:"label_certified"`
-	CustomerEmailsApproved     bool      `json:"customer_emails_approved"`
+	ProofMethods               []string `json:"proof_methods"`
+	ProofPolicyRef             string   `json:"proof_policy_ref"`
+	RescheduleCutoffHours      *int     `json:"reschedule_cutoff_hours"`
+	FailureReasons             []string `json:"failure_reasons"`
+	AllowUnapprovedPartners    bool     `json:"allow_unapproved_partners"`
+	UnapprovedPartnerPolicyRef string   `json:"unapproved_partner_policy_ref"`
+	LabelCertified             bool     `json:"label_certified"`
+	CustomerEmailsApproved     bool     `json:"customer_emails_approved"`
 	// Eligible delivery dates: order week start (Monday) + min..max days.
 	DeliveryOffsetMinDays *int      `json:"delivery_offset_min_days"`
 	DeliveryOffsetMaxDays *int      `json:"delivery_offset_max_days"`
 	DeliveryWeekRuleRef   string    `json:"delivery_week_rule_ref"`
 	UpdatedAt             time.Time `json:"updated_at"`
-	Blockers                   []string  `json:"blockers"`
+	Blockers              []string  `json:"blockers"`
 }
 
 // ProofMethodsAvailable are the methods that can be enabled. Photo proof is

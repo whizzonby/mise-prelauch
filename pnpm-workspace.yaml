@@ -13,6 +13,9 @@ overrides:
   zod@4: ">=4.6.7 <5"
   # Test tooling only (jsdom -> undici); never shipped.
   undici@8: ">=8.12.2 <9"
+  # Test tooling only (vitest -> vite): GHSA-9jrq-w75r-8gcw and related
+  # dev-server advisories, fixed in 8.3.3.
+  vite: "^8.3.3"
 
 # Packages allowed to run install scripts (they download or build native binaries).
 allowBuilds:

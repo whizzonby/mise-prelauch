@@ -8,9 +8,13 @@ import Link from "next/link";
 import { FilterForm, FilterPanel } from "@/components/filter-form";
 import { EmptyState, MealCard, MealGrid } from "@/components/meal-card";
 import { reference, savedMealIds } from "@/lib/data";
-import { api, requireCustomer } from "@/lib/session";
+import { api, optionalSession } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Explore meals" };
+export const metadata: Metadata = {
+  title: "Meal kits",
+  description: "Browse Mise's Caribbean meal kits: measured ingredients and a recipe card, cooked at home in Trinidad and Tobago.",
+  alternates: { canonical: "/meals" },
+};
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -31,16 +35,17 @@ const PAGE_SIZE = 12;
  * API, one page at a time; the browser never receives the whole catalogue.
  */
 export default async function MealsPage({ searchParams }: { searchParams: Search }) {
-  const { token } = await requireCustomer();
+  const token = (await optionalSession())?.token ?? null;
   const params = await searchParams;
   const ref = await reference();
-  const mine = one(params.allergies) === "mine";
+  // "Hide my allergens" needs the customer's own allergy list, so only a signed-in customer has it.
+  const mine = token !== null && one(params.allergies) === "mine";
 
   const [categories, chefs, prefs, saved] = await Promise.all([
     api.catalog.categories(),
     api.catalog.chefs(),
-    mine ? api.account.preferences(token) : Promise.resolve(null),
-    savedMealIds(token),
+    mine && token ? api.account.preferences(token) : Promise.resolve(null),
+    token ? savedMealIds(token) : Promise.resolve(null),
   ]);
   const myAllergens = (prefs?.allergies ?? []).map((a) => a.allergen).filter((a) => a !== "other");
 
@@ -118,7 +123,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Search
           </div>
         ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <Choice name="allergies" value="mine" label="Hide meals with my allergens" defaultChecked={mine} />
+          {token ? <Choice name="allergies" value="mine" label="Hide meals with my allergens" defaultChecked={mine} /> : null}
           <noscript>
             <button type="submit" className={buttonClasses("secondary")}>
               Apply filters
@@ -155,7 +160,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Search
             </p>
             <MealGrid>
               {result.items.map((m, i) => (
-                <MealCard key={m.id} meal={m} saved={saved.has(m.id)} priority={i < 3 && page === 1} />
+                <MealCard key={m.id} meal={m} saved={saved ? saved.has(m.id) : null} priority={i < 3 && page === 1} />
               ))}
             </MealGrid>
             {pages > 1 ? (

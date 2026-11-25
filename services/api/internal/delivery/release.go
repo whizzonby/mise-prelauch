@@ -21,7 +21,7 @@ type Release struct {
 	OrderNumber  string
 	CustomerID   string
 	// The order's week (Monday): eligible delivery dates are counted from it.
-	Week         time.Time
+	Week time.Time
 	// The address copied onto the order when it was made (orders.Address).
 	Address      json.RawMessage
 	PackageCount int

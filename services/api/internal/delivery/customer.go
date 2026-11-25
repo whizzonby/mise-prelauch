@@ -316,22 +316,22 @@ func (s *Service) LinkCase(ctx context.Context, actor, deliveryID, caseID string
 // their address, and their confirmation code while it is out. No partner,
 // courier, run or internal status names.
 type CustomerDelivery struct {
-	OrderID          string           `json:"order_id"`
-	Stage            string           `json:"stage"`
-	Headline         string           `json:"headline"`
-	Detail           string           `json:"detail"`
-	ServiceDate      *string          `json:"service_date"`
-	Window           *string          `json:"window"`
-	Address          json.RawMessage  `json:"address"`
-	ConfirmationCode *string          `json:"confirmation_code"`
-	CodeExplanation  string           `json:"code_explanation,omitempty"`
-	Timeline         []Milestone      `json:"timeline"`
-	Issue            *string          `json:"issue"`
-	CanReschedule    bool             `json:"can_reschedule"`
-	ReschedulePolicy string           `json:"reschedule_policy"`
-	OpenRequest      *Reschedule      `json:"open_request"`
+	OrderID          string            `json:"order_id"`
+	Stage            string            `json:"stage"`
+	Headline         string            `json:"headline"`
+	Detail           string            `json:"detail"`
+	ServiceDate      *string           `json:"service_date"`
+	Window           *string           `json:"window"`
+	Address          json.RawMessage   `json:"address"`
+	ConfirmationCode *string           `json:"confirmation_code"`
+	CodeExplanation  string            `json:"code_explanation,omitempty"`
+	Timeline         []Milestone       `json:"timeline"`
+	Issue            *string           `json:"issue"`
+	CanReschedule    bool              `json:"can_reschedule"`
+	ReschedulePolicy string            `json:"reschedule_policy"`
+	OpenRequest      *Reschedule       `json:"open_request"`
 	History          []CustomerAttempt `json:"history"`
-	LiveTracking     bool             `json:"live_tracking"`
+	LiveTracking     bool              `json:"live_tracking"`
 }
 
 type Milestone struct {
@@ -359,7 +359,9 @@ type OrderFacts struct {
 func (s *Service) ForCustomer(ctx context.Context, customerID string, o OrderFacts) (*CustomerDelivery, error) {
 	out := &CustomerDelivery{OrderID: o.OrderID, Address: o.Address, Timeline: []Milestone{}, History: []CustomerAttempt{}, LiveTracking: false}
 	created := o.CreatedAt
-	ms := func(key, label string, at *time.Time) { out.Timeline = append(out.Timeline, Milestone{Key: key, Label: label, Done: at != nil, At: at}) }
+	ms := func(key, label string, at *time.Time) {
+		out.Timeline = append(out.Timeline, Milestone{Key: key, Label: label, Done: at != nil, At: at})
+	}
 	ms("confirmed", "Order confirmed", &created)
 
 	// Kitchen milestones from the order's own status history.

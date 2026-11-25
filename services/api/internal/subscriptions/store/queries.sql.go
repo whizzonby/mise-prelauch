@@ -44,9 +44,10 @@ func (q *Queries) AddChange(ctx context.Context, arg AddChangeParams) error {
 	return err
 }
 
-const addEvent = `-- name: AddEvent :exec
+const addEvent = `-- name: AddEvent :one
 INSERT INTO subscription_events (subscription_id, type, from_status, to_status, effective_week, actor_user_id, metadata)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id
 `
 
 type AddEventParams struct {
@@ -59,8 +60,8 @@ type AddEventParams struct {
 	Metadata       []byte
 }
 
-func (q *Queries) AddEvent(ctx context.Context, arg AddEventParams) error {
-	_, err := q.db.Exec(ctx, addEvent,
+func (q *Queries) AddEvent(ctx context.Context, arg AddEventParams) (int64, error) {
+	row := q.db.QueryRow(ctx, addEvent,
 		arg.SubscriptionID,
 		arg.Type,
 		arg.FromStatus,
@@ -69,7 +70,9 @@ func (q *Queries) AddEvent(ctx context.Context, arg AddEventParams) error {
 		arg.Actor,
 		arg.Metadata,
 	)
-	return err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const addPause = `-- name: AddPause :exec

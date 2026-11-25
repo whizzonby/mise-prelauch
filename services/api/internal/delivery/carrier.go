@@ -69,7 +69,9 @@ type PartnerProof struct {
 // shipment is the manifest itself, so it needs no outside call.
 type ManualCarrier struct{}
 
-func (ManualCarrier) Capabilities() []Capability { return []Capability{CapCreateShipment, CapCancelShipment} }
+func (ManualCarrier) Capabilities() []Capability {
+	return []Capability{CapCreateShipment, CapCancelShipment}
+}
 
 func (ManualCarrier) CreateShipment(_ context.Context, s Shipment) (ShipmentRef, error) {
 	return ShipmentRef{DeliveryID: s.DeliveryID, Reference: "manifest:" + s.Number}, nil
@@ -85,7 +87,9 @@ func (ManualCarrier) RetrieveProof(context.Context, ShipmentRef) (*PartnerProof,
 	return nil, ErrUnsupported
 }
 
-func (ManualCarrier) ReportException(context.Context, ShipmentRef, string) error { return ErrUnsupported }
+func (ManualCarrier) ReportException(context.Context, ShipmentRef, string) error {
+	return ErrUnsupported
+}
 
 // ---------------------------------------------------------------- partner webhooks (designed, not routed)
 

@@ -71,9 +71,10 @@ ORDER BY id;
 -- name: StalePendingSubscriptions :many
 SELECT id FROM subscriptions WHERE status = 'pending_payment' AND created_at <= @before::timestamptz ORDER BY created_at LIMIT 100;
 
--- name: AddEvent :exec
+-- name: AddEvent :one
 INSERT INTO subscription_events (subscription_id, type, from_status, to_status, effective_week, actor_user_id, metadata)
-VALUES (@subscription_id, @type, sqlc.narg(from_status), sqlc.narg(to_status), sqlc.narg(effective_week), sqlc.narg(actor), @metadata);
+VALUES (@subscription_id, @type, sqlc.narg(from_status), sqlc.narg(to_status), sqlc.narg(effective_week), sqlc.narg(actor), @metadata)
+RETURNING id;
 
 -- name: ListEvents :many
 SELECT * FROM subscription_events WHERE subscription_id = @subscription_id ORDER BY id DESC LIMIT 100;

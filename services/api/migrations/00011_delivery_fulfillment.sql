@@ -769,6 +769,10 @@ DELETE FROM role_permissions WHERE permission_key IN ('fulfillment.read', 'fulfi
     'delivery_exceptions.manage', 'delivery_reports.read', 'delivery_settings.manage');
 DELETE FROM role_permissions WHERE role_key IN ('fulfillment_manager', 'fulfillment_staff', 'dispatch_manager', 'dispatcher',
     'delivery_coordinator', 'courier');
+-- Rolling back removes the roles, so pending invitations to them go too (Sprint 9 fix:
+-- an outstanding invitation used to block the rollback).
+DELETE FROM staff_invitations WHERE role_key IN ('fulfillment_manager', 'fulfillment_staff', 'dispatch_manager', 'dispatcher',
+    'delivery_coordinator', 'courier');
 DELETE FROM user_roles WHERE role_key IN ('fulfillment_manager', 'fulfillment_staff', 'dispatch_manager', 'dispatcher',
     'delivery_coordinator', 'courier');
 DELETE FROM permissions WHERE key IN ('fulfillment.read', 'fulfillment.verify', 'fulfillment.release', 'delivery.read',

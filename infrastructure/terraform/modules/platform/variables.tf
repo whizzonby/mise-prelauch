@@ -65,8 +65,9 @@ variable "desired_count" {
     worker    = number
     marketing = number
     admin     = number
+    web       = number
   })
-  default = { api = 1, worker = 1, marketing = 1, admin = 1 }
+  default = { api = 1, worker = 1, marketing = 1, admin = 1, web = 1 }
 }
 
 variable "email_verification_required" {
@@ -97,6 +98,8 @@ locals {
   site_host  = var.domain
   api_host   = "api.${var.domain}"
   admin_host = "admin.${var.domain}"
+  # The customer app: meal kits, plans, accounts and checkout (Sprint 9).
+  app_host = "app.${var.domain}"
 
   # The origin CloudFront uses to reach the marketing service through the load balancer.
   origin_host = "origin.${var.domain}"

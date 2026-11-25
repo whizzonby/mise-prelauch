@@ -734,19 +734,19 @@ func (s *Service) Release(ctx context.Context, actor, runID string) (*Run, error
 // ---------------------------------------------------------------- custody
 
 type Handoff struct {
-	ID            string    `json:"id"`
-	FromParty     string    `json:"from_party"`
-	ToParty       string    `json:"to_party"`
-	HandedAt      time.Time `json:"handed_at"`
-	Location      *string   `json:"location"`
-	Accepted      int       `json:"accepted_count"`
-	Rejected      int       `json:"rejected_count"`
-	Missing       int       `json:"missing_count"`
-	Disputed      bool      `json:"disputed"`
-	EvidenceRef   string    `json:"evidence_ref"`
-	Notes         string    `json:"notes"`
-	ActorName     *string   `json:"actor_name"`
-	RecordedAt    time.Time `json:"recorded_at"`
+	ID          string    `json:"id"`
+	FromParty   string    `json:"from_party"`
+	ToParty     string    `json:"to_party"`
+	HandedAt    time.Time `json:"handed_at"`
+	Location    *string   `json:"location"`
+	Accepted    int       `json:"accepted_count"`
+	Rejected    int       `json:"rejected_count"`
+	Missing     int       `json:"missing_count"`
+	Disputed    bool      `json:"disputed"`
+	EvidenceRef string    `json:"evidence_ref"`
+	Notes       string    `json:"notes"`
+	ActorName   *string   `json:"actor_name"`
+	RecordedAt  time.Time `json:"recorded_at"`
 }
 
 func (s *Service) handoffs(ctx context.Context, q db.Querier, runID string) ([]Handoff, error) {

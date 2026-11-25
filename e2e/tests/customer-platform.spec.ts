@@ -179,8 +179,9 @@ test("addresses, email preferences and household are managed from the account", 
 });
 
 test("a protected page sends a signed-out visitor to sign in and back again", async ({ page, request }) => {
-  await page.goto(`${urls.web}/meals/pumpkin-soup`);
-  await expect(page).toHaveURL(/\/sign-in\?next=%2Fmeals%2Fpumpkin-soup$/);
+  // Meal pages are public since Sprint 9; saved meals are not.
+  await page.goto(`${urls.web}/favorites`);
+  await expect(page).toHaveURL(/\/sign-in\?next=%2Ffavorites$/);
   // A sign-in link cannot be used to bounce someone to another site.
   await page.goto(`${urls.web}/sign-in?next=//evil.example/`);
   const email = uniqueEmail("deeplink");
@@ -195,14 +196,14 @@ test("a protected page sends a signed-out visitor to sign in and back again", as
   await expect(page).toHaveURL(`${urls.web}/dashboard`);
 
   await page.context().clearCookies();
-  await page.goto(`${urls.web}/sign-in?next=%2Fmeals%2Fpumpkin-soup`);
+  await page.goto(`${urls.web}/sign-in?next=%2Ffavorites`);
   await page.getByLabel("Email").fill(email);
   const pw = page.getByLabel("Password", { exact: true });
   await pw.fill(password);
   await page.getByRole("button", { name: "Show password" }).click();
   await expect(pw).toHaveAttribute("type", "text");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(`${urls.web}/meals/pumpkin-soup`);
+  await expect(page).toHaveURL(`${urls.web}/favorites`);
 });
 
 test("staff publish a meal from the admin; a draft needs a photograph first", async ({ page }) => {

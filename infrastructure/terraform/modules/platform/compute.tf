@@ -1,7 +1,7 @@
 # Container registry, cluster, task definitions and services.
 
 resource "aws_ecr_repository" "image" {
-  for_each             = toset(["api", "marketing", "admin"])
+  for_each             = toset(["api", "marketing", "admin", "web"])
   name                 = "${local.name}-${each.key}"
   image_tag_mutability = "IMMUTABLE"
 
@@ -33,7 +33,7 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_cloudwatch_log_group" "service" {
-  for_each          = toset(["api", "worker", "marketing", "admin", "migrate"])
+  for_each          = toset(["api", "worker", "marketing", "admin", "web", "migrate"])
   name              = "/mise/${var.environment}/${each.key}"
   retention_in_days = var.log_retention_days
 }
@@ -182,6 +182,24 @@ locals {
         { name = "PORT", value = "3101" },
         { name = "API_INTERNAL_URL", value = "https://${local.api_host}" },
         { name = "ADMIN_COOKIE_SECURE", value = "true" },
+      ]
+      secrets = [
+        { name = "BFF_SHARED_KEY", valueFrom = aws_secretsmanager_secret.bff_shared_key.arn },
+      ]
+    }
+    # The customer app is a backend-for-frontend: it holds the session cookie
+    # and calls the API server-side, so it needs the BFF key, not a public API.
+    web = {
+      repository = "web"
+      command    = null
+      port       = 3102
+      cpu        = 256
+      memory     = 512
+      environment = [
+        { name = "PORT", value = "3102" },
+        { name = "API_INTERNAL_URL", value = "https://${local.api_host}" },
+        { name = "CUSTOMER_APP_URL", value = "https://${local.app_host}" },
+        { name = "WEB_COOKIE_SECURE", value = "true" },
       ]
       secrets = [
         { name = "BFF_SHARED_KEY", valueFrom = aws_secretsmanager_secret.bff_shared_key.arn },

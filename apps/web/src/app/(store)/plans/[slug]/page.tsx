@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 
 import { TestModeNotice } from "@/components/commerce-bits";
 import { PlanCard } from "@/components/plan-card";
-import { api, requireCustomer } from "@/lib/session";
+import { api } from "@/lib/session";
 
 async function load(slug: string) {
   try {
@@ -20,11 +20,10 @@ async function load(slug: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const plan = await load((await params).slug);
-  return { title: `${plan.name} plan` };
+  return { title: `${plan.name} plan`, description: plan.summary, alternates: { canonical: `/plans/${plan.slug}` } };
 }
 
 export default async function PlanPage({ params }: { params: Promise<{ slug: string }> }) {
-  await requireCustomer();
   const { slug } = await params;
   const [plan, info] = await Promise.all([load(slug), api.shop.info()]);
   return (

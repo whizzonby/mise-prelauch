@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { formError, type FormState } from "@/lib/messages";
@@ -8,15 +9,25 @@ import { api, clearSession, sessionToken, storeSession } from "@/lib/session";
 
 const text = (form: FormData, key: string) => String(form.get(key) ?? "");
 
+/**
+ * Where a new customer was heading (a plan they chose) survives the trip
+ * through the verification email: kept for a day in this browser, used once
+ * at the first sign-in, then removed.
+ */
+const AFTER_SIGNUP_COOKIE = "mise_after_signup";
+
 export async function signIn(_previous: FormState, form: FormData): Promise<FormState> {
   const email = text(form, "email").trim();
   const password = text(form, "password");
   if (!email || !password) return { error: "Enter your email and password." };
-  const requested = text(form, "next");
+  const jar = await cookies();
+  const remembered = jar.get(AFTER_SIGNUP_COOKIE)?.value ?? "";
+  const requested = text(form, "next") || remembered;
   let destination = safeNext(requested);
   try {
     const result = await api.auth.login(email, password);
     await storeSession(result.token, result.expires_in);
+    if (remembered) jar.delete(AFTER_SIGNUP_COOKIE);
     // Someone who has not set up their kitchen yet starts there, unless they
     // followed a link to a particular page.
     const onboarding = requested ? null : await api.account.onboarding(result.token).catch(() => null);
@@ -38,6 +49,16 @@ export async function register(_previous: FormState, form: FormData): Promise<Fo
     });
   } catch (error) {
     return formError(error);
+  }
+  const next = text(form, "next");
+  if (next && safeNext(next, "") !== "") {
+    (await cookies()).set(AFTER_SIGNUP_COOKIE, safeNext(next), {
+      httpOnly: true,
+      secure: process.env.WEB_COOKIE_SECURE !== "false",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60,
+    });
   }
   redirect("/check-email");
 }

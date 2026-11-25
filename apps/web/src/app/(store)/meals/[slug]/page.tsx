@@ -1,5 +1,5 @@
 import { ApiError, type MealDetail } from "@mise/api-client";
-import { Container, Tag } from "@mise/ui";
+import { buttonClasses, Container, Tag } from "@mise/ui";
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -8,10 +8,10 @@ import { notFound } from "next/navigation";
 
 import { FavoriteButton } from "@/components/favorite-button";
 import { DemoTag } from "@/components/meal-card";
-import { savedMealIds } from "@/lib/data";
+import { openMenus, savedMealIds } from "@/lib/data";
 import { minutes } from "@/lib/format";
 import { shortDateTime } from "@/lib/greeting";
-import { api, requireCustomer } from "@/lib/session";
+import { api, optionalSession } from "@/lib/session";
 
 type Params = Promise<{ slug: string }>;
 
@@ -27,13 +27,24 @@ async function load(slug: string): Promise<MealDetail> {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const meal = await api.catalog.meal(slug).catch(() => null);
-  return { title: meal?.name ?? "Meal" };
+  if (!meal) return { title: "Meal" };
+  return {
+    title: meal.name,
+    description: meal.summary,
+    alternates: { canonical: `/meals/${meal.slug}` },
+    openGraph: { title: meal.name, description: meal.summary, images: meal.image ? [{ url: meal.image.src, alt: meal.image.alt }] : undefined },
+  };
 }
 
 export default async function MealPage({ params }: { params: Params }) {
-  const { token } = await requireCustomer();
+  const session = await optionalSession();
   const { slug } = await params;
-  const [meal, saved] = await Promise.all([load(slug), savedMealIds(token)]);
+  const [meal, saved, menus] = await Promise.all([
+    load(slug),
+    session ? savedMealIds(session.token) : Promise.resolve(null),
+    openMenus().catch(() => null),
+  ]);
+  const onMenus = menus?.filter((m) => m.meals.some((x) => x.id === meal.id)) ?? null;
   const hero = meal.images[0] ?? meal.image;
   const facts = [
     { label: "Preparation", value: minutes(meal.prep_minutes) },
@@ -91,12 +102,53 @@ export default async function MealPage({ params }: { params: Params }) {
             </ul>
           ) : null}
 
-          <div className="mt-8 flex flex-wrap items-start gap-4">
-            <FavoriteButton mealId={meal.id} mealName={meal.name} initial={saved.has(meal.id)} variant="full" />
+          <section aria-labelledby="availability" className="mt-8 border-t border-border pt-6">
+            <h2 id="availability" className="type-h4">
+              Availability
+            </h2>
+            {onMenus === null ? (
+              <p className="type-body-sm mt-2 text-muted">We could not check this week&rsquo;s menus just now.</p>
+            ) : onMenus.length ? (
+              <>
+                <p className="type-body-sm mt-2">
+                  {onMenus.length === 1 ? `On the menu for the week of ${onMenus[0]?.week_label}.` : `On the menu for ${onMenus.length} open weeks.`}{" "}
+                  Subscribers choose it before each week&rsquo;s cutoff.
+                </p>
+                {onMenus.length > 1 ? (
+                  <ul className="type-body-sm mt-2 list-disc pl-5">
+                    {onMenus.map((m) => (
+                      <li key={m.week}>Week of {m.week_label}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : (
+              <p className="type-body-sm mt-2 text-muted">Not on a menu open for ordering right now. Menus change every week.</p>
+            )}
+          </section>
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            {session ? (
+              onMenus?.[0] ? (
+                <Link href={`/menu/${onMenus[0].week}`} className={buttonClasses("primary")}>
+                  Choose your meals
+                </Link>
+              ) : null
+            ) : (
+              <Link href="/plans" className={buttonClasses("primary")}>
+                See plans
+              </Link>
+            )}
+            {saved ? <FavoriteButton mealId={meal.id} mealName={meal.name} initial={saved.has(meal.id)} variant="full" /> : null}
           </div>
-          <p className="type-caption mt-4 max-w-[40ch] text-muted">
-            Choosing meals for weekly delivery opens soon. Save this one and it will be waiting for you.
-          </p>
+          {session ? null : (
+            <p className="type-caption mt-4 max-w-[44ch] text-muted">
+              Meals are chosen each week as part of a plan.{" "}
+              <Link href={`/sign-in?next=${encodeURIComponent(`/meals/${meal.slug}`)}`} className="underline underline-offset-4">
+                Sign in
+              </Link>{" "}
+              to save meals you like.
+            </p>
+          )}
         </div>
       </Container>
 

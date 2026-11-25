@@ -225,17 +225,17 @@ func (s *Service) Delivery(ctx context.Context, sc Scope, id string) (*Delivery,
 
 // Tracking is one tracking event as staff see it.
 type Tracking struct {
-	ID         int64      `json:"id"`
-	Type       string     `json:"type"`
-	From       *string    `json:"from"`
-	To         *string    `json:"to"`
-	Attempt    int        `json:"attempt"`
-	Source     string     `json:"source"`
-	ActorName  *string    `json:"actor_name"`
-	OccurredAt time.Time  `json:"occurred_at"`
-	RecordedAt time.Time  `json:"recorded_at"`
-	Location   *string    `json:"location"`
-	Notes      *string    `json:"notes"`
+	ID         int64           `json:"id"`
+	Type       string          `json:"type"`
+	From       *string         `json:"from"`
+	To         *string         `json:"to"`
+	Attempt    int             `json:"attempt"`
+	Source     string          `json:"source"`
+	ActorName  *string         `json:"actor_name"`
+	OccurredAt time.Time       `json:"occurred_at"`
+	RecordedAt time.Time       `json:"recorded_at"`
+	Location   *string         `json:"location"`
+	Notes      *string         `json:"notes"`
 	Details    json.RawMessage `json:"details"`
 }
 

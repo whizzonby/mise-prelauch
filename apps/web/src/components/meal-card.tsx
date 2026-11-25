@@ -26,7 +26,8 @@ export function MealCard({
   className,
 }: {
   meal: Meal;
-  saved: boolean;
+  /** Whether the customer saved it; null for a visitor, who cannot save. */
+  saved: boolean | null;
   /** Why it was recommended, shown under the summary. */
   reasons?: string[];
   priority?: boolean;
@@ -45,9 +46,11 @@ export function MealCard({
             className="object-cover transition-transform duration-(--duration-editorial) ease-settle motion-safe:group-hover:scale-[1.02]"
           />
         ) : null}
-        <div className="absolute right-3 top-3 z-10">
-          <FavoriteButton mealId={meal.id} mealName={meal.name} initial={saved} />
-        </div>
+        {saved === null ? null : (
+          <div className="absolute right-3 top-3 z-10">
+            <FavoriteButton mealId={meal.id} mealName={meal.name} initial={saved} />
+          </div>
+        )}
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <span className="type-caption font-semibold uppercase tracking-[0.08em] text-secondary">{meal.category.name}</span>

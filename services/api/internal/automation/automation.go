@@ -131,7 +131,9 @@ var kinds = map[string]kind{
 				FROM dispatch_runs r WHERE r.status = 'completed' AND r.completed_at <= $1`, now.Add(-hours(r, "max_hours")))
 		}},
 	"payment_failed": {
-		events: []string{},
+		// Commerce publishes payment.failed since Sprint 9, so the rule reacts
+		// at once; the scheduled tick remains the safety net.
+		events: []string{"payment.failed"},
 		subjects: func(ctx context.Context, q db.Querier, r *Rule, _ time.Time) ([]Subject, error) {
 			// Only failures after the rule was enabled: enabling never floods
 			// the team with history.

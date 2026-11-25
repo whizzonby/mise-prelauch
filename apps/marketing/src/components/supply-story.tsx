@@ -59,7 +59,7 @@ export function SupplyStory() {
           {/* Position in the sequence. Decorative: the list above already carries the order. */}
           <ol data-story-progress aria-hidden="true" className="mt-10 hidden items-center gap-3">
             {story.stages.map((stage) => (
-              <li key={stage.id} data-story-marker className="type-caption flex items-center gap-3 opacity-45 transition-opacity duration-(--duration-standard)">
+              <li key={stage.id} data-story-marker className="type-caption flex items-center gap-3 opacity-80 transition-opacity duration-(--duration-standard)">
                 <span className="block h-px w-8 bg-current" />
                 {stage.name}
               </li>

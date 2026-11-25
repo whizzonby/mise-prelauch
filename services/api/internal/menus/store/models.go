@@ -51,6 +51,36 @@ type AdminUser struct {
 	UpdatedAt    time.Time
 }
 
+type AnalyticsQualityResult struct {
+	ID        int64
+	CheckID   string
+	Status    string
+	Count     int32
+	Detail    string
+	CheckedAt time.Time
+}
+
+type AnalyticsRefreshRun struct {
+	ID            int64
+	Reason        string
+	FromDay       time.Time
+	ToDay         time.Time
+	Status        string
+	ValuesWritten int32
+	Error         *string
+	ActorUserID   *string
+	StartedAt     time.Time
+	FinishedAt    *time.Time
+}
+
+type AnalyticsSnapshot struct {
+	MetricID     string
+	Day          time.Time
+	Value        pgtype.Numeric
+	RefreshRunID *int64
+	ComputedAt   time.Time
+}
+
 type AuditLog struct {
 	ID           int64
 	ActorAdminID *string
@@ -73,6 +103,91 @@ type AuthToken struct {
 	ConsumedAt *time.Time
 	CreatedAt  time.Time
 	NewEmail   *string
+}
+
+type AutomationExecution struct {
+	ID           string
+	RuleID       string
+	RuleVersion  int32
+	Trigger      string
+	TriggerRef   string
+	SubjectType  string
+	SubjectID    string
+	SubjectLabel string
+	DedupeKey    string
+	Action       string
+	Status       string
+	Attempts     int32
+	LastError    *string
+	Result       []byte
+	CreatedAt    time.Time
+	FinishedAt   *time.Time
+	DecidedBy    *string
+	DecidedAt    *time.Time
+	DecisionNote *string
+}
+
+type AutomationExecutionEvent struct {
+	ID          int64
+	ExecutionID string
+	Type        string
+	Body        *string
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
+type AutomationRule struct {
+	ID              string
+	Kind            string
+	Name            string
+	Description     string
+	Enabled         bool
+	Params          []byte
+	Action          string
+	OwnerPermission string
+	Priority        string
+	CooldownMinutes *int32
+	ApprovalRef     string
+	Version         int32
+	UpdatedBy       *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	LastEvaluatedAt *time.Time
+	EnabledAt       *time.Time
+}
+
+type AutomationRuleVersion struct {
+	RuleID      string
+	Version     int32
+	Config      []byte
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
+type AutomationTask struct {
+	ID          string
+	ExecutionID *string
+	Title       string
+	Detail      string
+	Permission  string
+	Link        string
+	Status      string
+	AssignedTo  *string
+	CreatedAt   time.Time
+	ClosedAt    *time.Time
+	ClosedBy    *string
+	CloseNote   *string
+}
+
+type BatchIngredientLot struct {
+	BatchID       string
+	LotID         string
+	IngredientID  string
+	Unit          string
+	Issued        pgtype.Numeric
+	Returned      pgtype.Numeric
+	FirstIssuedAt time.Time
+	UpdatedAt     time.Time
 }
 
 type BillingCycle struct {
@@ -127,17 +242,20 @@ type CheckoutSession struct {
 }
 
 type ChefProfile struct {
-	ID          string
-	Slug        string
-	DisplayName string
-	RoleTitle   *string
-	Bio         string
-	ImageSrc    *string
-	ImageAlt    *string
-	Status      string
-	IsDemo      bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           string
+	Slug         string
+	DisplayName  string
+	RoleTitle    *string
+	Bio          string
+	ImageSrc     *string
+	ImageAlt     *string
+	Status       string
+	IsDemo       bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	UserID       *string
+	Specialities []string
+	WorkStatus   string
 }
 
 type CrmLeadProfile struct {
@@ -241,6 +359,347 @@ type CustomerPreference struct {
 	UpdatedAt           time.Time
 }
 
+type Delivery struct {
+	ID                  string
+	Number              string
+	ObligationID        string
+	OrderID             string
+	CustomerID          string
+	Status              string
+	Version             int32
+	Attempt             int16
+	ZoneID              *string
+	ZoneSource          string
+	ServiceDate         *time.Time
+	WindowID            *string
+	ScheduleConfirmedAt *time.Time
+	Address             []byte
+	AddressValidation   string
+	PackageCount        int16
+	DeliveredAt         *time.Time
+	FailedAt            *time.Time
+	CancelledAt         *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	OrderWeek           time.Time
+}
+
+type DeliveryCapacity struct {
+	ID          string
+	ServiceDate time.Time
+	ZoneID      *string
+	WindowID    *string
+	PartnerID   *string
+	CourierID   *string
+	Capacity    int32
+	Notes       string
+	UpdatedBy   *string
+	UpdatedAt   time.Time
+}
+
+type DeliveryCaseLink struct {
+	SupportCaseID string
+	DeliveryID    string
+	CreatedAt     time.Time
+}
+
+type DeliveryCostRecord struct {
+	ID            string
+	PartnerID     string
+	DeliveryID    *string
+	RunID         *string
+	Kind          string
+	AmountMinor   int64
+	Currency      string
+	RateReference string
+	Status        string
+	Notes         string
+	RecordedBy    *string
+	CreatedAt     time.Time
+}
+
+type DeliveryCounter struct {
+	Kind   string
+	Period string
+	Last   int32
+}
+
+type DeliveryCourier struct {
+	ID        string
+	PartnerID string
+	Name      string
+	Phone     string
+	UserID    *string
+	ZoneIds   []string
+	Status    string
+	Notes     string
+	Demo      bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type DeliveryException struct {
+	ID           string
+	Number       string
+	Stage        string
+	Type         string
+	Severity     string
+	Status       string
+	Blocking     bool
+	OwnerUserID  *string
+	ObligationID *string
+	DeliveryID   *string
+	OrderID      *string
+	CustomerID   *string
+	BatchID      *string
+	RunID        *string
+	Summary      string
+	Notes        string
+	NextAction   string
+	Resolution   *string
+	DedupeKey    *string
+	CreatedBy    *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ResolvedBy   *string
+	ResolvedAt   *time.Time
+}
+
+type DeliveryExceptionEvent struct {
+	ID          int64
+	ExceptionID string
+	Type        string
+	Body        *string
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
+type DeliveryHandoff struct {
+	ID             string
+	RunID          string
+	FromParty      string
+	ToParty        string
+	PartnerID      string
+	CourierID      *string
+	HandedAt       time.Time
+	Location       *string
+	AcceptedCount  int32
+	RejectedCount  int32
+	MissingCount   int32
+	Disputed       bool
+	EvidenceRef    string
+	Notes          string
+	ActorUserID    *string
+	IdempotencyKey string
+	CreatedAt      time.Time
+}
+
+type DeliveryHandoffPackage struct {
+	HandoffID  string
+	PackageID  string
+	DeliveryID string
+	Attempt    int16
+	Outcome    string
+}
+
+type DeliveryNotification struct {
+	ID         string
+	DeliveryID string
+	CustomerID string
+	Kind       string
+	Channel    string
+	DedupeKey  string
+	Status     string
+	Reason     *string
+	Attempts   int32
+	LastError  *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type DeliveryPartner struct {
+	ID                string
+	Name              string
+	ContactName       string
+	Phone             string
+	Email             string
+	EscalationContact string
+	IntegrationMode   string
+	AgreementStatus   string
+	AgreementRef      string
+	Status            string
+	Capabilities      []string
+	SupportedWindows  string
+	CapacityNote      string
+	BillingReference  string
+	Notes             string
+	Demo              bool
+	Version           int32
+	ApprovedBy        *string
+	ApprovedAt        *time.Time
+	CreatedBy         *string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+type DeliveryPartnerCriterium struct {
+	PartnerID  string
+	Criterion  string
+	Met        bool
+	Evidence   string
+	RecordedBy *string
+	RecordedAt time.Time
+}
+
+type DeliveryPartnerEvent struct {
+	ID          int64
+	PartnerID   string
+	FromStatus  *string
+	ToStatus    string
+	Reason      *string
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
+type DeliveryPartnerZone struct {
+	PartnerID string
+	ZoneID    string
+}
+
+type DeliveryProof struct {
+	ID               string
+	DeliveryID       string
+	Attempt          int16
+	Method           string
+	Status           string
+	RecipientName    *string
+	PartnerReference *string
+	Notes            *string
+	RejectionReason  *string
+	RecordedBy       *string
+	IdempotencyKey   string
+	CreatedAt        time.Time
+}
+
+type DeliveryReconciliation struct {
+	ID            string
+	RunID         string
+	Status        string
+	Summary       []byte
+	Discrepancies []byte
+	Explanation   *string
+	ClosedBy      *string
+	ClosedAt      *time.Time
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type DeliveryRescheduleRequest struct {
+	ID            string
+	DeliveryID    string
+	RequestedBy   string
+	RequesterUser *string
+	PreferredDate *time.Time
+	Reason        string
+	Status        string
+	NewDate       *time.Time
+	NewWindowID   *string
+	DecisionNote  *string
+	DecidedBy     *string
+	DecidedAt     *time.Time
+	CreatedAt     time.Time
+}
+
+type DeliveryReturn struct {
+	ID              string
+	DeliveryID      string
+	Attempt         int16
+	Reason          string
+	ReturnedAt      time.Time
+	ReceivedBy      *string
+	Condition       string
+	Disposition     string
+	DispositionNote *string
+	Status          string
+	ReviewedBy      *string
+	ReviewedAt      *time.Time
+	CreatedAt       time.Time
+}
+
+type DeliveryReturnPackage struct {
+	ReturnID  string
+	PackageID string
+}
+
+type DeliveryServiceDay struct {
+	ID          string
+	ServiceDate time.Time
+	ZoneID      *string
+	Status      string
+	CutoffAt    *time.Time
+	Notes       string
+	CreatedBy   *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type DeliveryServiceZone struct {
+	ID           string
+	Code         string
+	Name         string
+	Status       string
+	FeePolicyRef string
+	Notes        string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type DeliverySetting struct {
+	ID                         bool
+	ProofMethods               []string
+	ProofPolicyRef             string
+	RescheduleCutoffHours      *int32
+	FailureReasons             []string
+	AllowUnapprovedPartners    bool
+	UnapprovedPartnerPolicyRef string
+	LabelCertified             bool
+	CustomerEmailsApproved     bool
+	UpdatedBy                  *string
+	UpdatedAt                  time.Time
+	DeliveryOffsetMinDays      *int32
+	DeliveryOffsetMaxDays      *int32
+	DeliveryWeekRuleRef        string
+}
+
+type DeliveryTrackingEvent struct {
+	ID               int64
+	DeliveryID       string
+	Type             string
+	FromStatus       *string
+	ToStatus         *string
+	Attempt          int16
+	Source           string
+	ActorUserID      *string
+	PartnerID        *string
+	OccurredAt       time.Time
+	RecordedAt       time.Time
+	Location         *string
+	LocationVerified bool
+	Notes            *string
+	Details          []byte
+	IdempotencyKey   string
+}
+
+type DeliveryWindow struct {
+	ID           string
+	ServiceDayID string
+	Label        string
+	StartsAt     pgtype.Time
+	EndsAt       pgtype.Time
+	Status       string
+	CreatedAt    time.Time
+}
+
 type DeliveryZone struct {
 	ID        string
 	Country   string
@@ -248,6 +707,391 @@ type DeliveryZone struct {
 	Status    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type DeliveryZoneRegion struct {
+	ZoneID  string
+	Country string
+	Region  string
+}
+
+type DispatchManifest struct {
+	ID           string
+	RunID        string
+	Revision     int32
+	Status       string
+	Content      []byte
+	ContentHash  string
+	StopCount    int32
+	PackageCount int32
+	GeneratedBy  *string
+	GeneratedAt  time.Time
+}
+
+type DispatchRun struct {
+	ID          string
+	Number      string
+	ServiceDate time.Time
+	PartnerID   string
+	CourierID   *string
+	ZoneID      *string
+	Status      string
+	Version     int32
+	Notes       string
+	CreatedBy   *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	FinalizedAt *time.Time
+	ReleasedBy  *string
+	ReleasedAt  *time.Time
+	CompletedAt *time.Time
+	CancelledAt *time.Time
+}
+
+type DispatchStop struct {
+	ID               string
+	RunID            string
+	DeliveryID       string
+	Attempt          int16
+	Sequence         int16
+	Status           string
+	CapacityOverride *string
+	PartnerOverride  *string
+	AddedBy          *string
+	AddedAt          time.Time
+	RemovedBy        *string
+	RemovedAt        *time.Time
+	RemovalReason    *string
+}
+
+type DomainEvent struct {
+	ID            int64
+	Type          string
+	AggregateType string
+	AggregateID   string
+	DedupeKey     string
+	Payload       []byte
+	RequestID     *string
+	OccurredAt    time.Time
+}
+
+type EventConsumerOffset struct {
+	Consumer    string
+	LastEventID int64
+	UpdatedAt   time.Time
+}
+
+type FarmerProfile struct {
+	SupplierID             string
+	FarmName               string
+	FarmLocation           string
+	Crops                  []string
+	GrowingSeasons         string
+	HarvestWindows         string
+	EstimatedCapacity      string
+	CollectionArrangements string
+	InformationSource      string
+	RecordedBy             *string
+	UpdatedAt              time.Time
+}
+
+type ForecastBacktest struct {
+	RunID    string
+	Method   string
+	Folds    int32
+	Mae      pgtype.Numeric
+	Wape     pgtype.Numeric
+	Bias     pgtype.Numeric
+	Mase     pgtype.Numeric
+	Selected bool
+}
+
+type ForecastRun struct {
+	ID            string
+	Trigger       string
+	ActorUserID   *string
+	Status        string
+	InputFrom     *time.Time
+	InputTo       *time.Time
+	Method        *string
+	MethodVersion *string
+	HorizonWeeks  int32
+	Readiness     []byte
+	Notes         string
+	CreatedAt     time.Time
+}
+
+type ForecastSetting struct {
+	ID                   bool
+	MinWeeks             *int32
+	MaxMissingShare      pgtype.Numeric
+	MinImprovement       pgtype.Numeric
+	MinIntervalResiduals *int32
+	HorizonWeeks         int32
+	SeasonWeeks          *int32
+	ApprovalRef          string
+	UpdatedBy            *string
+	UpdatedAt            time.Time
+}
+
+type ForecastValue struct {
+	RunID    string
+	MealID   string
+	Week     time.Time
+	Expected pgtype.Numeric
+	Lower    pgtype.Numeric
+	Upper    pgtype.Numeric
+}
+
+type FulfillmentEvent struct {
+	ID           int64
+	ObligationID string
+	FromStatus   *string
+	ToStatus     string
+	Reason       *string
+	ActorUserID  *string
+	CreatedAt    time.Time
+}
+
+type FulfillmentObligation struct {
+	ID            string
+	Number        string
+	OrderID       string
+	OrderNumber   string
+	CustomerID    string
+	WeekStart     time.Time
+	PlanID        *string
+	Status        string
+	ResumeStatus  *string
+	Version       int32
+	KitsRequired  int32
+	SourceEventID *int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	VerifiedAt    *time.Time
+	ReleasedAt    *time.Time
+	HandedOverAt  *time.Time
+	FulfilledAt   *time.Time
+	CancelledAt   *time.Time
+}
+
+type FulfillmentPackage struct {
+	ID                 string
+	Code               string
+	ObligationID       string
+	Sequence           int16
+	VerificationStatus string
+	VerifiedBy         *string
+	VerifiedAt         *time.Time
+	LabelPrintedAt     *time.Time
+	HandoffStatus      string
+	CreatedAt          time.Time
+}
+
+type FulfillmentPackageItem struct {
+	ID               string
+	PackageID        string
+	ObligationID     string
+	MealID           string
+	MealName         string
+	Quantity         int16
+	BatchID          string
+	BatchCode        string
+	RecipeVersionID  string
+	Status           string
+	VerifiedQuantity *int16
+}
+
+type FulfillmentVerification struct {
+	ID               int64
+	ObligationID     string
+	ItemID           string
+	CountedQuantity  int16
+	ScannedBatchCode string
+	RecipeConfirmed  bool
+	PackagingOk      bool
+	LabelOk          bool
+	Result           string
+	Discrepancy      *string
+	ActorUserID      *string
+	IdempotencyKey   string
+	CreatedAt        time.Time
+}
+
+type GoodsReceipt struct {
+	ID             string
+	Number         string
+	PoID           string
+	SupplierID     string
+	IdempotencyKey string
+	DeliveryRef    string
+	Notes          string
+	ReceivedBy     *string
+	ReceivedAt     time.Time
+}
+
+type GoodsReceiptLine struct {
+	ID               string
+	ReceiptID        string
+	PoLineID         string
+	IngredientID     *string
+	DeliveredPacks   pgtype.Numeric
+	AcceptedPacks    pgtype.Numeric
+	QuarantinedPacks pgtype.Numeric
+	RejectedPacks    pgtype.Numeric
+	SupplierLotRef   string
+	ExpiryDate       *time.Time
+	LocationID       *string
+	Inspection       []byte
+	TemperatureC     pgtype.Numeric
+	Discrepancy      string
+	DiscrepancyNote  string
+	UnitCostMinor    int64
+	Currency         string
+}
+
+type Ingredient struct {
+	ID               string
+	Name             string
+	Description      string
+	Category         string
+	BaseUnit         string
+	PurchasingUnit   *string
+	PreparationState string
+	Allergens        []string
+	Storage          string
+	StorageNotes     string
+	ShelfLifeNote    *string
+	Active           bool
+	CreatedBy        *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type IngredientAlias struct {
+	ID           string
+	IngredientID string
+	Alias        string
+	CreatedAt    time.Time
+}
+
+type IngredientCostReference struct {
+	ID            string
+	IngredientID  *string
+	Kind          string
+	Label         string
+	AmountMinor   int64
+	Currency      string
+	PerQuantity   pgtype.Numeric
+	Unit          string
+	Source        string
+	EffectiveFrom time.Time
+	CreatedBy     *string
+	CreatedAt     time.Time
+	Origin        string
+	OriginID      *string
+}
+
+type IngredientRequirement struct {
+	ID           string
+	PlanID       string
+	IngredientID string
+	Preparation  string
+	Quantity     pgtype.Numeric
+	Unit         string
+	Status       string
+	Approximate  bool
+	Note         string
+}
+
+type IngredientRequirementSource struct {
+	RequirementID   string
+	PlanItemID      string
+	RecipeVersionID string
+	BomLineID       string
+	Quantity        pgtype.Numeric
+	Unit            string
+}
+
+type IngredientUnitConversion struct {
+	ID           string
+	IngredientID string
+	FromUnit     string
+	ToUnit       string
+	Factor       pgtype.Numeric
+	Approximate  bool
+	Source       string
+	CreatedBy    *string
+	CreatedAt    time.Time
+}
+
+type InventoryLot struct {
+	ID               string
+	Code             string
+	IngredientID     string
+	SupplierID       string
+	PoLineID         string
+	ReceiptLineID    string
+	SupplierLotRef   string
+	ReceivedAt       time.Time
+	Unit             string
+	ReceivedQuantity pgtype.Numeric
+	OnHand           pgtype.Numeric
+	Reserved         pgtype.Numeric
+	Status           string
+	ExpiryDate       *time.Time
+	ExpiryStatus     string
+	ExpiryNote       string
+	LocationID       string
+	UnitCostMinor    *int64
+	Currency         *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type InventoryMovement struct {
+	ID            int64
+	LotID         string
+	IngredientID  string
+	Type          string
+	OnHandDelta   pgtype.Numeric
+	ReservedDelta pgtype.Numeric
+	OnHandAfter   pgtype.Numeric
+	ReservedAfter pgtype.Numeric
+	Unit          string
+	Reason        string
+	FromLocation  *string
+	ToLocation    *string
+	FromStatus    *string
+	ToStatus      *string
+	BatchID       *string
+	PlanID        *string
+	ReferenceType *string
+	ReferenceID   *string
+	ActorID       *string
+	CreatedAt     time.Time
+}
+
+type InventoryPolicy struct {
+	Category  string
+	Method    string
+	Note      string
+	UpdatedBy *string
+	UpdatedAt time.Time
+}
+
+type InventoryReservation struct {
+	ID            string
+	PlanID        string
+	IngredientID  string
+	LotID         string
+	Quantity      pgtype.Numeric
+	OpenQuantity  pgtype.Numeric
+	Status        string
+	ReleaseReason *string
+	CreatedBy     *string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type Invoice struct {
@@ -534,6 +1378,16 @@ type OrderCounter struct {
 	Last int64
 }
 
+type OrderDeliveryOutcome struct {
+	ID          int64
+	OrderID     string
+	State       string
+	Reason      string
+	Source      string
+	ActorUserID *string
+	CreatedAt   time.Time
+}
+
 type OrderItem struct {
 	OrderID        string
 	MealID         string
@@ -555,6 +1409,19 @@ type OrderStatusHistory struct {
 	Reason      *string
 	ActorUserID *string
 	CreatedAt   time.Time
+}
+
+type PackagingRecord struct {
+	BatchID        string
+	PackagingType  string
+	RequiredKits   int32
+	PackedKits     int32
+	LabelsVerified bool
+	AssignedTo     *string
+	Exceptions     string
+	CompletedAt    *time.Time
+	UpdatedBy      *string
+	UpdatedAt      time.Time
 }
 
 type PasswordCredential struct {
@@ -628,6 +1495,247 @@ type Permission struct {
 	CreatedAt   time.Time
 }
 
+type ProcurementLine struct {
+	ID           string
+	RunID        string
+	IngredientID string
+	Unit         string
+	Gross        pgtype.Numeric
+	Buffer       pgtype.Numeric
+	Decision     string
+	ProductID    *string
+	Packs        pgtype.Numeric
+	DecisionNote string
+	DecidedBy    *string
+	DecidedAt    *time.Time
+}
+
+type ProcurementRequirement struct {
+	RunID         string
+	RequirementID string
+	IngredientID  string
+	Preparation   string
+	Quantity      pgtype.Numeric
+	Unit          string
+	Status        string
+	Approximate   bool
+	BatchIds      []string
+}
+
+type ProcurementRun struct {
+	ID               string
+	Number           string
+	PlanID           string
+	PlanNumber       string
+	SnapshotID       string
+	SnapshotRevision int32
+	WeekStart        time.Time
+	RequiredBy       time.Time
+	SourceEventID    *int64
+	Status           string
+	ReviewReason     *string
+	ApprovedBy       *string
+	ApprovedAt       *time.Time
+	CreatedBy        *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type ProcurementSetting struct {
+	ID                        bool
+	ApprovalLimitMinor        *int64
+	ReceivingTolerancePercent pgtype.Numeric
+	Currencies                []string
+	AllowUnapprovedSuppliers  bool
+	UnapprovedPolicyRef       string
+	UpdatedBy                 *string
+	UpdatedAt                 time.Time
+}
+
+type ProductionBatch struct {
+	ID              string
+	Code            string
+	PlanID          string
+	PlanItemID      string
+	MealID          string
+	MealName        string
+	RecipeVersionID string
+	ProductionDate  time.Time
+	PlannedKits     int32
+	ActualKits      *int32
+	AssignedTeam    string
+	Status          string
+	QualityStatus   string
+	PackagingStatus string
+	StartedAt       *time.Time
+	CompletedAt     *time.Time
+	CancelledAt     *time.Time
+	CancelReason    *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type ProductionBatchEvent struct {
+	ID         int64
+	BatchID    string
+	FromStatus *string
+	ToStatus   string
+	Note       *string
+	ActorID    *string
+	CreatedAt  time.Time
+}
+
+type ProductionDemandLine struct {
+	SnapshotID        string
+	OrderID           string
+	OrderNumber       string
+	MealID            string
+	MealVersion       int32
+	MealName          string
+	Quantity          int16
+	Servings          int16
+	DietaryTags       []string
+	CustomerAllergens []string
+	RecipeVersionID   *string
+}
+
+type ProductionDemandSnapshot struct {
+	ID          string
+	WeekStart   time.Time
+	Revision    int32
+	CutoffAt    time.Time
+	ContentHash string
+	Status      string
+	Kits        int32
+	Orders      int32
+	CreatedBy   *string
+	CreatedAt   time.Time
+}
+
+type ProductionPlan struct {
+	ID             string
+	Number         string
+	WeekStart      time.Time
+	SnapshotID     string
+	ProductionDate time.Time
+	Status         string
+	Notes          string
+	CreatedBy      *string
+	ApprovedBy     *string
+	ApprovedAt     *time.Time
+	ReleasedBy     *string
+	ReleasedAt     *time.Time
+	CancelledAt    *time.Time
+	CancelReason   *string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type ProductionPlanCounter struct {
+	ID   bool
+	Last int64
+}
+
+type ProductionPlanItem struct {
+	ID               string
+	PlanID           string
+	MealID           string
+	MealName         string
+	RecipeVersionID  *string
+	ServingsPerKit   int16
+	DemandKits       int32
+	PlannedKits      int32
+	AdjustmentReason *string
+	AdjustedBy       *string
+}
+
+type ProductionScheduleSlot struct {
+	ID              string
+	Label           string
+	PrepWeekday     int16
+	DeliveryWeekday int16
+	Status          string
+	CreatedAt       time.Time
+}
+
+type ProductionSetting struct {
+	ID                 bool
+	CapacityKitsPerDay *int32
+	CapacityNote       string
+	UpdatedBy          *string
+	UpdatedAt          time.Time
+}
+
+type ProductionTask struct {
+	ID           string
+	BatchID      string
+	TemplateID   *string
+	Title        string
+	Kind         string
+	Instructions string
+	Position     int16
+	Priority     string
+	Status       string
+	AssignedTo   *string
+	DueAt        *time.Time
+	StartedAt    *time.Time
+	CompletedAt  *time.Time
+	Notes        string
+	Exception    *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type ProductionTaskEvent struct {
+	ID        int64
+	TaskID    string
+	Type      string
+	FromValue *string
+	ToValue   *string
+	Body      *string
+	ActorID   *string
+	CreatedAt time.Time
+}
+
+type ProductionTaskTemplate struct {
+	ID               string
+	Name             string
+	Kind             string
+	Instructions     string
+	Position         int16
+	Priority         string
+	DueOffsetMinutes *int32
+	Active           bool
+	CreatedBy        *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type ProductionWaste struct {
+	ID           string
+	BatchID      *string
+	IngredientID *string
+	Item         string
+	Quantity     pgtype.Numeric
+	Unit         string
+	Category     string
+	Reason       string
+	RecordedBy   *string
+	CreatedAt    time.Time
+}
+
+type ProductionYieldRecord struct {
+	BatchID      string
+	PlannedKits  int32
+	ProducedKits int32
+	RejectedKits int32
+	ReworkedKits int32
+	AcceptedKits int32
+	Notes        string
+	RecordedBy   *string
+	RecordedAt   time.Time
+}
+
 type Promotion struct {
 	ID             string
 	Code           string
@@ -660,6 +1768,255 @@ type PromotionRedemption struct {
 	Status         string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+}
+
+type PurchaseOrder struct {
+	ID                string
+	Number            string
+	SupplierID        string
+	RunID             *string
+	Status            string
+	Revision          int32
+	Currency          string
+	ExpectedDelivery  *time.Time
+	LocationID        *string
+	DeliveryFeeMinor  int64
+	TaxMinor          int64
+	Notes             string
+	SupplierException *string
+	BuyerID           *string
+	ApprovedBy        *string
+	ApprovedAt        *time.Time
+	LimitApprovedBy   *string
+	IssuedBy          *string
+	IssuedAt          *time.Time
+	IssuedVia         *string
+	CancelReason      *string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+type PurchaseOrderEvent struct {
+	ID         int64
+	PoID       string
+	FromStatus *string
+	ToStatus   string
+	Note       *string
+	ActorID    *string
+	CreatedAt  time.Time
+}
+
+type PurchaseOrderLine struct {
+	ID                string
+	PoID              string
+	Position          int16
+	ProductID         string
+	IngredientID      *string
+	Description       string
+	Packs             pgtype.Numeric
+	PackQuantity      pgtype.Numeric
+	PackUnit          string
+	QuantityBase      pgtype.Numeric
+	BaseUnit          *string
+	UnitPriceMinor    int64
+	LineTotalMinor    int64
+	QuotationLineID   *string
+	ProcurementLineID *string
+	ReceivedPacks     pgtype.Numeric
+	AcceptedPacks     pgtype.Numeric
+}
+
+type PurchaseOrderRevision struct {
+	PoID       string
+	Revision   int32
+	Snapshot   []byte
+	TotalMinor int64
+	Reason     *string
+	ApprovedBy *string
+	ApprovedAt time.Time
+}
+
+type QualityCheck struct {
+	ID          string
+	BatchID     string
+	TemplateID  string
+	CheckType   string
+	Critical    bool
+	Result      string
+	Notes       string
+	EvidenceRef *string
+	InspectorID *string
+	CreatedAt   time.Time
+}
+
+type QualityCheckTemplate struct {
+	ID           string
+	Name         string
+	CheckType    string
+	Criteria     string
+	Critical     bool
+	Position     int16
+	Active       bool
+	ProcedureRef string
+	CreatedBy    *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type QualityHold struct {
+	ID              string
+	BatchID         string
+	CheckID         *string
+	Reason          string
+	Status          string
+	CreatedBy       *string
+	CreatedAt       time.Time
+	ResolvedBy      *string
+	ResolvedAt      *time.Time
+	ResolutionNotes *string
+}
+
+type Quotation struct {
+	ID            string
+	RfqID         *string
+	SupplierID    string
+	Reference     string
+	Currency      string
+	LeadTimeDays  *int16
+	DeliveryTerms string
+	ValidUntil    *time.Time
+	ReceivedVia   string
+	ReceivedAt    time.Time
+	RecordedBy    *string
+	CreatedAt     time.Time
+}
+
+type QuotationLine struct {
+	ID             string
+	QuotationID    string
+	ProductID      string
+	Packs          pgtype.Numeric
+	UnitPriceMinor int64
+	Position       int16
+}
+
+type ReceivingChecklistItem struct {
+	ID           string
+	Name         string
+	Criteria     string
+	Categories   []string
+	ProcedureRef string
+	Position     int16
+	Active       bool
+	UpdatedAt    time.Time
+}
+
+type Recipe struct {
+	ID          string
+	Code        string
+	Name        string
+	Description string
+	Category    string
+	MealID      *string
+	ChefID      *string
+	CreatedBy   *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type RecipeAllergen struct {
+	VersionID string
+	Allergen  string
+	Kind      string
+}
+
+type RecipeCollaborator struct {
+	RecipeID  string
+	UserID    string
+	AddedBy   *string
+	CreatedAt time.Time
+}
+
+type RecipeCounter struct {
+	ID   bool
+	Last int64
+}
+
+type RecipeNutrition struct {
+	VersionID  string
+	EnergyKcal pgtype.Numeric
+	ProteinG   pgtype.Numeric
+	CarbsG     pgtype.Numeric
+	FatG       pgtype.Numeric
+	SatFatG    pgtype.Numeric
+	FibreG     pgtype.Numeric
+	SugarG     pgtype.Numeric
+	SodiumMg   pgtype.Numeric
+	Source     *string
+	Method     string
+	EnteredBy  *string
+	UpdatedAt  time.Time
+}
+
+type RecipeReview struct {
+	ID            string
+	VersionID     string
+	Stage         string
+	Decision      string
+	Notes         string
+	ReviewerID    *string
+	CreatedAt     time.Time
+	InvalidatedAt *time.Time
+}
+
+type RecipeStep struct {
+	VersionID string
+	Kind      string
+	Position  int16
+	Body      string
+}
+
+type RecipeVersion struct {
+	ID                    string
+	RecipeID              string
+	Number                int32
+	Status                string
+	YieldServings         int16
+	ServingSize           string
+	ServingSizeG          pgtype.Numeric
+	KitchenPrepMinutes    *int16
+	CustomerCookMinutes   *int16
+	StorageInstructions   string
+	PackagingInstructions string
+	CustomerInstructions  string
+	DietaryTags           []string
+	CrossContactNote      string
+	ChangeSummary         string
+	EffectiveFrom         *time.Time
+	AuthorID              *string
+	BasedOn               *string
+	SubmittedAt           *time.Time
+	ApprovedBy            *string
+	ApprovedAt            *time.Time
+	PublishedBy           *string
+	PublishedAt           *time.Time
+	ArchivedAt            *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type RecipeVersionIngredient struct {
+	ID           string
+	VersionID    string
+	Position     int16
+	IngredientID string
+	Quantity     pgtype.Numeric
+	Unit         string
+	Preparation  string
+	YieldPercent pgtype.Numeric
+	Optional     bool
+	Substitution string
+	Note         string
 }
 
 type Referral struct {
@@ -701,6 +2058,60 @@ type ReportExport struct {
 	ExpiresAt   time.Time
 }
 
+type ReportRun struct {
+	ID          string
+	ScheduleID  string
+	PeriodStart time.Time
+	PeriodEnd   time.Time
+	Status      string
+	Content     []byte
+	Csv         *string
+	Error       *string
+	Trigger     string
+	ActorUserID *string
+	StartedAt   time.Time
+	GeneratedAt *time.Time
+}
+
+type ReportRunDelivery struct {
+	RunID     string
+	UserID    string
+	Status    string
+	Reason    *string
+	UpdatedAt time.Time
+}
+
+type Rfq struct {
+	ID         string
+	Number     string
+	Status     string
+	RunID      *string
+	RequiredBy *time.Time
+	Deadline   *time.Time
+	Notes      string
+	BuyerID    *string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type RfqLine struct {
+	ID           string
+	RfqID        string
+	IngredientID *string
+	Description  string
+	Quantity     pgtype.Numeric
+	Unit         string
+	Position     int16
+}
+
+type RfqSupplier struct {
+	RfqID      string
+	SupplierID string
+	Channel    *string
+	InvitedAt  *time.Time
+	InvitedBy  *string
+}
+
 type Role struct {
 	Key         string
 	Name        string
@@ -711,6 +2122,17 @@ type Role struct {
 type RolePermission struct {
 	RoleKey       string
 	PermissionKey string
+}
+
+type ScheduledReport struct {
+	ID          string
+	Kind        string
+	Name        string
+	Enabled     bool
+	Recipients  []string
+	ApprovalRef string
+	UpdatedBy   *string
+	UpdatedAt   time.Time
 }
 
 type Session struct {
@@ -742,6 +2164,56 @@ type StaffInvitation struct {
 	AcceptedUserID *string
 	RevokedAt      *time.Time
 	CreatedAt      time.Time
+}
+
+type StockAdjustment struct {
+	ID             string
+	LotID          string
+	Category       string
+	PreviousOnHand pgtype.Numeric
+	NewOnHand      pgtype.Numeric
+	Reason         string
+	Evidence       string
+	CountLineID    *string
+	ActorID        *string
+	CreatedAt      time.Time
+}
+
+type StockCount struct {
+	ID          string
+	Number      string
+	LocationID  string
+	Status      string
+	Notes       string
+	StartedBy   *string
+	SubmittedBy *string
+	PostedBy    *string
+	CreatedAt   time.Time
+	SubmittedAt *time.Time
+	PostedAt    *time.Time
+}
+
+type StockCountLine struct {
+	ID             string
+	CountID        string
+	LotID          string
+	Expected       pgtype.Numeric
+	LastMovementID int64
+	Counted        pgtype.Numeric
+	CountedBy      *string
+	CountedAt      time.Time
+}
+
+type StorageLocation struct {
+	ID              string
+	Code            string
+	Name            string
+	Type            string
+	CapacityNote    string
+	TemperatureNote string
+	Active          bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type Subscription struct {
@@ -855,6 +2327,152 @@ type SubscriptionPlanPrice struct {
 	CreatedAt     time.Time
 }
 
+type Supplier struct {
+	ID                   string
+	Code                 string
+	Name                 string
+	TradingName          string
+	Type                 string
+	Status               string
+	ContactName          string
+	Phone                string
+	Email                string
+	PreferredChannel     string
+	Region               string
+	Location             string
+	OperatingRegions     []string
+	PaymentTerms         string
+	DeliveryArrangements string
+	Notes                string
+	ReviewExpiresOn      *time.Time
+	SubmittedBy          *string
+	CreatedBy            *string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+type SupplierAvailability struct {
+	ID                string
+	SupplierID        string
+	IngredientID      string
+	Status            string
+	EstimatedQuantity pgtype.Numeric
+	Unit              *string
+	AvailableFrom     *time.Time
+	AvailableUntil    *time.Time
+	Confidence        string
+	Source            string
+	ConfirmedAt       time.Time
+	RecordedBy        *string
+	CreatedAt         time.Time
+}
+
+type SupplierCommunication struct {
+	ID           int64
+	SupplierID   string
+	Channel      string
+	Direction    string
+	Summary      string
+	ResourceType *string
+	ResourceID   *string
+	RecordedBy   *string
+	CreatedAt    time.Time
+}
+
+type SupplierDocument struct {
+	ID         string
+	SupplierID string
+	Kind       string
+	Title      string
+	Reference  string
+	IssuedBy   string
+	ExpiresOn  *time.Time
+	VerifiedBy *string
+	VerifiedAt *time.Time
+	AddedBy    *string
+	CreatedAt  time.Time
+}
+
+type SupplierPrice struct {
+	ID          string
+	ProductID   string
+	AmountMinor int64
+	Currency    string
+	ValidFrom   time.Time
+	ValidUntil  *time.Time
+	Origin      string
+	QuotationID *string
+	Note        string
+	RecordedBy  *string
+	CreatedAt   time.Time
+}
+
+type SupplierProduct struct {
+	ID                  string
+	SupplierID          string
+	Kind                string
+	IngredientID        *string
+	Sku                 string
+	Name                string
+	Description         string
+	Grade               string
+	Specification       string
+	PackQuantity        pgtype.Numeric
+	PackUnit            string
+	PackDescription     string
+	MinOrderPacks       pgtype.Numeric
+	LeadTimeDays        *int16
+	Availability        string
+	DeliveryConstraints string
+	MappingStatus       string
+	MappingNote         string
+	MappingReviewedBy   *string
+	MappingReviewedAt   *time.Time
+	Active              bool
+	CreatedBy           *string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+type SupplierQualificationCriterium struct {
+	ID            string
+	Name          string
+	Description   string
+	SupplierTypes []string
+	Required      bool
+	ProcedureRef  string
+	Position      int16
+	Active        bool
+	UpdatedAt     time.Time
+}
+
+type SupplierReview struct {
+	ID         string
+	SupplierID string
+	Decision   string
+	Results    []byte
+	Notes      string
+	ExpiresOn  *time.Time
+	ReviewerID *string
+	CreatedAt  time.Time
+}
+
+type SupplierStatusEvent struct {
+	ID         int64
+	SupplierID string
+	FromStatus *string
+	ToStatus   string
+	Note       *string
+	ActorID    *string
+	CreatedAt  time.Time
+}
+
+type SupplyCounter struct {
+	Kind   string
+	Period string
+	Last   int32
+}
+
 type SupportCase struct {
 	ID         string
 	Number     int64
@@ -908,6 +2526,14 @@ type TestpayTransaction struct {
 	Status         string
 	IdempotencyKey string
 	CreatedAt      time.Time
+}
+
+type UnitsOfMeasure struct {
+	Code      string
+	Name      string
+	Dimension string
+	ToBase    pgtype.Numeric
+	Position  int16
 }
 
 type User struct {

@@ -8,6 +8,7 @@ const display = Young_Serif({ subsets: ["latin"], weight: "400", variable: "--fo
 const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-instrument-sans", display: "swap" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.CUSTOMER_APP_URL ?? "http://localhost:3102"),
   title: { default: "Your Mise account", template: "%s | Mise" },
   robots: { index: false, follow: false },
 };

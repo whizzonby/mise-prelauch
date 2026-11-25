@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, StatusTag } from "@/components/admin-ui";
 import { Panel } from "@/components/commerce-ui";
 import { Notice } from "@/components/kitchen-ui";
-import { formatDateTime, formatDay } from "@/lib/format";
+import { businessDay, formatDateTime, formatDay } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Supply chain" };
@@ -26,7 +26,7 @@ export default async function SupplyOverviewPage() {
     api.supply.locations(token).catch(() => null),
     can(admin, "receiving.read") ? api.supply.checklist(token) : Promise.resolve(null),
   ]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   const open = (orders?.items ?? []).filter((p) => ["approved", "issued", "partially_received"].includes(p.status));
   const overdue = open.filter((p) => p.expected_delivery && p.expected_delivery < today);
   const waiting = (orders?.items ?? []).filter((p) => p.status === "pending_approval");

@@ -52,10 +52,14 @@ const nextConfig: NextConfig = {
           // Keeps the tokens in /verify-email and /reset-password links out of Referer headers.
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          // Account pages are private; the marketing site is what search engines see.
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
           ...(isDev ? [] : [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }]),
         ],
+      },
+      {
+        // Account, checkout and sign-in pages are private. Only the public
+        // catalogue (meals, chefs, plans) and the sitemap may be indexed.
+        source: "/((?!meals|chefs|plans|sitemap\\.xml|robots\\.txt).*)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];
   },

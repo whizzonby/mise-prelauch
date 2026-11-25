@@ -17,6 +17,7 @@ import (
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
 	"mise.tt/api/internal/platform/jobs"
+	"mise.tt/api/internal/platform/outbox"
 )
 
 // JobProcessWebhook processes one stored webhook event.
@@ -433,6 +434,19 @@ func (s *Service) apply(ctx context.Context, tx pgx.Tx, pay store.Payment, pp *P
 	}
 	if err := audit.Record(ctx, tx, audit.Entry{Action: "payment." + string(to), TargetType: "payment", TargetID: pay.ID,
 		Metadata: map[string]any{"from": fromStr, "source": source, "amount_minor": pay.AmountMinor, "currency": pay.Currency}}); err != nil {
+		return err
+	}
+	// A payment changes status at most once per status (advance never goes
+	// back), so (payment, status) identifies the event: a duplicate webhook or
+	// a reconcile racing a webhook publishes it once.
+	test := true
+	if p, ok := s.providers[pay.Provider]; ok {
+		test = !p.Live()
+	}
+	if err := outbox.Record(ctx, tx, outbox.Event{Type: "payment." + string(to), AggregateType: "payment", AggregateID: pay.ID,
+		DedupeKey: string(to), Payload: map[string]any{"payment_id": pay.ID, "billing_cycle_id": pay.BillingCycleID,
+			"customer_id": pay.CustomerID, "kind": pay.Kind, "from_status": fromStr, "amount_minor": updated.AmountMinor,
+			"currency": updated.Currency, "provider": pay.Provider, "test": test, "source": source}}); err != nil {
 		return err
 	}
 	if s.Hooks == nil {

@@ -13,6 +13,21 @@ import (
 )
 
 // metricOf finds a metric's value on a dashboard response.
+// reconcileWithDashboard checks that a report figure equals the registry
+// metric with the same definition on an analytics dashboard, for one range.
+func (h *harness) reconcileWithDashboard(kind, from, to string, pairs map[string]float64) {
+	h.t.Helper()
+	viewer := bearer(h.adminLogin("reconcile-"+kind+"@mise.test", "analyst"))
+	res := h.do("GET", "/api/v1/admin/analytics/"+kind+"?from="+from+"&to="+to, nil, viewer)
+	h.wantStatus(res, http.StatusOK)
+	for id, want := range pairs {
+		got, _ := metricOf(h.t, res.Data, id)
+		if got != want {
+			h.t.Errorf("%s on the %s dashboard = %v, report says %v", id, kind, got, want)
+		}
+	}
+}
+
 func metricOf(t *testing.T, d map[string]any, id string) (value any, previous any) {
 	t.Helper()
 	for _, s := range list(t, d["sections"]) {

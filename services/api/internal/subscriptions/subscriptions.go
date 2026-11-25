@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,6 +27,7 @@ import (
 	"mise.tt/api/internal/menus"
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/outbox"
 	"mise.tt/api/internal/subscriptions/store"
 )
 
@@ -189,8 +191,27 @@ func (s *Service) record(ctx context.Context, q db.Querier, sub *Subscription, f
 	if e.Actor != "" {
 		actor = &e.Actor
 	}
-	if err := store.New(q).AddEvent(ctx, store.AddEventParams{SubscriptionID: sub.ID, Type: e.Type, FromStatus: from, ToStatus: to,
-		EffectiveWeek: e.EffectiveWeek, Actor: actor, Metadata: meta}); err != nil {
+	historyID, err := store.New(q).AddEvent(ctx, store.AddEventParams{SubscriptionID: sub.ID, Type: e.Type, FromStatus: from, ToStatus: to,
+		EffectiveWeek: e.EffectiveWeek, Actor: actor, Metadata: meta})
+	if err != nil {
+		return err
+	}
+	// The same fact as a domain event, in the same transaction: analytics and
+	// automation react to it. One event per history row (the row id is the
+	// dedupe key), so a replayed or retried change never publishes twice.
+	payload := map[string]any{"subscription_id": sub.ID, "customer_id": sub.CustomerID, "plan_id": sub.PlanID,
+		"status": sub.Status, "history_id": historyID}
+	if from != nil {
+		payload["from_status"] = *from
+	}
+	if to != nil {
+		payload["to_status"] = *to
+	}
+	if e.EffectiveWeek != nil {
+		payload["effective_week"] = menus.FormatWeek(*e.EffectiveWeek)
+	}
+	if err := outbox.Record(ctx, q, outbox.Event{Type: "subscription." + e.Type, AggregateType: "subscription", AggregateID: sub.ID,
+		DedupeKey: strconv.FormatInt(historyID, 10), Payload: payload}); err != nil {
 		return err
 	}
 	auditMeta := map[string]any{}

@@ -7,7 +7,7 @@ import { DataTable, Empty, Labelled, Panel, SelectInput, TextInput } from "@/com
 import { DeliveryStatus, Hidden } from "@/components/delivery-ui";
 import { KForm } from "@/components/kitchen-form";
 import { Notice } from "@/components/kitchen-ui";
-import { formatDay } from "@/lib/format";
+import { businessDay, formatDay } from "@/lib/format";
 import { api, can, requireAdmin } from "@/lib/session";
 
 import { addStop, createRun, decideReschedule, scheduleDelivery } from "../../delivery-actions";
@@ -23,7 +23,7 @@ export default async function PlanningPage({ searchParams }: { searchParams: Pro
   const { token, admin } = await requireAdmin();
   if (!can(admin, "delivery.read")) notFound();
   const sp = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDay();
   const [calendar, zones, partners, couriers, unassigned, requests] = await Promise.all([
     api.delivery.calendar(token, today, 42),
     api.delivery.zones(token),

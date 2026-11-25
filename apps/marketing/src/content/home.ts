@@ -32,9 +32,9 @@ export const hero = {
   /** One entry per line of the headline. */
   headline: ["Everything", "in its place."],
   body: "Mise is a Caribbean meal kit. We season, chop and portion fresh local ingredients in our Trinidad kitchen, then deliver them ready for you to cook.",
-  primaryCta: "Join the waitlist",
   secondaryCta: { label: "See how it works", href: "#how-it-works" },
   note: "Launching in Trinidad & Tobago. People on the waitlist hear first.",
+  noteLaunch: "Delivering in Trinidad & Tobago. You see delivery for your address before you pay.",
   /**
    * The counter: ingredients laid out the way a cook sets up before service.
    * `prep` is what the Mise kitchen has already done to it.
@@ -176,6 +176,75 @@ export const faq = {
       answer: "We use them to tell you about the launch and to plan menus and delivery areas. We do not sell them. You can unsubscribe from any email, and ask us to delete your details at any time.",
     },
   ],
+} as const;
+
+/**
+ * Questions once ordering is open. Rules that the system enforces (the menu
+ * cutoff, the pause limit) are read from the API and passed in, so the answer
+ * cannot drift from what the checkout does. Nothing here states a delivery
+ * area, a delivery time or a price: those come from configuration.
+ */
+export function launchFaq(rules: { cutoffRule: string | null; maxPauseWeeks: number | null }) {
+  return [
+    {
+      id: "how-plans-work",
+      question: "How does a Mise plan work?",
+      answer: `You choose a plan: a number of meal kits a week, paid a week at a time. Each week you pick your meals from that week's menu.${rules.cutoffRule ? ` ${rules.cutoffRule}` : ""}`,
+    },
+    {
+      id: "pause-cancel",
+      question: "Can I pause or cancel?",
+      answer: `Yes, from your account.${rules.maxPauseWeeks ? ` You can pause for up to ${rules.maxPauseWeeks} weeks at a time.` : ""} Weeks you have already paid for are still delivered.`,
+    },
+    {
+      id: "kit-contents",
+      question: "What comes in a kit?",
+      answer: "The ingredients for each recipe, measured for the number of servings, and a recipe card. Each meal's page lists what is in its kit.",
+    },
+    {
+      id: "delivery-area",
+      question: "Where do you deliver?",
+      answer: "Mise delivers to the areas it currently serves in Trinidad and Tobago. When you add your address, we check it against those areas before you pay.",
+    },
+    {
+      id: "allergies",
+      question: "I have an allergy. How do I check a meal?",
+      answer: "Every meal page lists its ingredients and the allergens the kitchen has declared. If a meal's allergens have not been confirmed yet, the page says so: do not rely on it if you have an allergy.",
+    },
+    {
+      id: "privacy",
+      question: "What do you do with my details?",
+      answer: "We use them to run your account, your deliveries and your payments. We do not sell them. The privacy policy explains what we keep and the choices you have.",
+    },
+  ];
+}
+
+export const mealsSection = {
+  id: "meals",
+  title: "From the Mise menu",
+  all: "See all meal kits",
+  empty: "The first menu is being written and tested in our kitchen. Meals appear here as soon as they are published.",
+  unavailable: "The menu could not be loaded just now. Please try again in a moment.",
+  note: "Every meal shown here is published in the Mise catalogue. Its page lists the ingredients, the declared allergens and, once the nutritionist has checked the recipe, nutrition per serving.",
+} as const;
+
+export const plansSection = {
+  id: "plans",
+  title: "Plans",
+  bodyWaitlist: "These are the plans set up for launch. Join the waitlist to hear when ordering opens.",
+  bodyLaunch: "Each plan is a number of meal kits a week, paid a week at a time. Pause or cancel from your account.",
+  pricePending: "Price to be confirmed",
+  empty: "Plans are being finalised and will appear here, with their prices, once they are confirmed.",
+  unavailable: "Plans could not be loaded just now. Please try again in a moment.",
+  ctaWaitlist: "Get early access",
+  ctaLaunch: "Compare plans",
+} as const;
+
+export const finalCta = {
+  title: "Dinner, already in its place.",
+  body: "Browse this week's meal kits, choose a plan and pick your meals before the cutoff.",
+  primary: "Browse meal kits",
+  secondary: "Compare plans",
 } as const;
 
 export const waitlistSection = {

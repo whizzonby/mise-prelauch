@@ -2,7 +2,7 @@
 
 Branch `sprint-9/launch-readiness` (from Sprint 8 tip `7e05db0`). Brief: `E:\FULL MISE DEV\SPRINT 9`. Audit and plan:
 `docs/architecture/SPRINT_9_AUDIT.md`, `SPRINT_9_PLAN.md`. Work ran 14 and 25 November 2026, interrupted by a power loss (nothing lost;
-local checkpoint commits were made after it). Commit hash: see §28.
+local checkpoint commits were made after it). Commit hash: see §29.
 
 ## Outcome
 
@@ -282,4 +282,5 @@ call the API host directly. **Sprint 10 has not been started and needs explicit 
 
 ## 29. Commit
 
-COMMIT_LINE
+Sprint 9 is committed as `37b700d` on `sprint-9/launch-readiness` (on top of local checkpoint commits `f0886f4`, `694b82d`,
+`02d5388`, `2b6c35e`), followed by this hash note. **Not pushed**: pushing needs your go-ahead.

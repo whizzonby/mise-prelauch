@@ -258,6 +258,7 @@ func NewKitchen(cfg config.Config, pool *pgxpool.Pool, com *Commerce, alerts pro
 // RegisterCommerceJobs wires the commerce and payment job kinds.
 func RegisterCommerceJobs(r *jobs.Runner, c *Commerce) {
 	r.Register(payments.JobProcessWebhook, c.Payments.ProcessWebhook)
+	r.Register(payments.JobCancelCheckout, c.Payments.CancelCheckoutJob)
 	r.Register(commerce.JobCharge, c.Service.HandleCharge)
 }
 

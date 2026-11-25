@@ -449,7 +449,7 @@ func (s *Service) SetAddress(ctx context.Context, p *identity.Principal, id stri
 		if !subscriptions.Status(sub.Status).Live() {
 			return notAllowed("change the address", subscriptions.Status(sub.Status))
 		}
-		addr, err := addresses.Lookup(ctx, tx, s.Delivery, sub.CustomerID, strings.ToLower(strings.TrimSpace(in.AddressID)))
+		addr, err := addresses.Lookup(ctx, tx, s.zones(tx), sub.CustomerID, strings.ToLower(strings.TrimSpace(in.AddressID)))
 		if errors.Is(err, httpx.ErrNotFound) {
 			return httpx.ValidationError([]httpx.FieldError{{Field: "address_id", Code: "required", Message: "Choose one of your addresses."}})
 		}

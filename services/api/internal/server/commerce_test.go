@@ -839,3 +839,39 @@ func TestAddressUsedBySubscriptionCannotBeRemoved(t *testing.T) {
 	h.wantError(h.do("DELETE", "/api/v1/me/addresses/"+addr, nil, tok), http.StatusConflict, "address_in_use")
 	_ = sub
 }
+
+// Starting checkout again (a second tab, a double click, two requests at
+// once) replaces the unfinished subscription. Its checkout is closed at the
+// provider too, so the abandoned one cannot still take the customer's money;
+// only the newest can be paid, and the subscription activates once.
+func TestReplacedCheckoutCannotBePaidAtTheProvider(t *testing.T) {
+	s := newShop(t)
+	h := s.h
+	tok, addr := s.customer("two-tabs@example.com")
+	_, first := s.subscribe(tok, addr, s.basic, nil)
+	_, second := s.subscribe(tok, addr, s.basic, nil)
+	if first == second {
+		t.Fatal("starting again reused the same checkout")
+	}
+	h.drainJobs() // the provider is told to close the abandoned checkout by a queued job
+	var status string
+	if err := h.pool.QueryRow(context.Background(), `SELECT status FROM testpay_sessions WHERE ref = $1`, first).Scan(&status); err != nil {
+		t.Fatal(err)
+	}
+	if status != "cancelled" {
+		t.Fatalf("the replaced checkout is %q at the provider, want cancelled", status)
+	}
+	// Paying the old tab does nothing; paying the new one activates the subscription.
+	s.pay(first, "approve", testpay.CardApprove)
+	s.pay(second, "approve", testpay.CardApprove)
+	h.drainJobs()
+	if st := s.subscription(tok)["status"]; st != "active" {
+		t.Fatalf("status = %v", st)
+	}
+	if n := h.count(`SELECT count(*) FROM payments WHERE status = 'succeeded'`); n != 1 {
+		t.Fatalf("%d succeeded payments, want 1", n)
+	}
+	if n := h.count(`SELECT count(*) FROM payments WHERE needs_attention`); n != 0 {
+		t.Fatalf("%d payments need attention, want 0", n)
+	}
+}

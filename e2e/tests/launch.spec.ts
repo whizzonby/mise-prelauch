@@ -12,11 +12,19 @@ import { linkIn, signInToAdmin, uniqueEmail, waitForEmail } from "./helpers";
 
 const shots = join(import.meta.dirname, "..", "..", "docs", "screenshots", "sprint-9");
 mkdirSync(shots, { recursive: true });
-const shot = (page: Page, name: string, fullPage = true) => page.screenshot({ path: join(shots, `${name}.png`), fullPage });
+// Evidence screenshots come from the Chromium run only, so cross-browser runs do not overwrite them.
+const shot = async (page: Page, name: string, fullPage = true) => {
+  if (test.info().project.name === "chromium") await page.screenshot({ path: join(shots, `${name}.png`), fullPage });
+};
 
 const launchMode = process.env.NEXT_PUBLIC_SITE_MODE === "launch";
 const password = "plantain and saltfish 2026";
 const wcag = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
+/** Waits until entrance animations have finished, so contrast is measured on the settled colours. */
+async function settled(page: Page) {
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity));
+}
 
 async function firstMeal(page: Page): Promise<string> {
   await page.goto(`${urls.web}/meals`);
@@ -152,13 +160,15 @@ test("public pages have no automatically detectable accessibility problems", asy
   const found: string[] = [];
   for (const url of paths) {
     await page.goto(url);
+    await settled(page);
     const results = await new AxeBuilder({ page }).withTags(wcag).analyze();
     found.push(...results.violations.map((v) => `${url} ${v.id}: ${v.help} (${v.nodes.length})`));
   }
   expect(found).toEqual([]);
 });
 
-test("the catalogue can be used with the keyboard alone", async ({ page }) => {
+test("the catalogue can be used with the keyboard alone", async ({ page, browserName }) => {
+  test.skip(browserName === "webkit", "WebKit (like Safari's default setting) does not move Tab focus to links. Needs a manual check on real Safari (not done in Sprint 9).");
   await page.goto(`${urls.web}/meals`);
   // Tab from the top of the page to the first meal link, then open it with Enter.
   const firstLink = page.locator("main article h3 a").first();

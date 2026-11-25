@@ -168,6 +168,13 @@ func (p *Provider) Complete(ctx context.Context, ref, outcome, card string) (*Se
 	return p.Session(ctx, ref)
 }
 
+// CancelCheckout closes an open session, as a merchant expiring a hosted
+// checkout would: the test page then shows it closed and paying does nothing.
+func (p *Provider) CancelCheckout(ctx context.Context, ref string) error {
+	_, err := p.pool.Exec(ctx, `UPDATE testpay_sessions SET status = 'cancelled', completed_at = now() WHERE ref = $1 AND status = 'open'`, ref)
+	return err
+}
+
 // send signs and delivers one webhook event.
 func (p *Provider) send(ctx context.Context, typ string, data map[string]string) error {
 	body, _ := json.Marshal(map[string]any{"id": token("evt_"), "type": typ, "data": data})

@@ -57,7 +57,8 @@ async function tabTo(page: Page, target: ReturnType<Page["getByRole"]>, maxTabs 
   throw new Error(`not reachable with Tab within ${maxTabs} presses`);
 }
 
-test("a customer subscribes with the keyboard alone", async ({ page, request }) => {
+test("a customer subscribes with the keyboard alone", async ({ page, request, browserName }) => {
+  test.skip(browserName === "webkit", "WebKit (like Safari's default setting) does not move Tab focus to links. Needs a manual check on real Safari (not done in Sprint 9).");
   await customer(page, request, "keyboard-checkout");
   await page.goto(`${urls.web}/plans`);
   await tabTo(page, page.getByRole("link", { name: "Choose Basic" }));

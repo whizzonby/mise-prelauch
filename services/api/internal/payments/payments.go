@@ -23,6 +23,27 @@ import (
 // JobProcessWebhook processes one stored webhook event.
 const JobProcessWebhook = "payments.process_webhook"
 
+// JobCancelCheckout closes an abandoned checkout at the provider.
+const JobCancelCheckout = "payments.cancel_checkout"
+
+type cancelCheckoutJob struct {
+	Provider string `json:"provider"`
+	Ref      string `json:"ref"`
+}
+
+// CancelCheckoutJob is the job handler for JobCancelCheckout.
+func (s *Service) CancelCheckoutJob(ctx context.Context, payload json.RawMessage) error {
+	var j cancelCheckoutJob
+	if err := json.Unmarshal(payload, &j); err != nil {
+		return err
+	}
+	c, ok := s.providers[j.Provider].(CheckoutCanceller)
+	if !ok {
+		return nil
+	}
+	return c.CancelCheckout(ctx, j.Ref)
+}
+
 // Outcome is what the rest of the system hears about a payment.
 type Outcome struct {
 	PaymentID       string
@@ -139,6 +160,19 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (*Checkou
 	reuse := false
 	err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
+		// Lock the bill and check it can still be paid. Without this, a checkout started for a bill that
+		// was voided a moment earlier (the customer started again in another tab) would open anyway and
+		// could take money for nothing. The lock orders this against Void, which cancels open checkouts.
+		var billStatus string
+		if err := tx.QueryRow(ctx, `SELECT status FROM billing_cycles WHERE id = $1 FOR UPDATE`, in.BillingCycleID).Scan(&billStatus); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return httpx.ErrNotFound
+			}
+			return err
+		}
+		if billStatus != "pending" && billStatus != "due" && billStatus != "failed" {
+			return httpx.NewError(http.StatusConflict, "nothing_to_pay", "This bill can no longer be paid. Start again from your subscription page.")
+		}
 		open, err := q.OpenCheckoutForBillingCycle(ctx, in.BillingCycleID)
 		if err == nil {
 			if open.ExpiresAt.After(s.Now()) && open.AmountMinor == in.AmountMinor && open.RedirectUrl != nil {
@@ -203,7 +237,37 @@ func (s *Service) CheckoutForCustomer(ctx context.Context, customerID, id string
 // CancelOpenCheckouts closes any open checkout for a billing cycle (it was
 // voided, or paid another way).
 func (s *Service) CancelOpenCheckouts(ctx context.Context, q db.Querier, billingCycleID string) error {
-	return store.New(q).CancelOpenCheckouts(ctx, billingCycleID)
+	rows, err := q.Query(ctx, `UPDATE checkout_sessions SET status = 'cancelled', updated_at = now()
+		WHERE billing_cycle_id = $1 AND status = 'open' RETURNING provider, COALESCE(provider_ref, '')`, billingCycleID)
+	if err != nil {
+		return err
+	}
+	type open struct{ provider, ref string }
+	var closed []open
+	for rows.Next() {
+		var o open
+		if err := rows.Scan(&o.provider, &o.ref); err != nil {
+			rows.Close()
+			return err
+		}
+		closed = append(closed, o)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	// Close them at the provider too, so an abandoned checkout cannot still be paid. Queued, not
+	// called here: no provider call inside the caller's transaction, and a failure is retried. Until it
+	// runs, a payment that arrives anyway lands on a void bill and is flagged for a refund.
+	for _, o := range closed {
+		if _, ok := s.providers[o.provider].(CheckoutCanceller); !ok || o.ref == "" {
+			continue
+		}
+		if err := jobs.Enqueue(ctx, q, JobCancelCheckout, cancelCheckoutJob{Provider: o.provider, Ref: o.ref}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------- webhooks

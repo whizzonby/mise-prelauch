@@ -165,7 +165,7 @@ func (s *Service) saveSelection(ctx context.Context, p *identity.Principal, cycl
 		return nil, err
 	}
 	cycleID = strings.ToLower(strings.TrimSpace(cycleID))
-	var page *SelectionPage
+	var saved *subscriptions.Cycle
 	err = db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		owned, err := s.Subs.CycleForCustomer(ctx, tx, cid, cycleID)
 		if err != nil {
@@ -202,8 +202,15 @@ func (s *Service) saveSelection(ctx context.Context, p *identity.Principal, cycl
 				return err
 			}
 		}
-		page, err = s.selectionPage(ctx, tx, cid, c)
-		return err
+		saved = c
+		return nil
 	})
-	return page, err
+	if err != nil {
+		return nil, err
+	}
+	// The page is read after the commit. Building it inside the transaction would need a second
+	// pool connection (the published menu is read through the menus service's pool) while this one
+	// holds the cycle's row lock: under simultaneous saves every connection ended up waiting on the
+	// lock and the holder waited for a connection that never came free.
+	return s.selectionPage(ctx, s.pool, cid, saved)
 }

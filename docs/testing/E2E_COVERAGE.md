@@ -52,7 +52,7 @@ weeks. On the real clock, no single test run can take a brand-new customer from 
 | Unsupported delivery zone | Go `TestReleaseSnapshotsTheAddressAndFlagsCoverage`, `TestSchedulingCoverageAndCapacity`; subscribe page disables unserved addresses |
 | Invalid discount | Go `TestPromotionsAreApprovedAndComputedOnTheServer`; `TestQuoteDiscountsAndTax` |
 | Payment failure | `subscription-commerce.spec.ts` ("a declined first payment can be paid again"); Go `TestFailedFirstPaymentCanBeRetried`, `TestPaymentFailedRuleReactsToTheEvent` |
-| Duplicate payment callback | Go `TestWebhooksAreAuthenticatedIdempotentAndOrderIndependent`, `TestCommerceEventsArePublishedOnceWithTheChange` |
+| Duplicate payment callback | Go `TestWebhooksAreAuthenticatedIdempotentAndOrderIndependent`, `TestCommerceEventsArePublishedOnceWithTheChange`, `TestReplacedCheckoutCannotBePaidAtTheProvider`; `e2e/tools/concurrency.mjs` (every checkout paid 5× at once → one payment) |
 | Expired session | Go `TestSessionsEndWhenIdleOrExpired`, `TestPasswordResetEndsEverySession`; `customer-platform.spec.ts` (signed-out visitor sent to sign-in and back) |
 | Unauthorized order access | Go `TestCustomersCannotReachEachOthersRecords`, `TestEveryRoleReachesExactlyTheAdminEndpointsItIsGranted`, `TestInvoicePDFAndOwnership` |
 | Cancelled subscription | `subscription-commerce.spec.ts`; Go `TestPlanChangePauseResumeAndCancel`, `TestCancellingAnUnpaidWeekTakesEffectAtOnce` |

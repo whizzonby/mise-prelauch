@@ -419,7 +419,7 @@ func (s *Service) finalize(ctx context.Context, tx pgx.Tx, cycleID string, now t
 	if sub.DeliveryAddressID == nil {
 		return resolve("no_address")
 	}
-	addr, err := addresses.Lookup(ctx, tx, s.Delivery, sub.CustomerID, *sub.DeliveryAddressID)
+	addr, err := addresses.Lookup(ctx, tx, s.zones(tx), sub.CustomerID, *sub.DeliveryAddressID)
 	if err != nil {
 		return resolve("no_address")
 	}

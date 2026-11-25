@@ -90,13 +90,13 @@ test("a visitor becomes a paying subscriber with chosen meals, and staff see the
   // 6. Select meals and confirm quantities (the plan's allowance is enforced).
   await page.goto(`${urls.web}/menu`);
   await expect(page).toHaveURL(/\/menu\/\d{4}-\d{2}-\d{2}\/select$/);
-  const summary = page.getByRole("complementary").filter({ has: page.getByRole("heading", { name: "Your box" }) });
   const addMeal = page.getByRole("button", { name: /^Add [^a]/ });
   await addMeal.nth(0).click();
   await addMeal.nth(0).click();
   await page.getByRole("button", { name: /^Add another/ }).first().click();
-  await summary.getByRole("button", { name: "Confirm meals" }).click();
-  await expect(summary.getByText(/Your meals are confirmed\./)).toBeVisible();
+  // The box summary on a wide screen, the action bar on a phone: whichever is shown.
+  await page.getByRole("button", { name: "Confirm meals" }).filter({ visible: true }).click();
+  await expect(page.getByRole("button", { name: "Confirmed" }).filter({ visible: true })).toBeDisabled();
 
   // 11-13. Dashboard, subscription status and the invoice.
   await page.goto(`${urls.web}/dashboard`);

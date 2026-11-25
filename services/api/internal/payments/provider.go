@@ -142,6 +142,15 @@ var ErrBadSignature = errors.New("payments: webhook signature is not valid")
 var ErrUnsupported = errors.New("payments: not supported by this provider")
 
 // Provider is one payment provider.
+// CheckoutCanceller is implemented by providers that can close a hosted
+// checkout so it can no longer be paid. When Mise abandons a checkout (the
+// customer started again, or the bill was voided) it closes the provider's
+// session too; otherwise a second browser tab could still take the money.
+// A real provider adapter must implement it if the provider allows it.
+type CheckoutCanceller interface {
+	CancelCheckout(ctx context.Context, sessionRef string) error
+}
+
 type Provider interface {
 	Name() string
 	// Live reports whether the provider moves real money.

@@ -113,6 +113,16 @@ type EmailJob struct {
 
 // notify queues an email once per dedupeKey: a retried event or a second
 // scheduler run finds the key taken and queues nothing.
+// zones checks delivery coverage through q, the caller's transaction when there is one. Checking it
+// through the service's own pool inside a transaction needs a second connection while row locks are
+// held; under simultaneous checkouts that exhausted the pool and every request waited forever.
+func (s *Service) zones(q db.Querier) delivery.Eligibility {
+	if _, ok := s.Delivery.(delivery.Zones); ok {
+		return delivery.Zones{DB: q}
+	}
+	return s.Delivery
+}
+
 func (s *Service) notify(ctx context.Context, q db.Querier, dedupeKey, kind, customerID string, data map[string]string) error {
 	tag, err := q.Exec(ctx, `INSERT INTO notification_deliveries (dedupe_key, kind, customer_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
 		dedupeKey, kind, customerID)
@@ -314,7 +324,7 @@ func (s *Service) subscriptionView(ctx context.Context, q db.Querier, sub *subsc
 		v.Test = !live
 	}
 	if sub.DeliveryAddressID != nil {
-		if a, err := addresses.Lookup(ctx, q, s.Delivery, sub.CustomerID, *sub.DeliveryAddressID); err == nil {
+		if a, err := addresses.Lookup(ctx, q, s.zones(q), sub.CustomerID, *sub.DeliveryAddressID); err == nil {
 			v.Address = a
 		}
 	}
@@ -380,7 +390,7 @@ func (s *Service) contactSnapshot(ctx context.Context, q db.Querier, sub *subscr
 		}
 	}
 	if sub.DeliveryAddressID != nil {
-		if a, err := addresses.Lookup(ctx, q, s.Delivery, sub.CustomerID, *sub.DeliveryAddressID); err == nil {
+		if a, err := addresses.Lookup(ctx, q, s.zones(q), sub.CustomerID, *sub.DeliveryAddressID); err == nil {
 			snap.Address = addressLines(a)
 		}
 	}

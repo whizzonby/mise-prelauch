@@ -140,7 +140,7 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 		if err != nil {
 			return err
 		}
-		addr, err := addresses.Lookup(ctx, tx, s.Delivery, cid, in.AddressID)
+		addr, err := addresses.Lookup(ctx, tx, s.zones(tx), cid, in.AddressID)
 		if errors.Is(err, httpx.ErrNotFound) {
 			return httpx.ValidationError([]httpx.FieldError{{Field: "address_id", Code: "required", Message: "Choose a delivery address."}})
 		}
@@ -188,11 +188,18 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 		return res, nil
 	}
 	res.Checkout, err = s.startCheckout(ctx, cid, bc)
+	var he *httpx.Error
+	if errors.As(err, &he) && he.Code == "nothing_to_pay" {
+		// A newer attempt (a second tab, a double click) replaced this one while it was starting.
+		return nil, httpx.NewError(http.StatusConflict, "subscription_exists", "You already have a subscription. Manage it from your subscription page.")
+	}
 	return res, err
 }
 
 func (s *Service) startCheckout(ctx context.Context, customerID string, bc *billing.Cycle) (*payments.Checkout, error) {
-	if err := s.Billing.MarkDue(ctx, s.pool, bc.ID); err != nil {
+	// In a transaction, so MarkDue's row lock holds: on the bare pool it read "pending", and a
+	// replacement that voided the bill a moment later was overwritten back to "due".
+	if err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error { return s.Billing.MarkDue(ctx, tx, bc.ID) }); err != nil {
 		return nil, err
 	}
 	desc := "Mise subscription, week of " + bc.PeriodStart

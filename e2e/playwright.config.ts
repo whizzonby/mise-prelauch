@@ -30,5 +30,16 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 850 } } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 850 } } },
+    // Cross-browser runs (Sprint 9): E2E_ALL_BROWSERS=1 npx playwright test --project=firefox --project=webkit …
+    // WebKit here is Playwright's build, not Safari on a real device.
+    ...(process.env.E2E_ALL_BROWSERS
+      ? [
+          { name: "firefox", use: { ...devices["Desktop Firefox"], viewport: { width: 1366, height: 850 } } },
+          { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1366, height: 850 } } },
+          { name: "mobile-webkit", use: { ...devices["iPhone 13"] } },
+        ]
+      : []),
+  ],
 });

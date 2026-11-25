@@ -2,6 +2,7 @@
 @import "@mise/ui/styles.css";
 
 @source "../../../../packages/ui/src";
+@source "../../../../packages/chat/src";
 
 /* Onboarding: each step settles in. Applied only when motion is allowed (motion-safe). */
 @keyframes step-in {

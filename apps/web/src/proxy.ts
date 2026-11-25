@@ -34,5 +34,6 @@ export const config = {
     "/menu/:path*",
     "/orders/:path*",
     "/billing/:path*",
+    "/support/:path*",
   ],
 };

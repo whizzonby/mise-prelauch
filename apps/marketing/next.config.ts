@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
   // The floating dev badge covers real controls in the bottom-left corner.
   devIndicators: false,
   reactStrictMode: true,
-  transpilePackages: ["@mise/ui", "@mise/validation", "@mise/api-client", "@mise/analytics"],
+  transpilePackages: ["@mise/ui", "@mise/validation", "@mise/api-client", "@mise/analytics", "@mise/chat"],
   images: {
     // WebP only. AVIF files are smaller but take seconds each to encode on a
     // small server, and a page asks for twenty at once: the first visitor at

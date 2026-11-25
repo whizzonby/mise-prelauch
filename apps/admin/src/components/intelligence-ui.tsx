@@ -15,6 +15,7 @@ export const DASHBOARDS: { kind: string; label: string; perm: Permission }[] = [
   { kind: "procurement", label: "Procurement", perm: "analytics_procurement.read" },
   { kind: "inventory", label: "Inventory", perm: "analytics_inventory.read" },
   { kind: "delivery", label: "Delivery", perm: "analytics_delivery.read" },
+  { kind: "support", label: "Support chat", perm: "support_chat.analytics" },
 ];
 
 /** A figure in its unit. Null means it cannot be calculated: never shown as zero. */

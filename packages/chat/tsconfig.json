@@ -1,0 +1,4 @@
+{
+  "extends": "@mise/config/tsconfig.base.json",
+  "include": ["src"]
+}

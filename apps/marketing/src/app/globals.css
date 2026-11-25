@@ -3,6 +3,7 @@
 
 /* Tailwind scans the shared UI package for class names too. */
 @source "../../../../packages/ui/src";
+@source "../../../../packages/chat/src";
 
 /*
  * The hero headline: each line rises from behind its baseline, then the body
@@ -89,7 +90,8 @@
   & [data-story-stage] > div {
     height: 100%;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* Title, stock-photo note, the stacked stages (takes the free height), progress. */
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
   /* The section title steps back so the stage names can lead. */

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mise/api-client": "workspace:*",
+    "@mise/chat": "workspace:*",
     "@mise/ui": "workspace:*",
     "lucide-react": "^1.47.0",
     "next": "^16.4.6",

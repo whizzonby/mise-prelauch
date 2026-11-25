@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Young_Serif } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { ChatMount } from "@/components/chat-mount";
 import { Providers } from "@/components/providers";
 import { site } from "@/content/site";
 import { env } from "@/lib/env";
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         <Providers>{children}</Providers>
+        <ChatMount />
       </body>
     </html>
   );

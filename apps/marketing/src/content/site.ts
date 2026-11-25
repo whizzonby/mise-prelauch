@@ -49,6 +49,7 @@ export const footer = {
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
     { label: "Contact", href: "/contact" },
+    { label: "Help centre", href: `${env.appUrl}/help` },
     { label: "Photo credits", href: "/credits" },
   ],
 } as const;

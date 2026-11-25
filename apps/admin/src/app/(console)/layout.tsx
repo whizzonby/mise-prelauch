@@ -32,7 +32,9 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       label: "CRM",
       items: [
         ...item(admin, "leads.read", "/leads", "Leads"),
+        ...item(admin, "support_chat.read", "/support/chat", "Support chat"),
         ...item(admin, "cases.read", "/support", "Support cases"),
+        ...item(admin, "help_centre.edit", "/help-centre", "Help centre"),
         ...item(admin, "campaigns.manage", "/campaigns", "Campaigns"),
         ...item(admin, "leads.read", "/referrals", "Referrals"),
       ],
@@ -130,7 +132,7 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
       label: "Intelligence",
       items: [
         ...(["analytics_executive.read", "analytics_revenue.read", "analytics_customers.read", "analytics_production.read", "analytics_procurement.read",
-          "analytics_inventory.read", "analytics_delivery.read"] as Permission[]).some((p) => can(admin, p))
+          "analytics_inventory.read", "analytics_delivery.read", "support_chat.analytics"] as Permission[]).some((p) => can(admin, p))
           ? [{ href: "/intelligence", label: "Insights" }, { href: "/intelligence/metrics", label: "Metric catalogue" }]
           : [],
         ...item(admin, "analytics_executive.read", "/intelligence/quality", "Data quality"),

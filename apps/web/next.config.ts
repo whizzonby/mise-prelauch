@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   reactStrictMode: true,
-  transpilePackages: ["@mise/ui", "@mise/api-client"],
+  transpilePackages: ["@mise/ui", "@mise/api-client", "@mise/chat"],
   images: {
     // Meal photographs live in /public/catalog, or on hosts the API also
     // accepts (CATALOG_IMAGE_HOSTS). Nothing else is optimised or proxied.

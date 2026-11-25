@@ -197,6 +197,25 @@ export type PaymentOption = S["PaymentOption"];
 export type PaymentProviderStatus = S["PaymentProviderStatus"];
 export type PaymentProviderSettingsInput = S["PaymentProviderSettingsInput"];
 export type PaymentProviderModeInput = S["PaymentProviderModeInput"];
+// Sprint 9.1: Mise Chat and the help centre.
+export type ChatAvailability = S["ChatAvailability"];
+export type ChatConversation = S["ChatConversation"];
+export type ChatMessage = S["ChatMessage"];
+export type ChatInboxItem = S["ChatInboxItem"];
+export type ChatDetail = S["ChatDetail"];
+export type ChatNote = S["ChatNote"];
+export type ChatAgent = S["ChatAgent"];
+export type ChatSavedReply = S["ChatSavedReply"];
+export type ChatSavedReplyInput = S["ChatSavedReplyInput"];
+export type ChatSettings = S["ChatSettings"];
+export type ChatUpdateInput = S["ChatUpdateInput"];
+export type ChatAssignInput = S["ChatAssignInput"];
+export type ChatEscalateInput = S["ChatEscalateInput"];
+export type HelpCategory = S["HelpCategory"];
+export type HelpArticleSummary = S["HelpArticleSummary"];
+export type HelpArticle = S["HelpArticle"];
+export type HelpStaffArticle = S["HelpStaffArticle"];
+export type HelpArticleInput = S["HelpArticleInput"];
 export type RefundInput = S["RefundInput"];
 export type StoredWebhook = S["StoredWebhook"];
 export type Demand = S["Demand"];
@@ -472,6 +491,8 @@ interface RequestOptions {
   cache?: RequestCache;
   /** Next.js data cache options (revalidation), on the server. */
   next?: { revalidate?: number };
+  /** Aborts the request (a relayed stream closes when its browser leaves). */
+  signal?: AbortSignal;
 }
 
 function toQuery(query?: object): string {
@@ -761,6 +782,7 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         keepalive: opts.keepalive,
         cache: opts.cache,
         ...(opts.next ? { next: opts.next } : {}),
+        ...(opts.signal ? { signal: opts.signal } : {}),
       } as RequestInit,
     ];
   }
@@ -1024,6 +1046,52 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<PaymentDetail>(`/admin/payments/${encodeURIComponent(id)}/refunds`, { method: "POST", body: input, token, cache: "no-store" }),
       webhooks: (token: string, status?: string) =>
         request<{ items: StoredWebhook[] }>("/admin/payment-webhooks", { token, query: { status }, cache: "no-store" }),
+      // Sprint 9.1: Mise Chat (staff) and the help centre editor.
+      chatInbox: (token: string, query: { view?: string; q?: string } = {}) =>
+        request<{ items: ChatInboxItem[] }>("/admin/chat/conversations", { token, query, cache: "no-store" }),
+      chatConversation: (token: string, id: string) =>
+        request<ChatDetail>(`/admin/chat/conversations/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      chatReply: (token: string, id: string, body: string, clientMessageId?: string) =>
+        request<ChatMessage>(`/admin/chat/conversations/${encodeURIComponent(id)}/messages`, {
+          method: "POST", body: { body, ...(clientMessageId ? { client_message_id: clientMessageId } : {}) }, token, cache: "no-store" }),
+      chatNote: (token: string, id: string, body: string) =>
+        request<ChatNote>(`/admin/chat/conversations/${encodeURIComponent(id)}/notes`, { method: "POST", body: { body }, token, cache: "no-store" }),
+      chatUpdate: (token: string, id: string, input: ChatUpdateInput) =>
+        request<ChatDetail>(`/admin/chat/conversations/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      chatAssign: (token: string, id: string, input: ChatAssignInput, transfer = false) =>
+        request<ChatDetail>(`/admin/chat/conversations/${encodeURIComponent(id)}/${transfer ? "transfer" : "assign"}`, {
+          method: "POST", body: input, token, cache: "no-store" }),
+      chatSetStatus: (token: string, id: string, action: "resolve" | "reopen", note = "") =>
+        request<ChatDetail>(`/admin/chat/conversations/${encodeURIComponent(id)}/${action}`, { method: "POST", body: { note }, token, cache: "no-store" }),
+      chatEscalate: (token: string, id: string, input: ChatEscalateInput) =>
+        request<ChatDetail>(`/admin/chat/conversations/${encodeURIComponent(id)}/escalate`, { method: "POST", body: input, token, cache: "no-store" }),
+      chatRead: (token: string, id: string, seq: number) =>
+        request<{ ok: boolean }>(`/admin/chat/conversations/${encodeURIComponent(id)}/read`, { method: "POST", body: { seq }, token, cache: "no-store" }),
+      chatTyping: (token: string, id: string) =>
+        request<{ ok: boolean }>(`/admin/chat/conversations/${encodeURIComponent(id)}/typing`, { method: "POST", token, cache: "no-store" }),
+      /** The raw live-event stream (text/event-stream), relayed by the admin app. */
+      chatStream: (token: string, signal?: AbortSignal) => send("/admin/chat/stream", { token, cache: "no-store", signal }),
+      chatAgents: (token: string) => request<{ items: ChatAgent[] }>("/admin/chat/agents", { token, cache: "no-store" }),
+      savedReplies: (token: string, archived = false) =>
+        request<{ items: ChatSavedReply[] }>("/admin/chat/saved-replies", { token, query: { archived: archived || undefined }, cache: "no-store" }),
+      createSavedReply: (token: string, input: ChatSavedReplyInput) =>
+        request<ChatSavedReply>("/admin/chat/saved-replies", { method: "POST", body: input, token, cache: "no-store" }),
+      updateSavedReply: (token: string, id: string, input: ChatSavedReplyInput) =>
+        request<ChatSavedReply>(`/admin/chat/saved-replies/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      chatSettings: (token: string) => request<ChatSettings>("/admin/chat/settings", { token, cache: "no-store" }),
+      updateChatSettings: (token: string, input: ChatSettings) =>
+        request<ChatSettings>("/admin/chat/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      helpArticles: (token: string, status?: string) =>
+        request<{ items: HelpStaffArticle[] }>("/admin/help/articles", { token, query: { status }, cache: "no-store" }),
+      helpArticle: (token: string, id: string) =>
+        request<HelpStaffArticle>(`/admin/help/articles/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createHelpArticle: (token: string, input: HelpArticleInput) =>
+        request<HelpStaffArticle>("/admin/help/articles", { method: "POST", body: input, token, cache: "no-store" }),
+      updateHelpArticle: (token: string, id: string, input: HelpArticleInput) =>
+        request<HelpStaffArticle>(`/admin/help/articles/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      transitionHelpArticle: (token: string, id: string, action: "submit" | "return" | "publish" | "archive" | "revise", note = "") =>
+        request<HelpStaffArticle>(`/admin/help/articles/${encodeURIComponent(id)}/${action}`, { method: "POST", body: { note }, token, cache: "no-store" }),
+
       // Sprint 9.1: payment providers.
       paymentProviders: (token: string) =>
         request<{ items: PaymentProviderStatus[] }>("/admin/payment-providers", { token, cache: "no-store" }),
@@ -1658,6 +1726,14 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<DeliverySupportResult>(`/me/orders/${encodeURIComponent(id)}/delivery/support`, { method: "POST", body: { message }, token, cache: "no-store" }),
       requestReschedule: (token: string, id: string, input: { preferred_date?: string; reason: string }) =>
         request<CustomerDelivery>(`/me/orders/${encodeURIComponent(id)}/delivery/reschedule-requests`, { method: "POST", body: input, token, cache: "no-store" }),
+    },
+
+    /** Sprint 9.1: the public help centre (published articles only). */
+    help: {
+      categories: () => request<{ items: HelpCategory[] }>("/help/categories", { next: { revalidate: 60 } }),
+      articles: (query: { q?: string; category?: string } = {}) =>
+        request<{ items: HelpArticleSummary[] }>("/help/articles", { query, cache: "no-store" }),
+      article: (slug: string) => request<HelpArticle>(`/help/articles/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } }),
     },
 
     /** The test payment simulator (never available in production). */

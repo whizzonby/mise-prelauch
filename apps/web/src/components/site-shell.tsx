@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AccountLink, DesktopNav, MobileTabBar } from "@/components/app-nav";
+import { ChatMount } from "@/components/chat-mount";
 import { initials } from "@/lib/format";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3100";
@@ -89,6 +90,7 @@ export function SiteShell({ customer, children }: { customer: Customer | null; c
       </footer>
 
       {customer ? <MobileTabBar /> : null}
+      <ChatMount signedIn={Boolean(customer)} />
     </div>
   );
 }

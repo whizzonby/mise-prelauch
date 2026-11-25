@@ -130,5 +130,5 @@ Resume from the first unchecked item.
   - [x] 4d Version endpoint, worker heartbeat, system status, launch gates API + admin pages (security docs written in Stage 8)
 - [x] Stage 5 — UI/UX refinement (responsive widths, a11y, fixes) — 25 Nov: responsive.spec 4/4 (keyboard checkout, 7 widths signed-in, admin tablet/phone, reduced motion); 3 overflow defects fixed; docs/testing/ACCESSIBILITY_RESULTS.md
 - [x] Stage 6 — Production infrastructure (web app in compose/Caddy/Terraform/deploy; local staging rehearsal; runbooks) — 25 Nov: terraform fmt+validate ok; ecs-deploy waits for web; compose passes VERSION/COMMIT; local prod-compose rehearsal (no Caddy/TLS) docs/testing/STAGING_REHEARSAL.md; marketing build-time data defect fixed; docs/launch runbooks; SECURITY_AUDIT + THREAT_MODEL; job-failure test; supply report test made date-independent
-- [ ] Stage 7 — End-to-end verification (journey.spec, negative paths, cross-browser, performance, load)
-- [ ] Stage 8 — Release assessment (launch control centre, GO_LIVE_CHECKLIST, report, screenshots, commit)
+- [x] Stage 7 — End-to-end verification (journey.spec, negative paths, cross-browser, performance, load) — 25 Nov: Chromium 71/71; cross-browser per report §21; perf/load/concurrency in docs/testing/PERFORMANCE_RESULTS.md (2 High concurrency defects fixed); E2E_COVERAGE.md
+- [x] Stage 8 — Release assessment (launch control centre, GO_LIVE_CHECKLIST, report, screenshots, commit) — 25 Nov: docs/launch/GO_LIVE_CHECKLIST.md, docs/SPRINT_9_REPORT.md, docs/screenshots/sprint-9/visual

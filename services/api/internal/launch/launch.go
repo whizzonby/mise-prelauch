@@ -27,9 +27,13 @@ import (
 
 // Facts are the deployment facts configuration knows and the database does not.
 type Facts struct {
-	Env              string
-	PaymentProvider  string // "" when none is configured
-	PaymentsLive     bool
+	Env             string
+	PaymentProvider string // "" when none is configured
+	PaymentsLive    bool
+	// Payments, when set, is asked at check time (staff enable providers and
+	// approve live mode while the system runs): the providers taking
+	// payments now, and which of them are live.
+	Payments         func(ctx context.Context) (taking []string, live []string, err error)
 	MailDriver       string
 	MailHost         string
 	CustomerAppURL   string
@@ -252,7 +256,19 @@ func countCheck(sql string, describe func(n int) (bool, string)) func(ctx contex
 
 var gates = []gateDef{
 	{key: "payment_provider", name: "Payment provider", owner: "Finance", category: Commercial, critical: true,
-		check: func(_ context.Context, s *Service) (bool, string, error) {
+		check: func(ctx context.Context, s *Service) (bool, string, error) {
+			if s.Facts.Payments != nil {
+				taking, live, err := s.Facts.Payments(ctx)
+				switch {
+				case err != nil:
+					return false, "", err
+				case len(taking) == 0:
+					return false, "No payment provider is taking payments.", nil
+				case len(live) == 0:
+					return false, fmt.Sprintf("Only test-mode providers are taking payments (%s): no real money can be collected.", strings.Join(taking, ", ")), nil
+				}
+				return true, fmt.Sprintf("Taking live payments: %s.", strings.Join(live, ", ")), nil
+			}
 			switch {
 			case s.Facts.PaymentProvider == "":
 				return false, "No payment provider is configured.", nil

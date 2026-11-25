@@ -64,6 +64,13 @@ func New(pool *pgxpool.Pool, secret []byte, pageURL string) *Provider {
 
 func (p *Provider) Name() string { return Name }
 func (p *Provider) Live() bool   { return false }
+
+// DisplayName and Readiness make the simulator read as what it is wherever
+// providers are listed (it is always ready; production refuses it in config).
+func (p *Provider) DisplayName() string { return "Test payments (simulator)" }
+func (p *Provider) Readiness() payments.Readiness {
+	return payments.Readiness{Ready: true, CredentialRef: "local simulator: no credentials"}
+}
 func (p *Provider) Capabilities() payments.Capabilities {
 	// The simulator takes any of the currencies Mise prices in; it moves no money.
 	return payments.Capabilities{OffSessionCharges: true, Refunds: true, Currencies: []string{"TTD", "USD"}, Method: "card"}

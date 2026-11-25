@@ -1361,7 +1361,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description What the server knows about a checkout. The result page polls this. */
+        /** @description What the server knows about a checkout. The result page polls this. While the checkout is open the API asks the provider directly (at most every 5 seconds per checkout), so a payment is recorded without waiting for the webhook; the browser's return alone is never proof of payment. */
         get: operations["getCheckoutResult"];
         put?: never;
         post?: never;
@@ -6537,7 +6537,7 @@ export interface paths {
         /** @description Messages after a seq, oldest first (at most 200). */
         get: operations["guestMessages"];
         put?: never;
-        /** @description Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. */
+        /** @description Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. At most 20 messages a minute per sender (429 rate_limited). */
         post: operations["guestSendMessage"];
         delete?: never;
         options?: never;
@@ -6658,7 +6658,7 @@ export interface paths {
         /** @description Messages after a seq, oldest first (at most 200). */
         get: operations["customerMessages"];
         put?: never;
-        /** @description Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. */
+        /** @description Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. At most 20 messages a minute per sender (429 rate_limited). */
         post: operations["customerSendMessage"];
         delete?: never;
         options?: never;

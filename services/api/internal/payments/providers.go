@@ -125,6 +125,22 @@ func (s *Service) Options(ctx context.Context, currency string) ([]Option, error
 	return out, nil
 }
 
+// Taking lists the providers that can take a payment now (in any
+// currency), and which of those move real money. For the launch gate.
+func (s *Service) Taking(ctx context.Context) (taking, live []string, err error) {
+	opts, err := s.Options(ctx, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, o := range opts {
+		taking = append(taking, o.Label)
+		if !o.Test {
+			live = append(live, o.Label)
+		}
+	}
+	return taking, live, nil
+}
+
 // choose returns the provider to use for a new checkout: the one asked for
 // if it is eligible, or the first eligible one when none is named.
 func (s *Service) choose(ctx context.Context, name, currency string) (Provider, error) {
@@ -151,27 +167,27 @@ func (s *Service) choose(ctx context.Context, name, currency string) (Provider, 
 
 // ProviderStatus is a provider as staff see it.
 type ProviderStatus struct {
-	Provider          string       `json:"provider"`
-	Name              string       `json:"name"`
-	Registered        bool         `json:"registered"`
-	Ready             bool         `json:"ready"`
-	ReadinessReason   string       `json:"readiness_reason"`
-	CredentialRef     string       `json:"credential_ref"`
-	Live              bool         `json:"live"`
-	Currencies        []string     `json:"currencies"`
-	Method            string       `json:"method"`
-	RecurringBilling  bool         `json:"recurring_billing"`
-	Refunds           bool         `json:"refunds"`
-	Setting           Setting      `json:"setting"`
-	TakingPayments    bool         `json:"taking_payments"`
-	NotTakingReason   string       `json:"not_taking_reason"`
-	LastReconciledAt  *time.Time   `json:"last_reconciled_at"`
-	LastSucceededAt   *time.Time   `json:"last_succeeded_at"`
-	Failures24h       int          `json:"failures_24h"`
-	WebhooksFailed    int          `json:"webhooks_failed"`
-	WebhooksReceived  int          `json:"webhooks_received_24h"`
-	LastWebhookAt     *time.Time   `json:"last_webhook_at"`
-	RecentEvents      []ProviderEv `json:"recent_events"`
+	Provider         string       `json:"provider"`
+	Name             string       `json:"name"`
+	Registered       bool         `json:"registered"`
+	Ready            bool         `json:"ready"`
+	ReadinessReason  string       `json:"readiness_reason"`
+	CredentialRef    string       `json:"credential_ref"`
+	Live             bool         `json:"live"`
+	Currencies       []string     `json:"currencies"`
+	Method           string       `json:"method"`
+	RecurringBilling bool         `json:"recurring_billing"`
+	Refunds          bool         `json:"refunds"`
+	Setting          Setting      `json:"setting"`
+	TakingPayments   bool         `json:"taking_payments"`
+	NotTakingReason  string       `json:"not_taking_reason"`
+	LastReconciledAt *time.Time   `json:"last_reconciled_at"`
+	LastSucceededAt  *time.Time   `json:"last_succeeded_at"`
+	Failures24h      int          `json:"failures_24h"`
+	WebhooksFailed   int          `json:"webhooks_failed"`
+	WebhooksReceived int          `json:"webhooks_received_24h"`
+	LastWebhookAt    *time.Time   `json:"last_webhook_at"`
+	RecentEvents     []ProviderEv `json:"recent_events"`
 }
 
 // ProviderEv is one audited change to a provider's settings.

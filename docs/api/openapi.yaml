@@ -2122,7 +2122,7 @@ paths:
     get:
       tags: [billing]
       operationId: getCheckoutResult
-      description: What the server knows about a checkout. The result page polls this.
+      description: "What the server knows about a checkout. The result page polls this. While the checkout is open the API asks the provider directly (at most every 5 seconds per checkout), so a payment is recorded without waiting for the webhook; the browser's return alone is never proof of payment."
       security: [{ customerSession: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       responses:
@@ -11954,7 +11954,7 @@ paths:
     post:
       tags: [chat-guest]
       operationId: guestSendMessage
-      description: "Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens."
+      description: "Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. At most 20 messages a minute per sender (429 rate_limited)."
       security: [{ guestSession: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       requestBody:
@@ -12152,7 +12152,7 @@ paths:
     post:
       tags: [chat]
       operationId: customerSendMessage
-      description: "Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens."
+      description: "Sends a message. Stored before it is acknowledged; idempotent by client_message_id. A resolved conversation reopens. At most 20 messages a minute per sender (429 rate_limited)."
       security: [{ customerSession: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       requestBody:

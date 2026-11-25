@@ -158,3 +158,62 @@ func TestCommercePaymentSafety(t *testing.T) {
 		t.Fatalf("production with the test provider: %v", err)
 	}
 }
+
+// Provider credentials (Sprint 9.1) are checked at start-up: malformed keys,
+// missing webhook secrets, unsupported PayPal currencies, live credentials
+// outside production and test-only API bases in production are all refused.
+func TestPaymentProviderConfigurationIsChecked(t *testing.T) {
+	clear := map[string]string{"STRIPE_SECRET_KEY": "", "STRIPE_WEBHOOK_SECRET": "", "STRIPE_CURRENCIES": "", "STRIPE_API_BASE": "",
+		"PAYPAL_CLIENT_ID": "", "PAYPAL_CLIENT_SECRET": "", "PAYPAL_ENV": "", "PAYPAL_WEBHOOK_ID": "", "PAYPAL_CURRENCIES": "", "PAYPAL_API_BASE": ""}
+	with := func(extra map[string]string) map[string]string {
+		m := map[string]string{}
+		for k, v := range clear {
+			m[k] = v
+		}
+		for k, v := range extra {
+			m[k] = v
+		}
+		return m
+	}
+	// Nothing configured: fine, and no provider credentials.
+	setEnv(t, with(nil))
+	cfg, err := Load()
+	if err != nil || cfg.Commerce.Stripe.SecretKey != "" || cfg.Commerce.PayPal.ClientID != "" {
+		t.Fatalf("empty provider config: %+v %v", cfg.Commerce.Stripe, err)
+	}
+	// A valid test setup loads.
+	setEnv(t, with(map[string]string{"STRIPE_SECRET_KEY": "sk_test_abc123", "STRIPE_WEBHOOK_SECRET": "whsec_x", "STRIPE_CURRENCIES": "usd, TTD",
+		"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "secret", "PAYPAL_ENV": "sandbox", "PAYPAL_WEBHOOK_ID": "WH", "PAYPAL_CURRENCIES": "USD"}))
+	if cfg, err = Load(); err != nil {
+		t.Fatalf("valid test providers: %v", err)
+	}
+	if strings.Join(cfg.Commerce.Stripe.Currencies, ",") != "USD,TTD" {
+		t.Errorf("Stripe currencies = %v", cfg.Commerce.Stripe.Currencies)
+	}
+	refused := []struct {
+		name string
+		env  map[string]string
+		want string
+	}{
+		{"not a Stripe key", map[string]string{"STRIPE_SECRET_KEY": "pk_test_abc", "STRIPE_WEBHOOK_SECRET": "whsec_x"}, "STRIPE_SECRET_KEY"},
+		{"Stripe without webhook secret", map[string]string{"STRIPE_SECRET_KEY": "sk_test_abc"}, "STRIPE_WEBHOOK_SECRET"},
+		{"bad currency code", map[string]string{"STRIPE_CURRENCIES": "US"}, "STRIPE_CURRENCIES"},
+		{"live Stripe key locally", map[string]string{"STRIPE_SECRET_KEY": "sk_live_abc", "STRIPE_WEBHOOK_SECRET": "whsec_x"}, "only allowed when MISE_ENV=production"},
+		{"PayPal cannot charge TTD", map[string]string{"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "s", "PAYPAL_ENV": "sandbox", "PAYPAL_WEBHOOK_ID": "W", "PAYPAL_CURRENCIES": "TTD"}, "PayPal does not support TTD"},
+		{"PayPal id without secret", map[string]string{"PAYPAL_CLIENT_ID": "id", "PAYPAL_ENV": "sandbox"}, "PAYPAL_CLIENT_SECRET"},
+		{"PayPal without webhook id", map[string]string{"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "s", "PAYPAL_ENV": "sandbox"}, "PAYPAL_WEBHOOK_ID"},
+		{"PayPal unknown env", map[string]string{"PAYPAL_ENV": "staging"}, "PAYPAL_ENV must be sandbox or live"},
+		{"PayPal live locally", map[string]string{"PAYPAL_CLIENT_ID": "id", "PAYPAL_CLIENT_SECRET": "s", "PAYPAL_ENV": "live", "PAYPAL_WEBHOOK_ID": "W"}, "only allowed when MISE_ENV=production"},
+	}
+	for _, c := range refused {
+		setEnv(t, with(c.env))
+		if _, err := Load(); err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want it to mention %q", c.name, err, c.want)
+		}
+	}
+	// Test-only API bases are refused in production.
+	setEnv(t, with(map[string]string{"MISE_ENV": "production", "MAIL_DRIVER": "smtp", "PAYMENTS_TEST_PROVIDER": "", "STRIPE_API_BASE": "http://fake"}))
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "for tests only") {
+		t.Errorf("API base in production: %v", err)
+	}
+}

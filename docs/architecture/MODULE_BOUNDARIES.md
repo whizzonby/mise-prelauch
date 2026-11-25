@@ -56,6 +56,9 @@ flowchart TD
 | `billing` (Sprint 3) | billing_cycles, invoices, invoice_items, invoice_counters, promotions, promotion_redemptions | `Policy.Quote`, `CreateCycle`, `MarkPaid`, `Void`, invoices and PDF; `Issuer` interface (implemented by subscriptions) |
 | `payments` (Sprint 3) | checkout_sessions, payments, payment_status_history, payment_webhook_events, refunds, payment_methods | the `Provider` interface, checkout, webhooks, reconciliation, charges, refunds; `Hooks` interface (implemented by commerce) |
 | `payments/testpay` (Sprint 3) | testpay_sessions, testpay_transactions | the payment simulator; never in production |
+| `payments` provider registry (Sprint 9.1) | payment_provider_settings, payment_provider_events | eligibility and `GET /payment-options`, staff settings and live activation; see `PAYMENT_ARCHITECTURE.md` |
+| `payments/stripe`, `payments/paypal`, `payments/scotiabank` (Sprint 9.1) | none (provider state lives at the provider) | adapters behind the `Provider` interface; Scotiabank blocked |
+| `supportchat` (Sprint 9.1) | support_conversations, support_messages, support_read_positions, support_conversation_events, support_internal_notes, support_saved_replies, support_feedback, support_guest_sessions, support_chat_settings, support_holidays, support_chat_notifications, help_categories, help_articles, help_article_events | Mise Chat (owner, guest and agent APIs, SSE streams, LISTEN/NOTIFY hub) and the help centre; uses `support` (cases), the alert centre and the job queue; see `SUPPORT_CHAT.md` |
 | `orders` (Sprint 3) | orders, order_items, order_status_history, order_counters | `Create` (once per cycle), history, `Demand` |
 | `commerce` (Sprint 3) | notification_deliveries | the workflows across those modules, each in one transaction: subscribe, pay, payment outcomes, pause, cancel and plan change, selection, and the scheduler `Tick` |
 

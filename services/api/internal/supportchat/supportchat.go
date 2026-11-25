@@ -38,6 +38,7 @@ import (
 
 	"mise.tt/api/internal/platform/db"
 	"mise.tt/api/internal/platform/httpx"
+	"mise.tt/api/internal/platform/ratelimit"
 	"mise.tt/api/internal/support"
 )
 
@@ -68,10 +69,23 @@ type Service struct {
 	Cases  *support.Service
 	Now    func() time.Time
 	typing *throttle
+	// SendLimit bounds messages per customer or guest (message flooding).
+	// Generous for a person typing; it stops scripts. Per API instance.
+	SendLimit *ratelimit.Limiter
 }
 
 func NewService(pool *pgxpool.Pool) *Service {
-	return &Service{pool: pool, Hub: NewHub(pool), Now: time.Now, typing: newThrottle(3 * time.Second)}
+	return &Service{pool: pool, Hub: NewHub(pool), Now: time.Now, typing: newThrottle(3 * time.Second),
+		SendLimit: ratelimit.New(20, time.Minute, 10)}
+}
+
+var errFlooding = httpx.NewError(http.StatusTooManyRequests, "rate_limited", "You're sending messages very quickly. Wait a moment, then try again.")
+
+func (s *Service) allowSend(o Owner) error {
+	if s.SendLimit != nil && !s.SendLimit.Allow(o.key()) {
+		return errFlooding
+	}
+	return nil
 }
 
 // Owner is who a conversation belongs to: a customer or a guest.
@@ -314,6 +328,9 @@ type StartInput struct {
 }
 
 func (s *Service) Start(ctx context.Context, o Owner, in StartInput) (*Conversation, *Message, error) {
+	if err := s.allowSend(o); err != nil {
+		return nil, nil, err
+	}
 	if err := s.requireEnabled(ctx); err != nil {
 		return nil, nil, err
 	}
@@ -387,6 +404,9 @@ type SendInput struct {
 
 // Send adds the owner's message. A resolved conversation reopens.
 func (s *Service) Send(ctx context.Context, o Owner, conversationID string, in SendInput) (*Message, error) {
+	if err := s.allowSend(o); err != nil {
+		return nil, err
+	}
 	body, err := cleanBody(in.Body)
 	if err != nil {
 		return nil, err

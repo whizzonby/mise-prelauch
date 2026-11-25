@@ -343,3 +343,44 @@ func TestProviderAmountMismatchIsHeld(t *testing.T) {
 		t.Fatalf("flag = %v %q", attention, reason)
 	}
 }
+
+// A customer back from the provider's page should not wait for a webhook:
+// the result page's poll asks the provider (the browser's return alone is
+// never proof of payment).
+func TestReturnPageAsksTheProvider(t *testing.T) {
+	s, fake := newProviderShop(t)
+	h := s.h
+	admin := bearer(h.adminLogin("ops-admin@mise.test", "admin"))
+	h.wantStatus(h.do("PATCH", "/api/v1/admin/payment-providers/stripe", map[string]any{"enabled": true}, admin), http.StatusOK)
+	tok, bill := declinedBill(t, s, "returning@example.com")
+	res := h.do("POST", "/api/v1/checkout/sessions", map[string]any{"billing_cycle_id": bill, "provider": "stripe"}, tok)
+	h.wantStatus(res, http.StatusCreated)
+	checkout := res.Data["id"].(string)
+
+	// Not paid yet: the poll says pending and nothing changes.
+	res = h.do("GET", "/api/v1/checkout/sessions/"+checkout, nil, tok)
+	h.wantStatus(res, http.StatusOK)
+	if res.Data["outcome"] != "pending" {
+		t.Fatalf("before paying = %v", res.Data["outcome"])
+	}
+	// Paid at Stripe, no webhook (yet). The next poll (after the throttle window) records it.
+	fake.set("cs_test_1", func(fs *fakeSession) {
+		fs.status = "complete"
+		fs.intent = `{"id":"pi_r","status":"succeeded","amount":33000,"currency":"ttd","customer":"cus_9","payment_method":"pm_9"}`
+	})
+	deadline := time.Now().Add(8 * time.Second)
+	for {
+		h.drainJobs()
+		res = h.do("GET", "/api/v1/checkout/sessions/"+checkout, nil, tok)
+		if res.Data["outcome"] == "succeeded" || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	if res.Data["outcome"] != "succeeded" {
+		t.Fatalf("after paying at Stripe, the return page says %v", res.Data["outcome"])
+	}
+	if st := s.subscription(tok)["status"]; st != "active" {
+		t.Fatalf("subscription = %v", st)
+	}
+}

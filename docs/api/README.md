@@ -210,3 +210,11 @@ All admin endpoints need `Authorization: Bearer <session token>` and check a per
 
 Session tokens are opaque, expire after `ADMIN_SESSION_TTL` (12 hours by default) and are
 stored only as SHA-256 hashes.
+
+## Sprint 9.1 additions
+
+Payment options and providers, Mise Chat (customer, guest and staff), the help centre: all in `openapi.yaml` (tags `chat`,
+`chat-guest`, `help`, `admin-chat`, `admin-help`, `commerce`, `admin-commerce`). For native clients (the future Flutter apps), read
+[FLUTTER_CONTRACTS.md](FLUTTER_CONTRACTS.md): authentication without a BFF, the real-time stream contract, pagination, reconnection,
+payment initiation and status verification, and reserved push events. The TypeScript client (`packages/api-client`) is regenerated
+from the contract with `pnpm --filter @mise/api-client generate`.

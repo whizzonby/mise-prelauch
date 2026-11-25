@@ -77,3 +77,24 @@ misectl admin disable -email a@b.c
 ```
 
 Each is audited (`via: misectl`).
+
+## Sprint 9.1 permissions
+
+Granted by migrations 00015 and 00016; each route's permission is checked by the API and by the role matrix test.
+
+| Permission | Roles | Guards |
+|---|---|---|
+| `payment_providers.read` | super_admin, admin, finance | `GET /admin/payment-providers` |
+| `payment_providers.manage` | super_admin, admin | `PATCH /admin/payment-providers/{provider}` (enable, merchant status) |
+| `payment_providers.activate` | super_admin | `POST /admin/payment-providers/{provider}/mode` (live approval) |
+| `support_chat.read` | super_admin, admin, operations, support | Inbox, conversation, messages, read position, staff stream, agents, saved replies (read) |
+| `support_chat.reply` | same | Reply, typing, priority/tags/links (`PATCH`); with `cases.manage`, escalate |
+| `support_chat.assign`, `support_chat.transfer`, `support_chat.resolve` | same | Assign, transfer, resolve and reopen |
+| `support_chat.internal_notes` | same | Add notes; notes appear in the conversation only with this permission |
+| `support_chat.manage` | super_admin, admin | Chat settings and saved replies (write) |
+| `support_chat.analytics` | super_admin, admin, operations | The Support chat dashboard |
+| `help_centre.edit` | super_admin, admin, support, marketing | Help articles: list, create, edit drafts, submit, revise |
+| `help_centre.publish` | super_admin, admin | Return to draft, publish, archive |
+
+Customers and guests are authorised by ownership, never by permission: `/me/chat/*` acts on the session's customer and
+`/chat/guest/*` on the guest token's session.

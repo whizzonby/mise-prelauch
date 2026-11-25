@@ -439,7 +439,6 @@ func splitList(s string) []string {
 	return out
 }
 
-
 func currencyList(name string) ([]string, error) {
 	var out []string
 	for _, c := range strings.Split(os.Getenv(name), ",") {

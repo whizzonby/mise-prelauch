@@ -101,10 +101,10 @@ func mask(key string) string {
 // apiError is Stripe's error object.
 type apiError struct {
 	Error struct {
-		Type          string        `json:"type"`
-		Code          string        `json:"code"`
-		DeclineCode   string        `json:"decline_code"`
-		Message       string        `json:"message"`
+		Type          string         `json:"type"`
+		Code          string         `json:"code"`
+		DeclineCode   string         `json:"decline_code"`
+		Message       string         `json:"message"`
 		PaymentIntent *paymentIntent `json:"payment_intent"`
 	} `json:"error"`
 }
@@ -161,15 +161,15 @@ type paymentIntent struct {
 }
 
 type checkoutSession struct {
-	ID            string         `json:"id"`
-	URL           string         `json:"url"`
-	Status        string         `json:"status"`
-	PaymentStatus string         `json:"payment_status"`
-	ExpiresAt     int64          `json:"expires_at"`
-	AmountTotal   int64          `json:"amount_total"`
-	Currency      string         `json:"currency"`
-	Customer      any            `json:"customer"`
-	PaymentIntent *paymentIntent `json:"-"`
+	ID            string          `json:"id"`
+	URL           string          `json:"url"`
+	Status        string          `json:"status"`
+	PaymentStatus string          `json:"payment_status"`
+	ExpiresAt     int64           `json:"expires_at"`
+	AmountTotal   int64           `json:"amount_total"`
+	Currency      string          `json:"currency"`
+	Customer      any             `json:"customer"`
+	PaymentIntent *paymentIntent  `json:"-"`
 	RawIntent     json.RawMessage `json:"payment_intent"`
 }
 

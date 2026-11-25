@@ -559,3 +559,32 @@ func mustLoc(t *testing.T, name string) *time.Location {
 	}
 	return loc
 }
+
+// A guest (or customer) sending faster than a person types is slowed down.
+func TestChatMessageFloodingIsLimited(t *testing.T) {
+	h := newHarness(t)
+	g := startGuest(t, h, "Fast Fingers", "fast@example.com", "hello")
+	limited := 0
+	for i := 0; i < 15; i++ {
+		res := h.do("POST", "/api/v1/chat/guest/conversations/"+g.conv+"/messages", map[string]any{"body": fmt.Sprintf("spam %d", i)}, guestTok(g.token))
+		if res.Status == http.StatusTooManyRequests {
+			if res.Error.Code != "rate_limited" {
+				t.Fatalf("code = %s", res.Error.Code)
+			}
+			limited++
+		} else {
+			h.wantStatus(res, http.StatusCreated)
+		}
+	}
+	if limited == 0 {
+		t.Fatal("15 messages in a burst were all accepted")
+	}
+	var stored int
+	_ = h.pool.QueryRow(context.Background(), `SELECT count(*) FROM support_messages WHERE conversation_id = $1`, g.conv).Scan(&stored)
+	if stored > 11 {
+		t.Fatalf("stored %d messages; the burst allows 10 plus the first", stored)
+	}
+	// Another guest is not affected.
+	other := startGuest(t, h, "Patient", "patient@example.com", "hi")
+	h.wantStatus(h.do("POST", "/api/v1/chat/guest/conversations/"+other.conv+"/messages", map[string]any{"body": "still fine"}, guestTok(other.token)), http.StatusCreated)
+}

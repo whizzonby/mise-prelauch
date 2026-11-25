@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -75,14 +76,17 @@ type Service struct {
 	Checkout string
 	// Production refuses providers that do not move real money.
 	Production bool
-	Hooks    Hooks
+	Hooks      Hooks
 	// CheckoutTTL is how long a checkout stays open.
 	CheckoutTTL time.Duration
 	Now         func() time.Time
+	// verifyOnReturn spaces out provider checks made while a customer waits on the result page.
+	verifyOnReturn *returnThrottle
 }
 
 func NewService(pool *pgxpool.Pool, providers ...Provider) *Service {
-	s := &Service{pool: pool, providers: map[string]Provider{}, CheckoutTTL: time.Hour, Now: time.Now}
+	s := &Service{pool: pool, providers: map[string]Provider{}, CheckoutTTL: time.Hour, Now: time.Now,
+		verifyOnReturn: &returnThrottle{every: 5 * time.Second}}
 	for _, p := range providers {
 		s.providers[p.Name()] = p
 		s.order = append(s.order, p.Name())
@@ -262,8 +266,50 @@ func (s *Service) CheckoutForCustomer(ctx context.Context, customerID, id string
 	if err != nil {
 		return nil, err
 	}
+	// The customer is back from the provider's page (or waiting on ours): ask
+	// the provider now rather than waiting for its webhook. The browser's
+	// return proves nothing by itself; the provider's answer decides. At most
+	// once per checkout every few seconds, however often the page polls.
+	if c.Status == "open" && c.ProviderRef != nil && s.verifyOnReturn.allow(c.ID) {
+		if err := s.ReconcileCheckout(ctx, c.Provider, *c.ProviderRef, "reconcile", ""); err != nil && !errors.Is(err, errUnknownRef) {
+			slog.WarnContext(ctx, "checkout check on return failed", "checkout_id", c.ID, "error", err.Error())
+		} else if fresh, err := store.New(s.pool).GetCheckoutSession(ctx, c.ID); err == nil {
+			c = fresh
+		}
+	}
 	v := s.checkoutView(c)
 	return &v, nil
+}
+
+// returnThrottle lets one key through at most once per interval.
+type returnThrottle struct {
+	mu    sync.Mutex
+	every time.Duration
+	last  map[string]time.Time
+}
+
+func (t *returnThrottle) allow(key string) bool {
+	if t == nil {
+		return true
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	now := time.Now()
+	if t.last == nil {
+		t.last = map[string]time.Time{}
+	}
+	if prev, ok := t.last[key]; ok && now.Sub(prev) < t.every {
+		return false
+	}
+	if len(t.last) > 5000 {
+		for k, v := range t.last {
+			if now.Sub(v) > t.every {
+				delete(t.last, k)
+			}
+		}
+	}
+	t.last[key] = now
+	return true
 }
 
 // CancelOpenCheckouts closes any open checkout for a billing cycle (it was

@@ -114,7 +114,8 @@ func NewLaunch(cfg config.Config, pool *pgxpool.Pool, com *Commerce) *launch.Ser
 		name = ""
 	}
 	l := launch.NewService(pool, launch.Facts{Env: cfg.Env, PaymentProvider: name, PaymentsLive: live, MailDriver: cfg.Mail.Driver,
-		MailHost: cfg.Mail.Host, CustomerAppURL: cfg.CustomerAppURL, PublicSiteURL: cfg.PublicSiteURL, DemoContentShown: cfg.CatalogDemoEnabled})
+		MailHost: cfg.Mail.Host, CustomerAppURL: cfg.CustomerAppURL, PublicSiteURL: cfg.PublicSiteURL, DemoContentShown: cfg.CatalogDemoEnabled,
+		Payments: com.Payments.Taking})
 	l.Now = func() time.Time { return com.Service.Now() }
 	return l
 }
@@ -417,6 +418,9 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&launch.Handler{S: NewLaunch(cfg, pool, com), Identity: ids}).Routes(mux)
 	chat := supportchat.NewService(pool)
 	chat.Alerts, chat.Cases = bo, bo.Support
+	if cfg.RateLimitsDisabled {
+		chat.SendLimit = nil // local automated test runs only (config refuses it elsewhere)
+	}
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

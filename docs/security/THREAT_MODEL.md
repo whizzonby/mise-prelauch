@@ -84,3 +84,23 @@ Assets added since Sprint 1: customer addresses, household and allergy informati
 | T28 | Lost events or silent job failure hide money or delivery problems (R/D) | Transactional outbox; at-least-once consumers with offsets; retries with backoff; failures visible on admin System | Done, tested |
 | T29 | Delivery manifest leaks customer contact data to partners (I) | Manifest excludes email; courier sees only assigned deliveries | Done, tested |
 | T30 | Backups unusable in an incident (D) | Encrypted RDS backups with PITR; restore rehearsal; runbooks | Rehearsed locally; **production restore not yet tested** |
+
+## Sprint 9.1 review
+
+Assets added: chat messages and internal notes, guest names and emails, guest tokens (hashed), help articles, payment provider
+settings and their audit trail, provider-reported fees and exchange rates. Details: `PAYMENT_SECURITY.md`, `MESSAGING_SECURITY.md`.
+
+| # | Threat (STRIDE) | Control | Status |
+|---|---|---|---|
+| T21 | (re-assessed) Forged or replayed webhook for Stripe or PayPal (S/T) | Stripe HMAC with tolerance and rotation; PayPal postback, byte-exact; event content never trusted, status fetched from the provider | Done, tested against fakes. **Re-verify in each sandbox** |
+| T31 | Two providers both take money for one bill (T) | One open checkout per bill; the original attempt is settled with its own provider before another; uncertain outcomes block; renewals lock the bill | Done, tested |
+| T32 | A provider reports a different amount or currency (T) | Recorded, flagged for finance, never applied | Done, tested |
+| T33 | Provider credentials leak through the admin or database (I) | Environment / secret store only; masked references; live keys refused outside production | Done, tested |
+| T34 | Unauthorised live payment activation (E) | `payment_providers.activate`, live credentials, verified merchant and a written reference; append-only audit | Done, tested |
+| T35 | One customer or guest reads another's conversation (I) | Owner-scoped queries (404 otherwise); streams authorised before the first byte and on every delivery | Done, tested |
+| T36 | Internal notes reach a customer (I) | Separate table and endpoints; streams carry ids only | Done, tested (API and browser) |
+| T37 | Guest impersonation or account takeover through guest linking (S) | 256-bit token, hashed, httpOnly cookie; linking needs the token and a verified matching email | Done, tested |
+| T38 | Chat spam and flooding (D) | Guest starts per email and address; 20 messages/min per sender; typing throttled; chat can be switched off | Done, tested |
+| T39 | Stored XSS through messages or help articles (T) | Plain text only, React-escaped; help articles refuse angle brackets | Done, tested |
+| T40 | Long-lived stream outlives a revoked session (S) | Session (and staff permission, MFA) re-checked every 60 s; 25-minute maximum | Done; the re-check itself is not covered by an automated test |
+| T41 | Excessive retention of conversation data (I) | Proposal in `MESSAGING_SECURITY.md` §4 | **Open**: business/legal decision, then a purge job |

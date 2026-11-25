@@ -68,11 +68,16 @@ export function ChatLauncher({
         onMouseEnter={preload}
         onFocus={preload}
         onClick={() => (open ? close() : setOpen(true))}
-        className={`fixed right-4 z-40 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:right-6 ${bottomClass} ${open ? "max-sm:hidden" : ""}`}
+        // A light ring and a deep shadow keep it visible over the dark green sections too.
+        // From a tablet up it is a labelled pill ("Chat with us"); on phones a round icon.
+        className={`fixed right-4 z-40 inline-flex h-14 min-w-14 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(0,0,0,0.28)] ring-2 ring-background transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:right-6 ${open ? "sm:px-4" : "sm:px-5"} ${bottomClass} ${open ? "max-sm:hidden" : ""}`}
       >
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />}
         </svg>
+        <span aria-hidden="true" className="hidden text-[0.9375rem] font-semibold sm:inline">
+          {open ? "Close" : "Chat with us"}
+        </span>
         {unread && !open ? (
           <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[0.75rem] font-bold text-accent-foreground">
             {unread > 9 ? "9+" : unread}

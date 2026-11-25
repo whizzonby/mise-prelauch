@@ -214,7 +214,11 @@ func (s *Service) renewals(ctx context.Context, now time.Time, r *TickReport) er
 		if err != nil {
 			return err
 		}
-		if sub.PaymentMethodID != nil && s.Payments.CanChargeMethod(ctx, *sub.PaymentMethodID) {
+		miseBills, err := s.Subs.MiseBillsRenewals(ctx, tx, sub.ID)
+		if err != nil {
+			return err
+		}
+		if miseBills && sub.PaymentMethodID != nil && s.Payments.CanChargeMethod(ctx, *sub.PaymentMethodID) {
 			return jobs.Enqueue(ctx, tx, JobCharge, ChargeJob{BillingCycleID: bc.ID, Attempt: 1})
 		}
 		return s.notify(ctx, tx, "payment_due:"+bc.ID, EmailPaymentDue, sub.CustomerID, map[string]string{
@@ -276,6 +280,10 @@ func (s *Service) HandleCharge(ctx context.Context, payload json.RawMessage) err
 	}
 	if cycle.State != "scheduled" || !s.Now().Before(cycle.CutoffAt) || sub.PaymentMethodID == nil {
 		return nil
+	}
+	// Checked again at charge time: billing may have moved to the customer or a provider since the job was queued.
+	if miseBills, err := s.Subs.MiseBillsRenewals(ctx, s.pool, sub.ID); err != nil || !miseBills {
+		return err
 	}
 	err = s.Payments.Charge(ctx, payments.ChargeInput{
 		CustomerID: sub.CustomerID, BillingCycleID: bc.ID, PaymentMethodID: *sub.PaymentMethodID,

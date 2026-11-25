@@ -11683,6 +11683,109 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/payment-options:
+    get:
+      tags: [commerce]
+      operationId: paymentOptions
+      description: The ways to pay that are open now for a currency (Sprint 9.1). Only providers that are configured, enabled by staff, able to charge this exact currency and in the right mode are listed. Public; no account data.
+      security: []
+      parameters: [{ name: currency, in: query, required: false, schema: { type: string, pattern: "^[A-Z]{3}$", default: TTD } }]
+      responses:
+        "200":
+          description: Options in display order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [currency, items]
+                    properties:
+                      currency: { type: string }
+                      items: { type: array, items: { $ref: "#/components/schemas/PaymentOption" } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payment-providers:
+    get:
+      tags: [admin-commerce]
+      operationId: adminPaymentProviders
+      description: Needs payment_providers.read. Every provider with readiness, mode, merchant status, currencies, recurring capability, reconciliation and webhook health, masked credential reference and recent audited changes.
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: Providers.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: object
+                    required: [items]
+                    properties:
+                      items: { type: array, items: { $ref: "#/components/schemas/PaymentProviderStatus" } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payment-providers/{provider}:
+    patch:
+      tags: [admin-commerce]
+      operationId: adminUpdatePaymentProvider
+      description: Needs payment_providers.manage. Enables or disables a provider and records merchant status. Enabling is refused while the adapter is not ready. Never switches to live mode. Audited.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: provider, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentProviderSettingsInput" }
+      responses:
+        "200":
+          description: The provider after the change.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PaymentProviderStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/payment-providers/{provider}/mode:
+    post:
+      tags: [admin-commerce]
+      operationId: adminSetPaymentProviderMode
+      description: Needs payment_providers.activate. Switches a provider to live (needs live credentials, a verified merchant account and a written approval reference; records who approved) or back to test. Audited.
+      security: [{ adminSession: [] }]
+      parameters: [{ name: provider, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentProviderModeInput" }
+      responses:
+        "200":
+          description: The provider after the change.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/PaymentProviderStatus" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 
 components:
   securitySchemes:
@@ -12963,6 +13066,7 @@ components:
         plan_id: { type: string, format: uuid }
         address_id: { type: string, format: uuid }
         promotion_code: { type: string }
+        provider: { type: string, description: "Payment method chosen from /payment-options (empty means the first available)." }
     Checkout:
       type: object
       required: [id, status, expires_at, billing_cycle_id, amount_minor, currency, provider, test]
@@ -13000,6 +13104,7 @@ components:
       additionalProperties: false
       properties:
         billing_cycle_id: { type: string, format: uuid }
+        provider: { type: string, description: "Payment method chosen from /payment-options (empty means the first available)." }
     PlanRef:
       type: object
       required: [id, name, meals_per_week]
@@ -18224,3 +18329,76 @@ components:
           type: array
           items: { type: string }
       description: Computed on request through the production requirement engine. Never stored in a plan or order.
+    PaymentOption:
+      type: object
+      required: [provider, label, method, test, recurring]
+      properties:
+        provider: { type: string }
+        label: { type: string }
+        method: { type: string, enum: [card, paypal] }
+        test: { type: boolean, description: "True when the provider is in test mode: no real money moves." }
+        recurring: { type: boolean, description: "The method can be saved and charged by Mise for later weeks." }
+    PaymentProviderSetting:
+      type: object
+      required: [provider, enabled, mode, merchant_status, merchant_reference, live_approved_by, live_approved_at, live_approval_reference, updated_at]
+      properties:
+        provider: { type: string }
+        enabled: { type: boolean }
+        mode: { type: string, enum: [test, live] }
+        merchant_status: { type: string, enum: [not_started, applied, verified, rejected] }
+        merchant_reference: { type: string }
+        live_approved_by: { type: string, nullable: true }
+        live_approved_at: { type: string, format: date-time, nullable: true }
+        live_approval_reference: { type: string }
+        updated_at: { type: string, format: date-time }
+    PaymentProviderEvent:
+      type: object
+      required: [action, from, to, note, actor_id, created_at]
+      properties:
+        action: { type: string }
+        from: { type: string }
+        to: { type: string }
+        note: { type: string }
+        actor_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+    PaymentProviderStatus:
+      type: object
+      required: [provider, name, registered, ready, readiness_reason, credential_ref, live, currencies, method, recurring_billing, refunds, setting, taking_payments, not_taking_reason, last_reconciled_at, last_succeeded_at, failures_24h, webhooks_failed, webhooks_received_24h, last_webhook_at, recent_events]
+      properties:
+        provider: { type: string }
+        name: { type: string }
+        registered: { type: boolean }
+        ready: { type: boolean }
+        readiness_reason: { type: string }
+        credential_ref: { type: string, description: "Masked reference to the credentials in the secret store; never the secret." }
+        live: { type: boolean }
+        currencies: { type: array, items: { type: string } }
+        method: { type: string }
+        recurring_billing: { type: boolean }
+        refunds: { type: boolean }
+        setting: { $ref: "#/components/schemas/PaymentProviderSetting" }
+        taking_payments: { type: boolean }
+        not_taking_reason: { type: string }
+        last_reconciled_at: { type: string, format: date-time, nullable: true }
+        last_succeeded_at: { type: string, format: date-time, nullable: true }
+        failures_24h: { type: integer }
+        webhooks_failed: { type: integer }
+        webhooks_received_24h: { type: integer }
+        last_webhook_at: { type: string, format: date-time, nullable: true }
+        recent_events: { type: array, items: { $ref: "#/components/schemas/PaymentProviderEvent" } }
+    PaymentProviderSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        merchant_status: { type: string, enum: [not_started, applied, verified, rejected] }
+        merchant_reference: { type: string, maxLength: 200 }
+        note: { type: string }
+    PaymentProviderModeInput:
+      type: object
+      required: [mode]
+      additionalProperties: false
+      properties:
+        mode: { type: string, enum: [test, live] }
+        reference: { type: string, description: "Written approval reference; required for live." }
+        note: { type: string }

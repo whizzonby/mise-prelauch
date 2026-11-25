@@ -34,6 +34,9 @@ import (
 	"mise.tt/api/internal/menus"
 	"mise.tt/api/internal/orders"
 	"mise.tt/api/internal/payments"
+	"mise.tt/api/internal/payments/paypal"
+	"mise.tt/api/internal/payments/scotiabank"
+	"mise.tt/api/internal/payments/stripe"
 	"mise.tt/api/internal/payments/testpay"
 	"mise.tt/api/internal/plans"
 	"mise.tt/api/internal/platform/config"
@@ -146,7 +149,17 @@ func NewCommerce(cfg config.Config, pool *pgxpool.Pool, ids *identity.Service) (
 		c.Testpay = testpay.New(pool, cfg.Commerce.TestProviderSecret, cfg.CustomerAppURL+"/test-checkout")
 		providers = append(providers, c.Testpay)
 	}
+	// Sprint 9.1: real providers, registered only when configured; Scotiabank
+	// is always listed so staff can see that it is blocked and why.
+	if cfg.Commerce.Stripe.SecretKey != "" {
+		providers = append(providers, stripe.New(cfg.Commerce.Stripe, nil))
+	}
+	if cfg.Commerce.PayPal.ClientID != "" {
+		providers = append(providers, paypal.New(cfg.Commerce.PayPal, nil))
+	}
+	providers = append(providers, scotiabank.New(cfg.Commerce.Scotiabank))
 	c.Payments = payments.NewService(pool, providers...)
+	c.Payments.Production = cfg.IsProduction()
 	if c.Testpay != nil {
 		p := c.Payments
 		// The simulator "sends" its webhooks straight into the same code a

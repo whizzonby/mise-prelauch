@@ -457,8 +457,24 @@ func (s *Service) SetPaymentMethod(ctx context.Context, q db.Querier, sub *Subsc
 	if err := store.New(q).SetSubscriptionPaymentMethod(ctx, store.SetSubscriptionPaymentMethodParams{ID: sub.ID, PaymentMethodID: &methodID}); err != nil {
 		return err
 	}
+	// Who bills renewals: Mise, through the method's provider. Never changed
+	// for a provider-run subscription, so two systems cannot both charge.
+	if _, err := q.Exec(ctx, `UPDATE subscriptions SET billing_provider = pm.provider, billing_authority = 'mise'
+		FROM payment_methods pm WHERE subscriptions.id = $1 AND pm.id = $2 AND subscriptions.billing_authority <> 'provider'`, sub.ID, methodID); err != nil {
+		return err
+	}
 	sub.PaymentMethodID = &methodID
 	return nil
+}
+
+// MiseBillsRenewals reports whether Mise may charge this subscription's
+// renewals itself: it is the billing authority and renewals are automatic.
+func (s *Service) MiseBillsRenewals(ctx context.Context, q db.Querier, subscriptionID string) (bool, error) {
+	var authority, renewal string
+	if err := q.QueryRow(ctx, `SELECT billing_authority, renewal_status FROM subscriptions WHERE id = $1`, subscriptionID).Scan(&authority, &renewal); err != nil {
+		return false, err
+	}
+	return authority == "mise" && renewal == "automatic", nil
 }
 
 // ---------------------------------------------------------------- scheduler queries

@@ -39,7 +39,7 @@ UPDATE payments SET refunded_minor = refunded_minor + $1,
     status = CASE WHEN refunded_minor + $1 >= amount_minor THEN 'refunded' ELSE 'partially_refunded' END,
     updated_at = now()
 WHERE id = $2 AND refunded_minor + $1 <= amount_minor
-RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at
+RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency
 `
 
 type AddRefundedParams struct {
@@ -71,6 +71,15 @@ func (q *Queries) AddRefunded(ctx context.Context, arg AddRefundedParams) (Payme
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
@@ -252,7 +261,7 @@ func (q *Queries) GetCheckoutSessionForCustomer(ctx context.Context, arg GetChec
 }
 
 const getPayment = `-- name: GetPayment :one
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE id = $1
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE id = $1
 `
 
 func (q *Queries) GetPayment(ctx context.Context, id string) (Payment, error) {
@@ -279,12 +288,21 @@ func (q *Queries) GetPayment(ctx context.Context, id string) (Payment, error) {
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
 
 const getPaymentForUpdate = `-- name: GetPaymentForUpdate :one
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE id = $1 FOR UPDATE
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) GetPaymentForUpdate(ctx context.Context, id string) (Payment, error) {
@@ -311,6 +329,15 @@ func (q *Queries) GetPaymentForUpdate(ctx context.Context, id string) (Payment, 
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
@@ -366,7 +393,7 @@ INSERT INTO payments (customer_id, billing_cycle_id, checkout_session_id, paymen
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8, $9, $10, $11)
 ON CONFLICT (idempotency_key) DO NOTHING
-RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at
+RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency
 `
 
 type InsertPaymentParams struct {
@@ -420,6 +447,15 @@ func (q *Queries) InsertPayment(ctx context.Context, arg InsertPaymentParams) (P
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
@@ -501,7 +537,7 @@ func (q *Queries) InsertWebhookEvent(ctx context.Context, arg InsertWebhookEvent
 }
 
 const listPayments = `-- name: ListPayments :many
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments
 WHERE ($1::text IS NULL OR status = $1::text)
   AND (NOT $2::bool OR needs_attention)
   AND ($3::uuid IS NULL OR customer_id = $3::uuid)
@@ -545,6 +581,15 @@ func (q *Queries) ListPayments(ctx context.Context, arg ListPaymentsParams) ([]P
 			&i.SucceededAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChargedCurrency,
+			&i.ChargedAmountMinor,
+			&i.SettlementCurrency,
+			&i.SettlementAmountMinor,
+			&i.FxRate,
+			&i.FxSource,
+			&i.FxAt,
+			&i.FeeMinor,
+			&i.FeeCurrency,
 		); err != nil {
 			return nil, err
 		}
@@ -557,7 +602,7 @@ func (q *Queries) ListPayments(ctx context.Context, arg ListPaymentsParams) ([]P
 }
 
 const listPaymentsForCustomer = `-- name: ListPaymentsForCustomer :many
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 100
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 100
 `
 
 func (q *Queries) ListPaymentsForCustomer(ctx context.Context, customerID string) ([]Payment, error) {
@@ -590,6 +635,15 @@ func (q *Queries) ListPaymentsForCustomer(ctx context.Context, customerID string
 			&i.SucceededAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ChargedCurrency,
+			&i.ChargedAmountMinor,
+			&i.SettlementCurrency,
+			&i.SettlementAmountMinor,
+			&i.FxRate,
+			&i.FxSource,
+			&i.FxAt,
+			&i.FeeMinor,
+			&i.FeeCurrency,
 		); err != nil {
 			return nil, err
 		}
@@ -684,7 +738,7 @@ func (q *Queries) OpenCheckoutForBillingCycle(ctx context.Context, billingCycleI
 }
 
 const paymentByIdempotencyKey = `-- name: PaymentByIdempotencyKey :one
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE idempotency_key = $1 FOR UPDATE
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE idempotency_key = $1 FOR UPDATE
 `
 
 func (q *Queries) PaymentByIdempotencyKey(ctx context.Context, idempotencyKey string) (Payment, error) {
@@ -711,12 +765,21 @@ func (q *Queries) PaymentByIdempotencyKey(ctx context.Context, idempotencyKey st
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
 
 const paymentByProviderRef = `-- name: PaymentByProviderRef :one
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE provider = $1 AND provider_ref = $2 FOR UPDATE
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE provider = $1 AND provider_ref = $2 FOR UPDATE
 `
 
 type PaymentByProviderRefParams struct {
@@ -748,6 +811,15 @@ func (q *Queries) PaymentByProviderRef(ctx context.Context, arg PaymentByProvide
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
@@ -942,7 +1014,7 @@ func (q *Queries) SetWebhookEventStatus(ctx context.Context, arg SetWebhookEvent
 }
 
 const succeededPaymentForBillingCycle = `-- name: SucceededPaymentForBillingCycle :one
-SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at FROM payments WHERE billing_cycle_id = $1 AND status IN ('succeeded', 'refunded', 'partially_refunded') LIMIT 1
+SELECT id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency FROM payments WHERE billing_cycle_id = $1 AND status IN ('succeeded', 'refunded', 'partially_refunded') LIMIT 1
 `
 
 func (q *Queries) SucceededPaymentForBillingCycle(ctx context.Context, billingCycleID string) (Payment, error) {
@@ -969,6 +1041,15 @@ func (q *Queries) SucceededPaymentForBillingCycle(ctx context.Context, billingCy
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }
@@ -980,7 +1061,7 @@ UPDATE payments SET status = $1, provider_ref = coalesce(provider_ref, $2),
     succeeded_at = CASE WHEN $1::text = 'succeeded' THEN coalesce(succeeded_at, now()) ELSE succeeded_at END,
     updated_at = now()
 WHERE id = $6
-RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at
+RETURNING id, customer_id, billing_cycle_id, checkout_session_id, payment_method_id, provider, provider_ref, kind, amount_minor, currency, status, refunded_minor, failure_code, failure_message, idempotency_key, needs_attention, attention_reason, succeeded_at, created_at, updated_at, charged_currency, charged_amount_minor, settlement_currency, settlement_amount_minor, fx_rate, fx_source, fx_at, fee_minor, fee_currency
 `
 
 type UpdatePaymentParams struct {
@@ -1023,6 +1104,15 @@ func (q *Queries) UpdatePayment(ctx context.Context, arg UpdatePaymentParams) (P
 		&i.SucceededAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ChargedCurrency,
+		&i.ChargedAmountMinor,
+		&i.SettlementCurrency,
+		&i.SettlementAmountMinor,
+		&i.FxRate,
+		&i.FxSource,
+		&i.FxAt,
+		&i.FeeMinor,
+		&i.FeeCurrency,
 	)
 	return i, err
 }

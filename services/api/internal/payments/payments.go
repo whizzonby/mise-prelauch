@@ -68,8 +68,13 @@ type Hooks interface {
 type Service struct {
 	pool      *pgxpool.Pool
 	providers map[string]Provider
-	// Checkout is the provider new checkouts use ("" = none available).
+	// order is the registration order, used to list options consistently.
+	order []string
+	// Checkout is the first registered provider ("" = none). New checkouts
+	// pick an eligible provider through Options; see providers.go.
 	Checkout string
+	// Production refuses providers that do not move real money.
+	Production bool
 	Hooks    Hooks
 	// CheckoutTTL is how long a checkout stays open.
 	CheckoutTTL time.Duration
@@ -80,6 +85,7 @@ func NewService(pool *pgxpool.Pool, providers ...Provider) *Service {
 	s := &Service{pool: pool, providers: map[string]Provider{}, CheckoutTTL: time.Hour, Now: time.Now}
 	for _, p := range providers {
 		s.providers[p.Name()] = p
+		s.order = append(s.order, p.Name())
 		if s.Checkout == "" {
 			s.Checkout = p.Name()
 		}
@@ -95,11 +101,18 @@ func (s *Service) Provider(name string) (Provider, bool) {
 
 // Available reports which provider takes new payments, if any, and whether
 // it moves real money.
+//
+// Only an eligible provider counts (ready, enabled by staff, mode matching
+// its credentials): a registered but blocked provider such as Scotiabank, or
+// one staff have not enabled, never makes payments look available.
 func (s *Service) Available() (name string, live bool, caps Capabilities, ok bool) {
-	p, ok := s.providers[s.Checkout]
-	if !ok {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	opts, err := s.Options(ctx, "")
+	if err != nil || len(opts) == 0 {
 		return "", false, Capabilities{}, false
 	}
+	p := s.providers[opts[0].Provider]
 	return p.Name(), p.Live(), p.Capabilities(), true
 }
 
@@ -142,6 +155,8 @@ type CheckoutInput struct {
 	Description    string
 	// ReturnURL gets "?checkout=<id>" appended.
 	ReturnURL string
+	// Provider is the customer's choice ("" = the first eligible one).
+	Provider string
 }
 
 // StartCheckout opens (or returns the open) hosted checkout for a billing
@@ -149,16 +164,21 @@ type CheckoutInput struct {
 // is the server-computed total. The provider is called outside any database
 // transaction.
 func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (*Checkout, error) {
-	p, ok := s.providers[s.Checkout]
-	if !ok {
-		return nil, ErrNoProvider
-	}
 	if in.AmountMinor <= 0 {
 		return nil, httpx.NewError(http.StatusConflict, "nothing_to_pay", "There is nothing to pay.")
 	}
+	p, err := s.choose(ctx, in.Provider, in.Currency)
+	if err != nil {
+		return nil, err
+	}
+	// Never let a second provider take money for a bill whose earlier attempt
+	// is still open or uncertain: settle it with its own provider first.
+	if err := s.settleOtherAttempts(ctx, in.BillingCycleID, p.Name()); err != nil {
+		return nil, err
+	}
 	var session store.CheckoutSession
 	reuse := false
-	err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
+	err = db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
 		// Lock the bill and check it can still be paid. Without this, a checkout started for a bill that
 		// was voided a moment earlier (the customer started again in another tab) would open anyway and
@@ -173,7 +193,19 @@ func (s *Service) StartCheckout(ctx context.Context, in CheckoutInput) (*Checkou
 		if billStatus != "pending" && billStatus != "due" && billStatus != "failed" {
 			return httpx.NewError(http.StatusConflict, "nothing_to_pay", "This bill can no longer be paid. Start again from your subscription page.")
 		}
+		// An attempt that became uncertain since settleOtherAttempts ran (a race) still blocks.
+		var uncertain int
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM payments WHERE billing_cycle_id = $1 AND provider <> $2
+			AND status IN ('pending', 'requires_action', 'processing')`, in.BillingCycleID, p.Name()).Scan(&uncertain); err != nil {
+			return err
+		}
+		if uncertain > 0 {
+			return errAttemptInProgress
+		}
 		open, err := q.OpenCheckoutForBillingCycle(ctx, in.BillingCycleID)
+		if err == nil && open.Provider != p.Name() {
+			return errAttemptInProgress
+		}
 		if err == nil {
 			if open.ExpiresAt.After(s.Now()) && open.AmountMinor == in.AmountMinor && open.RedirectUrl != nil {
 				session, reuse = open, true
@@ -384,8 +416,13 @@ func (s *Service) ReconcileCheckout(ctx context.Context, providerName, sessionRe
 			}
 			return nil // the customer has not paid yet
 		}
+		// The provider must report exactly the amount and currency Mise asked for. If not, the payment
+		// is recorded and flagged for finance, and the bill is not marked paid.
+		mismatch := ""
 		if pp.AmountMinor != cs.AmountMinor || pp.Currency != cs.Currency {
 			slog.ErrorContext(ctx, "provider amount does not match the checkout", "checkout_id", cs.ID)
+			mismatch = fmt.Sprintf("The provider reported %d %s, but the checkout was for %d %s. Not applied to the bill: refund or resolve it.",
+				pp.AmountMinor, pp.Currency, cs.AmountMinor, cs.Currency)
 		}
 		var methodID *string
 		if pp.MethodRef != "" {
@@ -404,6 +441,9 @@ func (s *Service) ReconcileCheckout(ctx context.Context, providerName, sessionRe
 		})
 		if err != nil {
 			return err
+		}
+		if mismatch != "" {
+			return s.applyHeld(ctx, tx, pay, pp, methodID, source, eventID, mismatch)
 		}
 		switch pp.Status {
 		case StatusSucceeded:
@@ -465,6 +505,13 @@ func (s *Service) paymentFor(ctx context.Context, q *store.Queries, key string, 
 // records the history, and tells the hooks. A repeat of the same status
 // does nothing, so a duplicate event never runs the hooks twice.
 func (s *Service) apply(ctx context.Context, tx pgx.Tx, pay store.Payment, pp *ProviderPayment, methodID *string, source, eventID string) error {
+	return s.applyHeld(ctx, tx, pay, pp, methodID, source, eventID, "")
+}
+
+// applyHeld records a status change. With a hold reason the payment is
+// flagged for finance and nothing downstream hears about it (the bill is not
+// paid, the subscription does not activate).
+func (s *Service) applyHeld(ctx context.Context, tx pgx.Tx, pay store.Payment, pp *ProviderPayment, methodID *string, source, eventID, hold string) error {
 	from := Status(pay.Status)
 	to := pp.Status
 	if !advance(from, to) {
@@ -485,6 +532,9 @@ func (s *Service) apply(ctx context.Context, tx pgx.Tx, pay store.Payment, pp *P
 	updated, err := q.UpdatePayment(ctx, store.UpdatePaymentParams{ID: pay.ID, Status: string(to), ProviderRef: ref,
 		PaymentMethodID: methodID, FailureCode: code, FailureMessage: msg})
 	if err != nil {
+		return err
+	}
+	if err := recordMoney(ctx, tx, pay.ID, pp.Money); err != nil {
 		return err
 	}
 	var evID *string
@@ -512,6 +562,9 @@ func (s *Service) apply(ctx context.Context, tx pgx.Tx, pay store.Payment, pp *P
 			"customer_id": pay.CustomerID, "kind": pay.Kind, "from_status": fromStr, "amount_minor": updated.AmountMinor,
 			"currency": updated.Currency, "provider": pay.Provider, "test": test, "source": source}}); err != nil {
 		return err
+	}
+	if hold != "" {
+		return s.Flag(ctx, tx, pay.ID, hold)
 	}
 	if s.Hooks == nil {
 		return nil
@@ -574,8 +627,25 @@ func (s *Service) Charge(ctx context.Context, in ChargeInput) error {
 	}
 	key := fmt.Sprintf("charge:%s:%d", in.BillingCycleID, in.Attempt)
 	var pay store.Payment
+	blocked := false
 	err = db.InTx(ctx, s.pool, func(tx pgx.Tx) error {
 		q := store.New(tx)
+		// One renewal is charged once: if the bill already has a payment that succeeded or is still in
+		// flight (any provider, any attempt), this attempt does nothing. The bill row lock orders
+		// concurrent attempts.
+		if _, err := tx.Exec(ctx, `SELECT 1 FROM billing_cycles WHERE id = $1 FOR UPDATE`, in.BillingCycleID); err != nil {
+			return err
+		}
+		var other int
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM payments WHERE billing_cycle_id = $1 AND idempotency_key <> $2
+			AND status IN ('succeeded', 'pending', 'requires_action', 'processing', 'partially_refunded', 'refunded')`,
+			in.BillingCycleID, key).Scan(&other); err != nil {
+			return err
+		}
+		if other > 0 {
+			blocked = true
+			return nil
+		}
 		var err error
 		pay, err = s.paymentFor(ctx, q, key, store.InsertPaymentParams{
 			CustomerID: in.CustomerID, BillingCycleID: in.BillingCycleID, PaymentMethodID: &m.ID, Provider: p.Name(),
@@ -585,6 +655,9 @@ func (s *Service) Charge(ctx context.Context, in ChargeInput) error {
 	})
 	if err != nil {
 		return err
+	}
+	if blocked {
+		return nil // already paid, or another attempt is in flight
 	}
 	if Status(pay.Status) != StatusPending {
 		return nil // this attempt already has an outcome
@@ -820,4 +893,36 @@ func (s *Service) Webhooks(ctx context.Context, status string) ([]StoredWebhook,
 			ReceivedAt: r.ReceivedAt, ProcessedAt: r.ProcessedAt})
 	}
 	return out, nil
+}
+
+// recordMoney stores provider-reported charged, settlement, exchange-rate and
+// fee figures. Fields the provider did not report keep their earlier value;
+// Mise never computes them. The rate and its source are written together.
+func recordMoney(ctx context.Context, tx pgx.Tx, paymentID string, m *MoneyDetail) error {
+	if m == nil {
+		return nil
+	}
+	str := func(v string) *string {
+		if v == "" {
+			return nil
+		}
+		return &v
+	}
+	var rate, source *string
+	if m.FXRate != "" && m.FXSource != "" {
+		rate, source = &m.FXRate, &m.FXSource
+	}
+	_, err := tx.Exec(ctx, `UPDATE payments SET
+		charged_currency        = COALESCE($2, charged_currency),
+		charged_amount_minor    = COALESCE($3, charged_amount_minor),
+		settlement_currency     = COALESCE($4, settlement_currency),
+		settlement_amount_minor = COALESCE($5, settlement_amount_minor),
+		fx_rate   = COALESCE($6::numeric, fx_rate),
+		fx_source = COALESCE($7, fx_source),
+		fx_at     = COALESCE($8, fx_at),
+		fee_minor = COALESCE($9, fee_minor),
+		fee_currency = COALESCE($10, fee_currency)
+		WHERE id = $1`, paymentID, str(m.ChargedCurrency), m.ChargedAmountMinor, str(m.SettlementCurrency),
+		m.SettlementAmountMinor, rate, source, m.FXAt, m.FeeMinor, str(m.FeeCurrency))
+	return err
 }

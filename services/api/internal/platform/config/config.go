@@ -87,6 +87,33 @@ type Config struct {
 // CommerceConfig holds the subscription, billing and payment settings.
 // Several of these encode business decisions that are still open; each is
 // documented in .env.example.
+// StripeConfig: Stripe Checkout and off-session charges.
+type StripeConfig struct {
+	SecretKey     string // sk_test_… or sk_live_…
+	WebhookSecret string // whsec_…
+	// Currencies this merchant account may charge, confirmed with Stripe.
+	// Empty: Stripe is never offered.
+	Currencies []string
+	APIBase    string // tests only; default https://api.stripe.com
+}
+
+// PayPalConfig: PayPal Orders v2 (one-time payments).
+type PayPalConfig struct {
+	ClientID     string
+	ClientSecret string
+	Env          string // sandbox or live
+	WebhookID    string
+	// Currencies this merchant account may charge, from PayPal's supported list.
+	Currencies []string
+	APIBase    string // tests only
+}
+
+// ScotiabankConfig: registration only. No public integration specification
+// exists, so the adapter never processes payments (see docs/integrations/SCOTIABANK.md).
+type ScotiabankConfig struct {
+	MerchantID string
+}
+
 type CommerceConfig struct {
 	// Selection cutoff: weekday and local time (Trinidad and Tobago).
 	CutoffWeekday string
@@ -109,6 +136,12 @@ type CommerceConfig struct {
 	TestProvider bool
 	// TestProviderSecret signs testpay webhooks.
 	TestProviderSecret []byte
+
+	// Sprint 9.1 providers. Credentials come only from the environment (or
+	// the secret store that fills it); they are never stored in the database.
+	Stripe     StripeConfig
+	PayPal     PayPalConfig
+	Scotiabank ScotiabankConfig
 	// SchedulerInterval: how often the worker runs the commerce scheduler.
 	SchedulerInterval time.Duration
 }
@@ -271,6 +304,7 @@ func Load() (Config, error) {
 	if cfg.IsProduction() && cfg.Commerce.TestProvider {
 		errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER cannot be true in production: the test provider never takes real money"))
 	}
+	errs = append(errs, loadProviders(&cfg.Commerce, cfg.IsProduction())...)
 	if v := strings.TrimSpace(os.Getenv("PAYMENTS_TEST_PROVIDER_SECRET")); v != "" {
 		if len(v) < 32 {
 			errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER_SECRET must be at least 32 characters"))
@@ -403,4 +437,84 @@ func splitList(s string) []string {
 		}
 	}
 	return out
+}
+
+
+func currencyList(name string) ([]string, error) {
+	var out []string
+	for _, c := range strings.Split(os.Getenv(name), ",") {
+		c = strings.ToUpper(strings.TrimSpace(c))
+		if c == "" {
+			continue
+		}
+		if len(c) != 3 || strings.Trim(c, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") != "" {
+			return nil, fmt.Errorf("%s: %q is not a three-letter currency code", name, c)
+		}
+		out = append(out, c)
+	}
+	return out, nil
+}
+
+// paypalCurrencies is PayPal's list of supported currency codes, read from
+// developer.paypal.com/reference/currency-codes on 25 November 2026. TTD is
+// not on it. BRL, CNY and MYR work only for in-country accounts.
+var paypalCurrencies = map[string]bool{"AUD": true, "BRL": true, "CAD": true, "CNY": true, "CZK": true, "DKK": true, "EUR": true,
+	"HKD": true, "HUF": true, "ILS": true, "JPY": true, "MYR": true, "MXN": true, "TWD": true, "NZD": true, "NOK": true, "PHP": true,
+	"PLN": true, "GBP": true, "SGD": true, "SEK": true, "CHF": true, "THB": true, "USD": true}
+
+func loadProviders(c *CommerceConfig, production bool) []error {
+	var errs []error
+	var err error
+	c.Stripe = StripeConfig{
+		SecretKey:     strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
+		WebhookSecret: strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
+		APIBase:       strings.TrimSpace(os.Getenv("STRIPE_API_BASE")),
+	}
+	if c.Stripe.Currencies, err = currencyList("STRIPE_CURRENCIES"); err != nil {
+		errs = append(errs, err)
+	}
+	if k := c.Stripe.SecretKey; k != "" && !strings.HasPrefix(k, "sk_test_") && !strings.HasPrefix(k, "sk_live_") && !strings.HasPrefix(k, "rk_") {
+		errs = append(errs, errors.New("STRIPE_SECRET_KEY must be a Stripe secret key (sk_test_…, sk_live_… or a restricted rk_ key)"))
+	}
+	if c.Stripe.SecretKey != "" && !strings.HasPrefix(c.Stripe.WebhookSecret, "whsec_") {
+		errs = append(errs, errors.New("STRIPE_WEBHOOK_SECRET (whsec_…) is required with STRIPE_SECRET_KEY: payments are confirmed only by verified webhooks"))
+	}
+	c.PayPal = PayPalConfig{
+		ClientID:     strings.TrimSpace(os.Getenv("PAYPAL_CLIENT_ID")),
+		ClientSecret: strings.TrimSpace(os.Getenv("PAYPAL_CLIENT_SECRET")),
+		Env:          strings.ToLower(strings.TrimSpace(os.Getenv("PAYPAL_ENV"))),
+		WebhookID:    strings.TrimSpace(os.Getenv("PAYPAL_WEBHOOK_ID")),
+		APIBase:      strings.TrimSpace(os.Getenv("PAYPAL_API_BASE")),
+	}
+	if c.PayPal.Env == "" {
+		c.PayPal.Env = "sandbox"
+	}
+	if c.PayPal.Env != "sandbox" && c.PayPal.Env != "live" {
+		errs = append(errs, errors.New("PAYPAL_ENV must be sandbox or live"))
+	}
+	if c.PayPal.Currencies, err = currencyList("PAYPAL_CURRENCIES"); err != nil {
+		errs = append(errs, err)
+	}
+	for _, cur := range c.PayPal.Currencies {
+		if !paypalCurrencies[cur] {
+			errs = append(errs, fmt.Errorf("PAYPAL_CURRENCIES: PayPal does not support %s (see docs/integrations/PAYPAL.md)", cur))
+		}
+	}
+	if (c.PayPal.ClientID == "") != (c.PayPal.ClientSecret == "") {
+		errs = append(errs, errors.New("set both PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET, or neither"))
+	}
+	if c.PayPal.ClientID != "" && c.PayPal.WebhookID == "" {
+		errs = append(errs, errors.New("PAYPAL_WEBHOOK_ID is required with PayPal credentials: payments are confirmed only by verified webhooks"))
+	}
+	if !production && c.PayPal.Env == "live" {
+		errs = append(errs, errors.New("PAYPAL_ENV=live is only allowed when MISE_ENV=production"))
+	}
+	if !production && strings.HasPrefix(c.Stripe.SecretKey, "sk_live_") {
+		errs = append(errs, errors.New("a live Stripe key (sk_live_) is only allowed when MISE_ENV=production"))
+	}
+	if (c.Stripe.APIBase != "" || c.PayPal.APIBase != "") && production {
+		errs = append(errs, errors.New("STRIPE_API_BASE and PAYPAL_API_BASE are for tests only"))
+	}
+	c.Scotiabank = ScotiabankConfig{MerchantID: strings.TrimSpace(os.Getenv("SCOTIABANK_MERCHANT_ID"))}
+	return errs
 }

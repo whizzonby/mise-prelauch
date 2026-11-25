@@ -1148,6 +1148,17 @@ type Job struct {
 	FinishedAt  *time.Time
 }
 
+type LaunchSignoff struct {
+	ID            int64
+	Gate          string
+	Decision      string
+	Reference     string
+	Note          string
+	DecidedBy     string
+	DecidedByName string
+	DecidedAt     time.Time
+}
+
 type Lead struct {
 	ID              string
 	FirstName       string
@@ -1431,26 +1442,35 @@ type PasswordCredential struct {
 }
 
 type Payment struct {
-	ID                string
-	CustomerID        string
-	BillingCycleID    string
-	CheckoutSessionID *string
-	PaymentMethodID   *string
-	Provider          string
-	ProviderRef       *string
-	Kind              string
-	AmountMinor       int64
-	Currency          string
-	Status            string
-	RefundedMinor     int64
-	FailureCode       *string
-	FailureMessage    *string
-	IdempotencyKey    string
-	NeedsAttention    bool
-	AttentionReason   *string
-	SucceededAt       *time.Time
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	ID                    string
+	CustomerID            string
+	BillingCycleID        string
+	CheckoutSessionID     *string
+	PaymentMethodID       *string
+	Provider              string
+	ProviderRef           *string
+	Kind                  string
+	AmountMinor           int64
+	Currency              string
+	Status                string
+	RefundedMinor         int64
+	FailureCode           *string
+	FailureMessage        *string
+	IdempotencyKey        string
+	NeedsAttention        bool
+	AttentionReason       *string
+	SucceededAt           *time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	ChargedCurrency       *string
+	ChargedAmountMinor    *int64
+	SettlementCurrency    *string
+	SettlementAmountMinor *int64
+	FxRate                pgtype.Numeric
+	FxSource              *string
+	FxAt                  *time.Time
+	FeeMinor              *int64
+	FeeCurrency           *string
 }
 
 type PaymentMethod struct {
@@ -1462,6 +1482,31 @@ type PaymentMethod struct {
 	Status      string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type PaymentProviderEvent struct {
+	ID        int64
+	Provider  string
+	Action    string
+	FromValue string
+	ToValue   string
+	Note      string
+	ActorID   *string
+	RequestID *string
+	CreatedAt time.Time
+}
+
+type PaymentProviderSetting struct {
+	Provider              string
+	Enabled               bool
+	Mode                  string
+	MerchantStatus        string
+	MerchantReference     string
+	LiveApprovedBy        *string
+	LiveApprovedAt        *time.Time
+	LiveApprovalReference string
+	UpdatedBy             *string
+	UpdatedAt             time.Time
 }
 
 type PaymentStatusHistory struct {
@@ -2217,28 +2262,33 @@ type StorageLocation struct {
 }
 
 type Subscription struct {
-	ID                  string
-	CustomerID          string
-	Status              string
-	PlanID              string
-	PlanPriceID         string
-	MealsPerWeek        int16
-	AmountMinor         int64
-	Currency            string
-	DeliveryAddressID   *string
-	PaymentMethodID     *string
-	FirstWeek           time.Time
-	ActivatedAt         *time.Time
-	PauseFromWeek       *time.Time
-	PauseUntilWeek      *time.Time
-	CancelRequestedAt   *time.Time
-	CancelEffectiveWeek *time.Time
-	CancelReason        *string
-	CancelledAt         *time.Time
-	ExpiredAt           *time.Time
-	Version             int32
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID                      string
+	CustomerID              string
+	Status                  string
+	PlanID                  string
+	PlanPriceID             string
+	MealsPerWeek            int16
+	AmountMinor             int64
+	Currency                string
+	DeliveryAddressID       *string
+	PaymentMethodID         *string
+	FirstWeek               time.Time
+	ActivatedAt             *time.Time
+	PauseFromWeek           *time.Time
+	PauseUntilWeek          *time.Time
+	CancelRequestedAt       *time.Time
+	CancelEffectiveWeek     *time.Time
+	CancelReason            *string
+	CancelledAt             *time.Time
+	ExpiredAt               *time.Time
+	Version                 int32
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	BillingProvider         *string
+	BillingAuthority        string
+	ExternalSubscriptionRef *string
+	RenewalStatus           string
+	ConsentRef              *string
 }
 
 type SubscriptionChange struct {
@@ -2582,4 +2632,11 @@ type WeeklyMenuMeal struct {
 	MealID         string
 	Position       int16
 	MaxPerCustomer *int16
+}
+
+type WorkerHeartbeat struct {
+	Worker    string
+	Version   string
+	StartedAt time.Time
+	BeatAt    time.Time
 }

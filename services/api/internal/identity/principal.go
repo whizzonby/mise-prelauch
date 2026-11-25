@@ -141,6 +141,11 @@ const (
 	// Sprint 9: launch readiness.
 	PermLaunchRead    Permission = "launch.read"
 	PermLaunchSignoff Permission = "launch.signoff"
+
+	// Sprint 9.1: payment providers.
+	PermPaymentProvidersRead     Permission = "payment_providers.read"
+	PermPaymentProvidersManage   Permission = "payment_providers.manage"
+	PermPaymentProvidersActivate Permission = "payment_providers.activate"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -171,6 +176,7 @@ var AllPermissions = []Permission{
 	PermAnalyticsInventoryRead, PermAnalyticsDeliveryRead, PermAnalyticsExport, PermAutomationRead, PermAutomationManage, PermAutomationExecute,
 	PermAutomationApprove, PermForecastingRead, PermForecastingRun, PermForecastingConfigure,
 	PermLaunchRead, PermLaunchSignoff,
+	PermPaymentProvidersRead, PermPaymentProvidersManage, PermPaymentProvidersActivate,
 }
 
 // RoleCustomer is the role every registered customer holds.

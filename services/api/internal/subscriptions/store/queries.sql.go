@@ -194,7 +194,7 @@ INSERT INTO subscriptions (customer_id, plan_id, plan_price_id, meals_per_week, 
                            delivery_address_id, first_week)
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8)
-RETURNING id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at
+RETURNING id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref
 `
 
 type CreateSubscriptionParams struct {
@@ -245,6 +245,11 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }
@@ -700,7 +705,7 @@ func (q *Queries) GetSelectionForCycle(ctx context.Context, subscriptionCycleID 
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at FROM subscriptions WHERE id = $1
+SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref FROM subscriptions WHERE id = $1
 `
 
 func (q *Queries) GetSubscription(ctx context.Context, id string) (Subscription, error) {
@@ -729,12 +734,17 @@ func (q *Queries) GetSubscription(ctx context.Context, id string) (Subscription,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }
 
 const getSubscriptionForUpdate = `-- name: GetSubscriptionForUpdate :one
-SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at FROM subscriptions WHERE id = $1 FOR UPDATE
+SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref FROM subscriptions WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) GetSubscriptionForUpdate(ctx context.Context, id string) (Subscription, error) {
@@ -763,6 +773,11 @@ func (q *Queries) GetSubscriptionForUpdate(ctx context.Context, id string) (Subs
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }
@@ -859,7 +874,7 @@ func (q *Queries) LatestCycle(ctx context.Context, subscriptionID string) (Subsc
 }
 
 const latestSubscription = `-- name: LatestSubscription :one
-SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at FROM subscriptions WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 1
+SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref FROM subscriptions WHERE customer_id = $1 ORDER BY created_at DESC LIMIT 1
 `
 
 func (q *Queries) LatestSubscription(ctx context.Context, customerID string) (Subscription, error) {
@@ -888,6 +903,11 @@ func (q *Queries) LatestSubscription(ctx context.Context, customerID string) (Su
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }
@@ -927,7 +947,7 @@ func (q *Queries) ListEvents(ctx context.Context, subscriptionID string) ([]Subs
 }
 
 const listSubscriptions = `-- name: ListSubscriptions :many
-SELECT s.id, s.customer_id, s.status, s.plan_id, s.plan_price_id, s.meals_per_week, s.amount_minor, s.currency, s.delivery_address_id, s.payment_method_id, s.first_week, s.activated_at, s.pause_from_week, s.pause_until_week, s.cancel_requested_at, s.cancel_effective_week, s.cancel_reason, s.cancelled_at, s.expired_at, s.version, s.created_at, s.updated_at, p.name AS plan_name
+SELECT s.id, s.customer_id, s.status, s.plan_id, s.plan_price_id, s.meals_per_week, s.amount_minor, s.currency, s.delivery_address_id, s.payment_method_id, s.first_week, s.activated_at, s.pause_from_week, s.pause_until_week, s.cancel_requested_at, s.cancel_effective_week, s.cancel_reason, s.cancelled_at, s.expired_at, s.version, s.created_at, s.updated_at, s.billing_provider, s.billing_authority, s.external_subscription_ref, s.renewal_status, s.consent_ref, p.name AS plan_name
 FROM subscriptions s JOIN subscription_plans p ON p.id = s.plan_id
 WHERE ($1::text IS NULL OR s.status = $1::text)
   AND ($2::uuid IS NULL OR s.customer_id = $2::uuid)
@@ -943,29 +963,34 @@ type ListSubscriptionsParams struct {
 }
 
 type ListSubscriptionsRow struct {
-	ID                  string
-	CustomerID          string
-	Status              string
-	PlanID              string
-	PlanPriceID         string
-	MealsPerWeek        int16
-	AmountMinor         int64
-	Currency            string
-	DeliveryAddressID   *string
-	PaymentMethodID     *string
-	FirstWeek           time.Time
-	ActivatedAt         *time.Time
-	PauseFromWeek       *time.Time
-	PauseUntilWeek      *time.Time
-	CancelRequestedAt   *time.Time
-	CancelEffectiveWeek *time.Time
-	CancelReason        *string
-	CancelledAt         *time.Time
-	ExpiredAt           *time.Time
-	Version             int32
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	PlanName            string
+	ID                      string
+	CustomerID              string
+	Status                  string
+	PlanID                  string
+	PlanPriceID             string
+	MealsPerWeek            int16
+	AmountMinor             int64
+	Currency                string
+	DeliveryAddressID       *string
+	PaymentMethodID         *string
+	FirstWeek               time.Time
+	ActivatedAt             *time.Time
+	PauseFromWeek           *time.Time
+	PauseUntilWeek          *time.Time
+	CancelRequestedAt       *time.Time
+	CancelEffectiveWeek     *time.Time
+	CancelReason            *string
+	CancelledAt             *time.Time
+	ExpiredAt               *time.Time
+	Version                 int32
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	BillingProvider         *string
+	BillingAuthority        string
+	ExternalSubscriptionRef *string
+	RenewalStatus           string
+	ConsentRef              *string
+	PlanName                string
 }
 
 func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsParams) ([]ListSubscriptionsRow, error) {
@@ -1005,6 +1030,11 @@ func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsPa
 			&i.Version,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BillingProvider,
+			&i.BillingAuthority,
+			&i.ExternalSubscriptionRef,
+			&i.RenewalStatus,
+			&i.ConsentRef,
 			&i.PlanName,
 		); err != nil {
 			return nil, err
@@ -1018,7 +1048,7 @@ func (q *Queries) ListSubscriptions(ctx context.Context, arg ListSubscriptionsPa
 }
 
 const liveSubscription = `-- name: LiveSubscription :one
-SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at FROM subscriptions WHERE customer_id = $1 AND status NOT IN ('cancelled', 'expired')
+SELECT id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref FROM subscriptions WHERE customer_id = $1 AND status NOT IN ('cancelled', 'expired')
 `
 
 func (q *Queries) LiveSubscription(ctx context.Context, customerID string) (Subscription, error) {
@@ -1047,6 +1077,11 @@ func (q *Queries) LiveSubscription(ctx context.Context, customerID string) (Subs
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }
@@ -1350,7 +1385,7 @@ UPDATE subscriptions SET status = $1,
     expired_at = CASE WHEN $1::text = 'expired' THEN $2::timestamptz ELSE expired_at END,
     version = version + 1, updated_at = now()
 WHERE id = $3
-RETURNING id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at
+RETURNING id, customer_id, status, plan_id, plan_price_id, meals_per_week, amount_minor, currency, delivery_address_id, payment_method_id, first_week, activated_at, pause_from_week, pause_until_week, cancel_requested_at, cancel_effective_week, cancel_reason, cancelled_at, expired_at, version, created_at, updated_at, billing_provider, billing_authority, external_subscription_ref, renewal_status, consent_ref
 `
 
 type SetSubscriptionStatusParams struct {
@@ -1385,6 +1420,11 @@ func (q *Queries) SetSubscriptionStatus(ctx context.Context, arg SetSubscription
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BillingProvider,
+		&i.BillingAuthority,
+		&i.ExternalSubscriptionRef,
+		&i.RenewalStatus,
+		&i.ConsentRef,
 	)
 	return i, err
 }

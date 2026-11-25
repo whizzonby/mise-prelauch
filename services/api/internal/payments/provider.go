@@ -69,6 +69,40 @@ type Capabilities struct {
 	// present (needed for automatic weekly renewals).
 	OffSessionCharges bool
 	Refunds           bool
+	// Currencies the provider can charge for this merchant account, as
+	// confirmed by the provider (ISO 4217). A currency missing here is never
+	// offered: Mise does not convert money to fit a provider.
+	Currencies []string
+	// Method is what the customer sees the provider as: "card" or "paypal".
+	Method string
+}
+
+// Supports reports whether the provider can charge in currency.
+func (c Capabilities) Supports(currency string) bool {
+	for _, cur := range c.Currencies {
+		if cur == currency {
+			return true
+		}
+	}
+	return false
+}
+
+// Readiness is whether an adapter can take payments at all, before any
+// staff setting is considered: configured credentials, a published
+// specification. Reason explains a "no" in plain words.
+type Readiness struct {
+	Ready  bool
+	Reason string
+	// CredentialRef is a masked reference to the credentials in use (never
+	// the secret itself), for the admin page.
+	CredentialRef string
+}
+
+// Describer is implemented by adapters that can say whether they are ready
+// and how they present themselves. Adapters without it are ready.
+type Describer interface {
+	Readiness() Readiness
+	DisplayName() string
 }
 
 type CheckoutRequest struct {
@@ -101,6 +135,24 @@ type ProviderPayment struct {
 	MethodLabel    string
 	FailureCode    string
 	FailureMessage string
+	// Money detail, only when the provider reports it (Mise never converts):
+	// what was actually charged, what settles to the merchant, the provider's
+	// exchange rate (exact decimal string) and its fee.
+	Money *MoneyDetail
+}
+
+// MoneyDetail is provider-reported money movement that can differ from the
+// order amount. Empty fields are left unrecorded.
+type MoneyDetail struct {
+	ChargedCurrency       string
+	ChargedAmountMinor    *int64
+	SettlementCurrency    string
+	SettlementAmountMinor *int64
+	FXRate                string // decimal, e.g. "0.1472000000"; "" when none
+	FXSource              string
+	FXAt                  *time.Time
+	FeeMinor              *int64
+	FeeCurrency           string
 }
 
 type ChargeRequest struct {

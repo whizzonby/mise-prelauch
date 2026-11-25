@@ -125,7 +125,7 @@ Resume from the first unchecked item.
 
 - [x] Stage 1 — Audit, provider research, this plan
 - [x] Stage 2 — Landing hero and image sources — 25 Nov: one Pexels photo (27556985, self-hosted 2000px), 45/55 layout, phone CTA on first screen; chef section waitlist-only; stock notes; final CTA restyle; IMAGE_SOURCES.md; vitals before 232/152 ms vs after 256/180 ms LCP (desktop/phone, marketing only), CLS 0 both; launch.spec 9/9
-- [ ] Stage 3 — Payments: migration, registry/options, settings + audit, billing ownership, money fields
+- [x] Stage 3 — Payments: migration, registry/options, settings + audit, billing ownership, money fields — 25 Nov: migration 00015; `GET /payment-options`, admin provider routes (read/manage/activate); checkout takes `provider`, cross-provider attempt blocking, amount/currency mismatch held for finance; renewals only when `billing_authority=mise` + `automatic`; provider-reported money detail (`MoneyDetail`, PayPal `seller_receivable_breakdown`; Stripe fees not fetched). Existing server + config tests pass. Adapter code for Stage 4 written (paypal, stripe, scotiabank) but untested
 - [ ] Stage 4 — Payments: PayPal, Stripe, Scotiabank adapters + fake-server tests; checkout UI; admin providers page
 - [ ] Stage 5 — Chat backend: migration, conversations/messages/guests, SSE + LISTEN/NOTIFY, agent actions, notifications, help centre, analytics, permissions
 - [ ] Stage 6 — Chat UI: widget package, BFF relays in both apps, admin inbox + context + settings, help centre pages

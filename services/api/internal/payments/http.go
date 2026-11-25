@@ -27,6 +27,67 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("GET /api/v1/admin/payments/{id}", adm(identity.PermPaymentsRead, h.adminGet))
 	mux.Handle("POST /api/v1/admin/payments/{id}/refunds", adm(identity.PermPaymentsRefund, h.adminRefund))
 	mux.Handle("GET /api/v1/admin/payment-webhooks", adm(identity.PermPaymentsRead, h.adminWebhooks))
+
+	// Sprint 9.1: providers. Live activation is a separate, stronger permission.
+	mux.Handle("GET /api/v1/admin/payment-providers", adm(identity.PermPaymentProvidersRead, h.adminProviders))
+	mux.Handle("PATCH /api/v1/admin/payment-providers/{provider}", adm(identity.PermPaymentProvidersManage, h.adminProviderUpdate))
+	mux.Handle("POST /api/v1/admin/payment-providers/{provider}/mode", adm(identity.PermPaymentProvidersActivate, h.adminProviderMode))
+
+	// Public: which ways to pay are open for a currency (no account data).
+	mux.Handle("GET /api/v1/payment-options", http.HandlerFunc(h.options))
+}
+
+var currencyPattern = regexp.MustCompile(`^[A-Z]{3}$`)
+
+func (h *Handler) options(w http.ResponseWriter, r *http.Request) {
+	cur := r.URL.Query().Get("currency")
+	if cur == "" {
+		cur = "TTD"
+	}
+	if !currencyPattern.MatchString(cur) {
+		httpx.Fail(w, r, httpx.ValidationError([]httpx.FieldError{{Field: "currency", Code: "invalid", Message: "Use a three-letter currency code."}}))
+		return
+	}
+	opts, err := h.Service.Options(r.Context(), cur)
+	if opts == nil {
+		opts = []Option{}
+	}
+	respond(w, r, http.StatusOK, map[string]any{"currency": cur, "items": opts}, err)
+}
+
+func (h *Handler) adminProviders(w http.ResponseWriter, r *http.Request) {
+	list, err := h.Service.Statuses(r.Context())
+	respond(w, r, http.StatusOK, map[string]any{"items": list}, err)
+}
+
+func (h *Handler) adminProviderUpdate(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("provider")
+	if !providerPattern.MatchString(name) {
+		httpx.Fail(w, r, httpx.ErrNotFound)
+		return
+	}
+	var in SettingsInput
+	if err := httpx.Decode(w, r, &in, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	st, err := h.Service.UpdateSettings(r.Context(), identity.PrincipalFrom(r.Context()).UserID, name, in)
+	respond(w, r, http.StatusOK, st, err)
+}
+
+func (h *Handler) adminProviderMode(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("provider")
+	if !providerPattern.MatchString(name) {
+		httpx.Fail(w, r, httpx.ErrNotFound)
+		return
+	}
+	var in ActivateInput
+	if err := httpx.Decode(w, r, &in, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	st, err := h.Service.SetMode(r.Context(), identity.PrincipalFrom(r.Context()).UserID, name, in)
+	respond(w, r, http.StatusOK, st, err)
 }
 
 func (h *Handler) webhook(w http.ResponseWriter, r *http.Request) {

@@ -94,6 +94,8 @@ type SubscribeInput struct {
 	PlanID        string `json:"plan_id"`
 	AddressID     string `json:"address_id"`
 	PromotionCode string `json:"promotion_code"`
+	// Provider is the payment method the customer chose ("" = the first available).
+	Provider string `json:"provider"`
 }
 
 type SubscribeResult struct {
@@ -187,7 +189,7 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 		res.Activated = true
 		return res, nil
 	}
-	res.Checkout, err = s.startCheckout(ctx, cid, bc)
+	res.Checkout, err = s.startCheckout(ctx, cid, bc, in.Provider)
 	var he *httpx.Error
 	if errors.As(err, &he) && he.Code == "nothing_to_pay" {
 		// A newer attempt (a second tab, a double click) replaced this one while it was starting.
@@ -196,7 +198,7 @@ func (s *Service) Subscribe(ctx context.Context, p *identity.Principal, in Subsc
 	return res, err
 }
 
-func (s *Service) startCheckout(ctx context.Context, customerID string, bc *billing.Cycle) (*payments.Checkout, error) {
+func (s *Service) startCheckout(ctx context.Context, customerID string, bc *billing.Cycle, provider string) (*payments.Checkout, error) {
 	// In a transaction, so MarkDue's row lock holds: on the bare pool it read "pending", and a
 	// replacement that voided the bill a moment later was overwritten back to "due".
 	if err := db.InTx(ctx, s.pool, func(tx pgx.Tx) error { return s.Billing.MarkDue(ctx, tx, bc.ID) }); err != nil {
@@ -205,7 +207,7 @@ func (s *Service) startCheckout(ctx context.Context, customerID string, bc *bill
 	desc := "Mise subscription, week of " + bc.PeriodStart
 	return s.Payments.StartCheckout(ctx, payments.CheckoutInput{
 		CustomerID: customerID, BillingCycleID: bc.ID, AmountMinor: bc.TotalMinor, Currency: bc.Currency,
-		Description: desc, ReturnURL: s.link("/subscribe/result"),
+		Description: desc, ReturnURL: s.link("/subscribe/result"), Provider: provider,
 	})
 }
 
@@ -220,6 +222,7 @@ func (s *Service) settleFree(ctx context.Context, billingCycleID string) error {
 // PayInput asks to pay a billing cycle now.
 type PayInput struct {
 	BillingCycleID string `json:"billing_cycle_id"`
+	Provider       string `json:"provider"`
 }
 
 // Pay opens a checkout for one of the customer's unpaid weeks: an
@@ -248,7 +251,7 @@ func (s *Service) Pay(ctx context.Context, p *identity.Principal, in PayInput) (
 	if !subscriptions.Status(sub.Status).Live() || cycle.State != "scheduled" || !s.Now().Before(cycle.CutoffAt) {
 		return nil, billing.ErrNotPayable()
 	}
-	return s.startCheckout(ctx, cid, bc)
+	return s.startCheckout(ctx, cid, bc, in.Provider)
 }
 
 // CheckoutResult is what the result page shows. It reports what the

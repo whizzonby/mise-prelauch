@@ -65,7 +65,8 @@ func New(pool *pgxpool.Pool, secret []byte, pageURL string) *Provider {
 func (p *Provider) Name() string { return Name }
 func (p *Provider) Live() bool   { return false }
 func (p *Provider) Capabilities() payments.Capabilities {
-	return payments.Capabilities{OffSessionCharges: true, Refunds: true}
+	// The simulator takes any of the currencies Mise prices in; it moves no money.
+	return payments.Capabilities{OffSessionCharges: true, Refunds: true, Currencies: []string{"TTD", "USD"}, Method: "card"}
 }
 
 func token(prefix string) string {

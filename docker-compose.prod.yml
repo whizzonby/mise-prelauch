@@ -26,6 +26,11 @@ x-api: &api
   build:
     context: .
     dockerfile: infrastructure/docker/api.Dockerfile
+    args:
+      # Shown by GET /api/v1/version and the worker heartbeat, e.g.
+      #   RELEASE_VERSION=2026.11.1 RELEASE_COMMIT=$(git rev-parse --short HEAD) docker compose ... up -d --build
+      VERSION: ${RELEASE_VERSION:-unversioned}
+      COMMIT: ${RELEASE_COMMIT:-}
   env_file: .env.production
   environment:
     MISE_ENV: production

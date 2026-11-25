@@ -15,7 +15,8 @@ const REVALIDATE_SECONDS = 300;
 async function get<T>(path: string): Promise<T | null> {
   const base = (process.env.API_INTERNAL_URL ?? env.apiUrl).replace(/\/$/, "");
   try {
-    const res = await fetch(`${base}/api/v1${path}`, { next: { revalidate: REVALIDATE_SECONDS } });
+    // A slow API must not hold the page: give up after a few seconds and show the honest empty state.
+    const res = await fetch(`${base}/api/v1${path}`, { next: { revalidate: REVALIDATE_SECONDS }, signal: AbortSignal.timeout(4000) });
     if (!res.ok) return null;
     return ((await res.json()) as { data: T }).data;
   } catch {

@@ -48,7 +48,7 @@ case "${1:-}" in
     done
     # ECS circuit breakers roll a service back if the new tasks fail their health checks.
     aws ecs wait services-stable --cluster "$ECS_CLUSTER" \
-      --services "$NAME_PREFIX-api" "$NAME_PREFIX-worker" "$NAME_PREFIX-marketing" "$NAME_PREFIX-admin"
+      --services "$NAME_PREFIX-api" "$NAME_PREFIX-worker" "$NAME_PREFIX-marketing" "$NAME_PREFIX-admin" "$NAME_PREFIX-web"
     # Static pages are cached at the edge for a long time; a release replaces them.
     if [ -n "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
       aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*" > /dev/null

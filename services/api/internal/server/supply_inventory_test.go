@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"mise.tt/api/internal/platform/qty"
 )
@@ -495,7 +496,17 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	st := newStockSetup(t)
 	h, team := st.h, st.team
 	all, cold := st.checklist(t)
-	// One delivery on time (13 Nov, expected 14 Nov): 2 good bags of chicken, one torn; all the rice; one carton of coconut milk past its date.
+	// Receipts and issues happen "now", so the reports cover the current month in Trinidad and Tobago.
+	tt := time.Now().In(time.FixedZone("AST", -4*3600))
+	first := time.Date(tt.Year(), tt.Month(), 1, 0, 0, 0, 0, time.UTC)
+	monthFrom, monthTo := first.Format(time.DateOnly), first.AddDate(0, 1, -1).Format(time.DateOnly)
+	month := "from=" + monthFrom + "&to=" + monthTo
+	// One delivery on time: 2 good bags of chicken, one torn; all the rice; one carton of coconut milk past its date.
+	// Receipts are stamped with the database clock and are immutable, so the order is due tomorrow (Trinidad
+	// and Tobago) whatever day the test runs; "on time" then never depends on the calendar.
+	if _, err := h.pool.Exec(context.Background(), `UPDATE purchase_orders SET expected_delivery = (now() AT TIME ZONE 'America/Port_of_Spain')::date + 1 WHERE id = $1`, st.po); err != nil {
+		t.Fatal(err)
+	}
 	h.wantStatus(h.do("POST", "/api/v1/admin/receiving", map[string]any{"po_id": st.po, "idempotency_key": "report-form-1-" + st.po[:8], "lines": []map[string]any{
 		{"po_line_id": st.lines["chicken"], "delivered_packs": "3", "accepted_packs": "2", "rejected_packs": "1", "expiry_date": "2026-11-20", "location_id": st.chill,
 			"quarantine_location_id": st.quarantine, "inspection": pass(all, cold), "discrepancy": "damaged", "discrepancy_note": "Torn bag"},
@@ -505,8 +516,8 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	h.wantStatus(h.do("POST", "/api/v1/admin/inventory/issues", map[string]any{"batch_id": st.batch, "ingredient_id": st.ing["chicken"], "quantity": "1500"}, team.cook), http.StatusCreated)
 
 	// Reports are for supplier_reports.read.
-	h.wantStatus(h.do("GET", "/api/v1/admin/reports/procurement?from=2026-11-01&to=2026-11-30", nil, team.receiver), http.StatusForbidden)
-	res := h.do("GET", "/api/v1/admin/reports/procurement?from=2026-11-01&to=2026-11-30", nil, team.manager)
+	h.wantStatus(h.do("GET", "/api/v1/admin/reports/procurement?"+month, nil, team.receiver), http.StatusForbidden)
+	res := h.do("GET", "/api/v1/admin/reports/procurement?"+month, nil, team.manager)
 	h.wantStatus(res, http.StatusOK)
 	var poTotal float64
 	po := h.do("GET", "/api/v1/admin/purchase-orders/"+st.po, nil, team.manager)
@@ -524,8 +535,8 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	// agree wherever they show the same definition. (Report "po_value" is the
 	// value *approved*; the registry's procurement.po_value is the value
 	// *issued*; they are different figures and labelled so.)
-	h.reconcileWithDashboard("procurement", "2026-11-01", "2026-11-30", map[string]float64{"procurement.po_count": tot["pos_issued"]})
-	res = h.do("GET", "/api/v1/admin/reports/inventory?from=2026-11-01&to=2026-11-30", nil, team.stores)
+	h.reconcileWithDashboard("procurement", monthFrom, monthTo, map[string]float64{"procurement.po_count": tot["pos_issued"]})
+	res = h.do("GET", "/api/v1/admin/reports/inventory?"+month, nil, team.stores)
 	h.wantStatus(res, http.StatusOK)
 	tot = reportTotals(t, res)
 	riceValue := qty.MustParse(st.packs["rice"]).Mul(qty.Int(9000))
@@ -542,7 +553,7 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	if reportBreakdown(t, res, "issued")["Chicken thigh (g)"] != 1500 {
 		t.Errorf("issued = %v", reportBreakdown(t, res, "issued"))
 	}
-	res = h.do("GET", "/api/v1/admin/reports/suppliers?from=2026-11-01&to=2026-11-30", nil, team.finance)
+	res = h.do("GET", "/api/v1/admin/reports/suppliers?"+month, nil, team.finance)
 	h.wantStatus(res, http.StatusOK)
 	tot = reportTotals(t, res)
 	if tot["deliveries"] != 1 || tot["on_time"] != 1 || tot["suppliers_approved"] != 1 {
@@ -555,13 +566,19 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 	for _, v := range reportBreakdown(t, res, "rejected_packs") {
 		rejected += v
 	}
-	h.reconcileWithDashboard("procurement", "2026-11-01", "2026-11-30", map[string]float64{"procurement.rejected_packs": rejected})
+	h.reconcileWithDashboard("procurement", monthFrom, monthTo, map[string]float64{"procurement.rejected_packs": rejected})
 	if _, ok := res.Data["definitions"].(map[string]any)["lead_time_days"]; !ok {
 		t.Error("lead time is not defined")
 	}
 
-	// Alerts: the order is overdue after 14 Nov (still partly received), the coconut milk awaits an expiry review.
-	if _, err := h.bo.ScanAlerts(context.Background(), at("2026-11-16 12:00")); err != nil {
+	// Alerts: two days after the expected date the order is overdue (still partly received), and the
+	// coconut milk awaits an expiry review.
+	var due time.Time
+	if err := h.pool.QueryRow(context.Background(), `SELECT expected_delivery FROM purchase_orders WHERE id = $1`, st.po).Scan(&due); err != nil {
+		t.Fatal(err)
+	}
+	scanAt := due.AddDate(0, 0, 2).Add(16 * time.Hour) // 12:00 in Trinidad and Tobago (UTC−4)
+	if _, err := h.bo.ScanAlerts(context.Background(), scanAt); err != nil {
 		t.Fatal(err)
 	}
 	for kind, perm := range map[string]string{"purchase_order_overdue": "purchase_orders.read", "lot_expiry_review": "receiving.inspect"} {
@@ -570,7 +587,7 @@ func TestSupplyReportsAndAlertsMatchTheRecords(t *testing.T) {
 		}
 	}
 	// Scanning again raises nothing new.
-	if n, _ := h.bo.ScanAlerts(context.Background(), at("2026-11-16 12:01")); n != 0 {
+	if n, _ := h.bo.ScanAlerts(context.Background(), scanAt.Add(time.Minute)); n != 0 {
 		t.Errorf("second scan raised %d", n)
 	}
 }

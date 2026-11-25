@@ -1,6 +1,6 @@
-# Threat model (Sprint 1)
+# Threat model
 
-Scope: the API, worker, the three Next.js apps and PostgreSQL, as of Sprint 1. The
+Written in Sprint 1; reviewed and extended in Sprint 9 (see the end). Scope: the API, worker, the three Next.js apps and PostgreSQL. The
 pre-launch controls are in `docs/architecture/security.md` and still apply.
 
 ## Assets
@@ -61,3 +61,26 @@ request id and trace id.
 T2 breached-password check, T7 admin API exposure in AWS, T18 CAPTCHA before opening
 registration, a manual review of the MFA screens with a screen reader, and a rehearsed
 RDS restore.
+
+## Sprint 9 review
+
+Status of the Sprint 1 open items: **T2** (breached-password check) still open; **T7** (admin API reachable on the AWS API host) still
+open, now also covering customer `/me/*` paths (finding F1 in `SECURITY_AUDIT.md`); single-server Caddy routes only public paths;
+**T18** (CAPTCHA) still open, needed before public registration; the RDS restore is rehearsed locally only
+(`docs/testing/MIGRATION_AND_RESTORE_RESULTS.md`).
+
+Assets added since Sprint 1: customer addresses, household and allergy information, subscriptions, invoices, payment references
+(no card data), orders, production, inventory and supplier records, delivery proof (recipient names, notes), analytics snapshots.
+
+| # | Threat (STRIDE) | Control | Status |
+|---|---|---|---|
+| T21 | Forged or replayed payment webhook marks an order paid (S/T) | Signature verified, replay window, idempotent on provider event id, order-independent; browser redirect never marks payment | Done, tested (test provider). Re-assess for the real provider |
+| T22 | Client tampers with price, discount or quantity (T) | Server quotes every amount; promotions approved and computed on the server; allowance enforced on the server | Done, tested |
+| T23 | One customer reads another's order, invoice, address or delivery (I) | Every `/me/*` query scoped to the session's user | Done, tested on every id-bearing route |
+| T24 | Staff role exceeds its job (E) | Permission per endpoint; role matrix test; courier sees only their runs | Done, tested |
+| T25 | Open redirect through `next` after sign-in or address entry (S) | `safeNext` accepts only same-site paths | Done, tested |
+| T26 | Demo or test data shown to customers (I/T) | `CATALOG_DEMO_ENABLED=false` in production; demo seeders refuse outside local; launch gate `demo_content_hidden` | Done |
+| T27 | Automation bypasses financial or food-safety controls (E) | Rules need approval; actions limited to tasks and notifications; no automatic refunds or production changes | Done, tested (Sprint 8) |
+| T28 | Lost events or silent job failure hide money or delivery problems (R/D) | Transactional outbox; at-least-once consumers with offsets; retries with backoff; failures visible on admin System | Done, tested |
+| T29 | Delivery manifest leaks customer contact data to partners (I) | Manifest excludes email; courier sees only assigned deliveries | Done, tested |
+| T30 | Backups unusable in an incident (D) | Encrypted RDS backups with PITR; restore rehearsal; runbooks | Rehearsed locally; **production restore not yet tested** |

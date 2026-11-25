@@ -1,9 +1,11 @@
 import { Tag } from "@mise/ui";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { AddressFields } from "@/components/address-fields";
 import { Form, FormMessage, SubmitButton } from "@/components/forms";
 import { reference } from "@/lib/data";
+import { safeNext } from "@/lib/safe-redirect";
 import { availabilityText } from "@/lib/format";
 import { api, requireCustomer } from "@/lib/session";
 
@@ -16,13 +18,23 @@ export const metadata: Metadata = { title: "Addresses" };
  * "still being confirmed" until delivery areas are set up: an address saved
  * here is never a promise of delivery.
  */
-export default async function AddressesPage() {
+export default async function AddressesPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { token } = await requireCustomer();
+  // Arriving from a step that needs an address (subscribing): offer the way back once one is saved.
+  const { next: rawNext } = await searchParams;
+  const next = rawNext ? safeNext(rawNext, "") : "";
   const [{ items }, ref] = await Promise.all([api.account.addresses(token), reference()]);
   return (
     <>
       <h1 className="type-h2">Addresses</h1>
       <p className="type-body mt-3 text-muted">Where you would like your kits delivered. Mise is starting in Trinidad and Tobago.</p>
+      {next && items.length ? (
+        <p className="mt-6">
+          <Link href={next} className="type-body-sm inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
+            Continue with your plan
+          </Link>
+        </p>
+      ) : null}
 
       {items.length ? (
         <ul className="mt-8 grid gap-4">

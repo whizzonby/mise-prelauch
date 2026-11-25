@@ -1,4 +1,5 @@
 import { ChefFeature } from "@/components/chef-feature";
+import { connection } from "next/server";
 import { FAQ } from "@/components/faq";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
@@ -50,10 +51,11 @@ function structuredData(questions: { question: string; answer: string }[]) {
   };
 }
 
-/** Meals and plans are read from the API and refreshed every five minutes. */
-export const revalidate = 300;
-
 export default async function HomePage() {
+  // Rendered per request, not at build: the API is not reachable while images are built, and a
+  // page baked then would show "could not be loaded" after every deploy. The reads stay cached for
+  // five minutes (lib/storefront.ts).
+  await connection();
   const [meals, plans, questions] = await Promise.all([featuredMeals(), livePlans(), faqItems()]);
   return (
     <>

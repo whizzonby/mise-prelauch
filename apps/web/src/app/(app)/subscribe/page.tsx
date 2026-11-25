@@ -83,7 +83,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
             ) : (
               <p className="type-body mt-4 text-muted">You haven&apos;t saved an address yet.</p>
             )}
-            <Link href="/profile/addresses" className="type-body-sm mt-4 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
+            <Link href={`/profile/addresses?next=${encodeURIComponent(`/subscribe?plan=${slug}`)}`} className="type-body-sm mt-4 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
               Add an address
             </Link>
           </fieldset>

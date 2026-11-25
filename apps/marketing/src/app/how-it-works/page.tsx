@@ -1,4 +1,5 @@
 import { Container, Heading, Section, Text } from "@mise/ui";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 
 import { HowItWorks } from "@/components/how-it-works";
@@ -14,10 +15,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/how-it-works" },
 };
 
-export const revalidate = 300;
 
 /** The steps, and the weekly rules exactly as the system applies them. */
 export default async function HowItWorksPage() {
+  // Rendered per request, not at build: the API is not reachable while images are built, and a
+  // page baked then would show "could not be loaded" after every deploy. The reads stay cached for
+  // five minutes (lib/storefront.ts).
+  await connection();
   const info = await subscriptionInfo();
   return (
     <>

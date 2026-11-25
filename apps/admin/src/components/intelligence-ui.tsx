@@ -73,14 +73,15 @@ export function MetricCard({ m }: { m: AnalyticsMetricValue }) {
 /** The one renderer for every dashboard: notices, sections of figures, then tables. */
 export function DashboardView({ d }: { d: AnalyticsDashboard }) {
   return (
-    <div className="grid gap-6">
+    // minmax(0, 1fr) tracks: a wide table scrolls inside its frame instead of widening the page.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <p className="type-body-sm text-muted">
         {formatDay(d.from)} to {formatDay(d.to)}, compared with {formatDay(d.previous_from)} to {formatDay(d.previous_to)}. {d.time_zone}.{" "}
         {d.last_refresh ? `Snapshots last refreshed ${formatDateTime(d.last_refresh)}; figures here are calculated live.` : "Figures are calculated live."}
       </p>
       {d.notices.length ? <Notice tone="warning" title="Read these figures with care" items={d.notices} /> : null}
       {d.sections.map((s) => (
-        <section key={s.title} aria-labelledby={`sec-${slug(s.title)}`} className="grid gap-3">
+        <section key={s.title} aria-labelledby={`sec-${slug(s.title)}`} className="grid grid-cols-[minmax(0,1fr)] gap-3">
           <h2 id={`sec-${slug(s.title)}`} className="type-h3">
             {s.title}
           </h2>

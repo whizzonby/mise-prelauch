@@ -113,22 +113,22 @@ delivery policy, email, domain, AWS).
 Resume from the first unchecked item.
 
 - [x] Stage 1 — Audit (`SPRINT_9_AUDIT.md`) and plan (this file)
-- [ ] Stage 2 — Customer website & commerce
+- [x] Stage 2 — Customer website & commerce
   - [x] 2a Public catalogue/plans in the customer app (public shell, signed-in extras)
   - [x] 2b Plan choice carried through sign-up to subscribe
   - [x] 2c Marketing landing on live data, `SITE_MODE`, new pages, redirects
   - [x] 2d SEO: metadata, canonicals, sitemaps, robots (verify in browser with 2e)
-  - [ ] 2e Tests (Vitest, Playwright launch.spec) green
-- [ ] Stage 3 — Integration corrections
+  - [x] 2e Tests (Vitest, Playwright launch.spec) green — 25 Nov: Vitest 45, typecheck+lint clean, launch.spec 8/8, waitlist-mode regression 66/66 (experience.spec heading updated to the live-data section title)
+- [x] Stage 3 — Integration corrections
   - [x] 3a Commerce outbox events + tests
   - [x] 3b Consumers (analytics refresh, automation payment_failed event trigger) + backfill command
   - [x] 3c Reports onto registry; procurement/delivery reconciliation tests; automation consumer e2e test
-- [ ] Stage 4 — Security & reliability
+- [x] Stage 4 — Security & reliability
   - [x] 4a RBAC matrix + ownership + session tests
   - [x] 4b Scans (deps, vuln, secrets), headers/CSP
   - [x] 4c Migrations fresh/upgraded; backup + restore rehearsal
   - [x] 4d Version endpoint, worker heartbeat, system status, launch gates API + admin pages (security docs written in Stage 8)
-- [ ] Stage 5 — UI/UX refinement (responsive widths, a11y, fixes)
+- [x] Stage 5 — UI/UX refinement (responsive widths, a11y, fixes) — 25 Nov: responsive.spec 4/4 (keyboard checkout, 7 widths signed-in, admin tablet/phone, reduced motion); 3 overflow defects fixed; docs/testing/ACCESSIBILITY_RESULTS.md
 - [ ] Stage 6 — Production infrastructure (web app in compose/Caddy/Terraform/deploy; local staging rehearsal; runbooks)
 - [ ] Stage 7 — End-to-end verification (journey.spec, negative paths, cross-browser, performance, load)
 - [ ] Stage 8 — Release assessment (launch control centre, GO_LIVE_CHECKLIST, report, screenshots, commit)

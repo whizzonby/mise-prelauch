@@ -9,7 +9,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
   return (
     <Container className="py-10 md:py-14">
       <p className="type-h3 font-display">Your account</p>
-      <div className="mt-6 grid gap-8 lg:mt-10 lg:grid-cols-[14rem_1fr] lg:gap-16">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 lg:mt-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
         <div>
           <ProfileNav />
           <form action={signOut} className="mt-6 hidden border-t border-border pt-4 lg:block">

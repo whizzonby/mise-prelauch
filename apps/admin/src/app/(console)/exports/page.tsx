@@ -36,7 +36,7 @@ export default async function ExportsPage() {
         title="Exports"
         description={`CSV files of business records, up to ${number.format(limit)} rows each. Files are yours alone and are deleted after 24 hours. Health details, addresses, phone numbers and notes are never included.`}
       />
-      <div className="grid gap-6 xl:grid-cols-[24rem_1fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
         <Panel title="New export">
           {allowed.length ? (
             <CatalogForm action={requestExport} submit="Request export" pending="Requesting…" label="New export">

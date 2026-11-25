@@ -25,7 +25,7 @@ test.describe("mobile navigation", () => {
     await menu.getByRole("link", { name: "Meals" }).click();
     await expect(menu).toBeHidden();
     await expect(page).toHaveURL(/#meals$/);
-    await expect(page.getByRole("heading", { name: "A taste of the first menus" })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "From the Mise menu" })).toBeInViewport();
   });
 
   test("the page never scrolls sideways", async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe("reduced motion", () => {
     }
 
     // No photograph is left masked.
-    await page.getByRole("heading", { name: "A taste of the first menus" }).scrollIntoViewIfNeeded();
+    await page.getByRole("heading", { name: "From the Mise menu" }).scrollIntoViewIfNeeded();
     const masked = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("main div")].filter((el) => el.style.clipPath).length);
     expect(masked).toBe(0);
 

@@ -2,11 +2,7 @@ import type { StaticImageData } from "next/image";
 
 import chefDetail from "@/assets/images/chef-detail.jpg";
 import chefMain from "@/assets/images/chef-main.jpg";
-import coconut from "@/assets/images/ingredient-coconut.jpg";
-import garlic from "@/assets/images/ingredient-garlic.jpg";
-import lime from "@/assets/images/ingredient-lime.jpg";
-import okra from "@/assets/images/ingredient-okra.jpg";
-import pepper from "@/assets/images/ingredient-pepper.jpg";
+import heroPlate from "@/assets/images/hero-caribbean-plate.jpg";
 import marketPeppers from "@/assets/images/market-peppers.jpg";
 import marketStall from "@/assets/images/market-stall.jpg";
 import spices from "@/assets/images/spices.jpg";
@@ -18,7 +14,7 @@ import storyKitchen from "@/assets/images/story-kitchen.jpg";
 
 /*
  * PLACEHOLDER PHOTOGRAPHY. Every image in this file is a stock photograph
- * from Pexels (credits: docs/content/image-credits.md).
+ * from Pexels (sources and licences: docs/branding/IMAGE_SOURCES.md).
  * Replace them with Mise's own photography before launch; alt text describes
  * what the current image shows and must be rewritten with each replacement.
  */
@@ -29,28 +25,31 @@ export interface Photo {
 }
 
 export const hero = {
+  eyebrow: "The Caribbean, in your kitchen",
   /** One entry per line of the headline. */
-  headline: ["Everything", "in its place."],
-  body: "Mise is a Caribbean meal kit. We season, chop and portion fresh local ingredients in our Trinidad kitchen, then deliver them ready for you to cook.",
-  secondaryCta: { label: "See how it works", href: "#how-it-works" },
+  headline: ["Good food.", "Fresh ingredients.", "Made by you."],
+  body: "Caribbean meal kits with fresh ingredients, seasoned, chopped and portioned in our Trinidad kitchen, and a recipe card to cook from. Dinner is yours to make.",
+  /** Secondary action: plans once ordering is open; how it works before that. */
+  secondaryCtaLaunch: { label: "Explore our plans", path: "/plans" },
+  secondaryCtaWaitlist: { label: "See how it works", href: "#how-it-works" },
   note: "Launching in Trinidad & Tobago. People on the waitlist hear first.",
   noteLaunch: "Delivering in Trinidad & Tobago. You see delivery for your address before you pay.",
   /**
-   * The counter: ingredients laid out the way a cook sets up before service.
-   * `prep` is what the Mise kitchen has already done to it.
+   * One photograph. It is stock photography (credited at /credits and in
+   * docs/branding/IMAGE_SOURCES.md), so the caption says so: it must never
+   * pass for a Mise dish or kitchen.
    */
-  counter: [
-    { id: "coconut", name: "Coconut", prep: "cracked", src: coconut, alt: "Two whole coconuts and one cracked open, showing pieces of white flesh" },
-    { id: "lime", name: "Lime", prep: "halved", src: lime, alt: "A whole lime with lime halves and wedges on a white counter" },
-    { id: "garlic", name: "Garlic", prep: "peeled", src: garlic, alt: "Garlic bulbs cut across, with loose peeled cloves" },
-    { id: "ochro", name: "Ochro", prep: "sliced", src: okra, alt: "An ochro pod with five neat slices cut from it" },
-    { id: "pepper", name: "Bird pepper", prep: "whole", src: pepper, alt: "Three small red hot peppers in a row" },
-  ],
+  image: {
+    src: heroPlate,
+    alt: "A white plate of jerk chicken, rice and peas topped with coriander, and golden fried plantain, on a dark wooden table",
+    caption: "Serving suggestion. Stock photograph, not a Mise kit.",
+  },
 } as const;
 
 export const story = {
   id: "our-story",
   title: "How a Mise dinner gets made",
+  photoNote: "Photographs are stock images standing in for our own: they are not Mise's farms, kitchen or kits.",
   stages: [
     {
       id: "farm",

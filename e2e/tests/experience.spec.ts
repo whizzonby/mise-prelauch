@@ -42,8 +42,8 @@ test.describe("reduced motion", () => {
     await page.goto("/");
 
     // The hero is in its settled state from the first frame.
-    const tile = page.getByRole("list", { name: "Ingredients, prepped" }).getByRole("listitem").first();
-    await expect(tile).toHaveCSS("animation-name", "none");
+    const line = page.locator("#hero-title .headline-line > span").first();
+    await expect(line).toHaveCSS("animation-name", "none");
 
     // The story stays an ordinary list: never pinned, every stage readable.
     await page.getByRole("heading", { name: "How a Mise dinner gets made" }).scrollIntoViewIfNeeded();

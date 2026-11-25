@@ -5,19 +5,10 @@
 @source "../../../../packages/ui/src";
 
 /*
- * The hero counter: ingredient tiles start a little out of true and settle
- * into their places. It is CSS so it runs at first paint, before any
- * JavaScript, and it is the one orchestrated moment on the page.
+ * The hero headline: each line rises from behind its baseline, then the body
+ * text fades in. CSS, so it runs at first paint without JavaScript. The hero
+ * photograph never animates (it is the largest paint on the page).
  */
-@keyframes counter-settle {
-  from {
-    transform: translate(var(--from-x, 0), var(--from-y, 0)) rotate(var(--from-rotate, 0deg));
-  }
-  to {
-    transform: none;
-  }
-}
-
 @keyframes line-rise {
   from {
     transform: translateY(105%);
@@ -56,11 +47,6 @@
   }
 }
 
-@utility counter-tile {
-  animation: counter-settle var(--duration-editorial) var(--ease-settle) both;
-  animation-delay: calc(var(--order, 0) * 90ms + 150ms);
-}
-
 @utility headline-line {
   display: block;
   /* Clip vertically only, so a long word is never cut at the sides. */
@@ -78,11 +64,10 @@
 
 @utility hero-quiet {
   animation: quiet-in var(--duration-editorial) var(--ease-interaction) both;
-  animation-delay: 500ms;
+  animation-delay: 250ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .counter-tile,
   .headline-line > span,
   .hero-quiet {
     animation: none;

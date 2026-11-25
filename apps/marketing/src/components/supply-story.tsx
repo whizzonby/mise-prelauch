@@ -21,6 +21,7 @@ export function SupplyStory() {
           <Heading as="h2" id="story-title" className="max-w-[14ch]">
             {story.title}
           </Heading>
+          <p className="type-caption mt-3 max-w-[48ch] text-primary-foreground/70">{story.photoNote}</p>
 
           <ol data-story-list className="mt-12 grid gap-14 md:mt-16">
             {story.stages.map((stage, index) => (

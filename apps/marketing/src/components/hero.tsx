@@ -1,4 +1,4 @@
-import { buttonClasses, Container, cx, Text } from "@mise/ui";
+import { buttonClasses, Container, Text } from "@mise/ui";
 import Image from "next/image";
 import type { CSSProperties } from "react";
 
@@ -9,25 +9,40 @@ import { env } from "@/lib/env";
 import { TrackedLink } from "./tracked-link";
 
 /*
- * Where each counter tile sits on the six-column grid, and where it starts
- * before it settles. The offsets are small on purpose: the idea is things
- * being nudged square, not flying in.
+ * The hero: one photograph and the words beside it. About 45 % text and 55 %
+ * photograph on a wide screen; on a phone the photograph comes first, short
+ * enough that the headline and the main action are still on the first screen.
+ * The photograph is the largest element on the page, so it is preloaded,
+ * has fixed proportions (no layout shift) and never animates.
  */
-const placement = [
-  { area: "col-span-4 row-span-2", stretch: true, from: { x: "-18px", y: "14px", r: "-2.2deg" } },
-  { area: "col-span-2", stretch: false, from: { x: "16px", y: "-12px", r: "2.6deg" } },
-  { area: "col-span-2", stretch: false, from: { x: "20px", y: "10px", r: "-1.8deg" } },
-  { area: "col-span-3", stretch: false, from: { x: "-12px", y: "18px", r: "1.9deg" } },
-  { area: "col-span-3", stretch: false, from: { x: "14px", y: "16px", r: "-2.4deg" } },
-] as const;
-
 export function Hero() {
+  const launch = env.siteMode === "launch";
+  const secondary = launch
+    ? { label: hero.secondaryCtaLaunch.label, href: `${env.appUrl}${hero.secondaryCtaLaunch.path}` }
+    : hero.secondaryCtaWaitlist;
   return (
-    <section className="overflow-hidden pb-[clamp(3.5rem,7vw,7rem)] pt-[clamp(1.5rem,4vw,3.5rem)]">
-      <Container className="grid items-center gap-x-10 gap-y-10 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <h1 className="type-display text-primary">
-            {/* Each line rises from behind its own baseline. */}
+    <section aria-labelledby="hero-title" className="pb-[clamp(3rem,6vw,6rem)] pt-[clamp(0.75rem,3vw,2.5rem)]">
+      <Container className="grid items-center gap-x-[clamp(2rem,5vw,5.5rem)] gap-y-8 lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)]">
+        <figure className="relative lg:order-2">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-border sm:aspect-[3/2] lg:aspect-[11/10] lg:max-h-[78vh] lg:w-full">
+            <Image
+              src={hero.image.src}
+              alt={hero.image.alt}
+              fill
+              preload
+              placeholder="blur"
+              sizes="(min-width: 1440px) 760px, (min-width: 1024px) 52vw, 100vw"
+              // The plate sits right of centre; keep it in frame on narrow and tall crops.
+              className="object-cover object-[58%_50%]"
+            />
+          </div>
+          <figcaption className="type-caption mt-2 text-muted">{hero.image.caption}</figcaption>
+        </figure>
+
+        <div className="lg:order-1">
+          <p className="type-caption font-semibold uppercase tracking-[0.14em] text-accent">{hero.eyebrow}</p>
+          <h1 id="hero-title" className="type-display mt-4 text-[clamp(3rem,0.75rem+4.1vw,5.5rem)] leading-[0.98] text-primary">
+            {/* Each line rises from behind its own baseline (still with reduced motion). */}
             {hero.headline.map((line, index) => (
               <span key={line} className="headline-line" style={{ "--order": index } as CSSProperties}>
                 <span>{line} </span>
@@ -35,74 +50,26 @@ export function Hero() {
             ))}
           </h1>
 
-          <div className="hero-quiet">
-            <Text size="lg" className="mt-8 max-w-[34ch] md:mt-10">
+          {/* On a phone the actions come straight after the headline, so they are on the first screen. */}
+          <div className="hero-quiet flex flex-col">
+            <Text size="lg" className="order-2 mt-6 max-w-[38ch] md:mt-8 lg:order-1">
               {hero.body}
             </Text>
 
-            <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
-              <TrackedLink
-                href={primaryCta.href}
-                event="hero_cta_clicked"
-                metadata={{ cta: "primary" }}
-                className={buttonClasses("primary", "lg")}
-              >
+            <div className="order-1 mt-6 flex flex-wrap items-center gap-x-6 gap-y-4 lg:order-2 lg:mt-8">
+              <TrackedLink href={primaryCta.href} event="hero_cta_clicked" metadata={{ cta: "primary" }} className={buttonClasses("primary", "lg")}>
                 {primaryCta.label}
               </TrackedLink>
-              <TrackedLink
-                href={hero.secondaryCta.href}
-                event="hero_cta_clicked"
-                metadata={{ cta: "secondary" }}
-                className={buttonClasses("quiet", "lg")}
-              >
-                {hero.secondaryCta.label}
+              <TrackedLink href={secondary.href} event="hero_cta_clicked" metadata={{ cta: "secondary" }} className={buttonClasses("quiet", "lg")}>
+                {secondary.label}
               </TrackedLink>
             </div>
 
-            <Text size="sm" tone="muted" className="mt-6 max-w-[36ch]">
-              {env.siteMode === "launch" ? hero.noteLaunch : hero.note}
+            <Text size="sm" tone="muted" className="order-3 mt-6 max-w-[40ch]">
+              {launch ? hero.noteLaunch : hero.note}
             </Text>
           </div>
         </div>
-
-        {/* The counter. A list, because it is one: the ingredients, each with its prep. */}
-        <ul aria-label="Ingredients, prepped" className="grid grid-cols-6 gap-x-2 gap-y-3 sm:gap-x-3 lg:col-span-5">
-          {hero.counter.map((item, index) => {
-            const spot = placement[index % placement.length]!;
-            return (
-              <li
-                key={item.id}
-                className={cx("counter-tile", spot.area)}
-                style={
-                  {
-                    "--order": index,
-                    "--from-x": spot.from.x,
-                    "--from-y": spot.from.y,
-                    "--from-rotate": spot.from.r,
-                  } as CSSProperties
-                }
-              >
-                <figure className="flex h-full flex-col">
-                  <div className={cx("relative overflow-hidden rounded-lg bg-border", spot.stretch ? "min-h-0 flex-1" : "aspect-[3/2]")}>
-                    <Image
-                      src={item.src}
-                      alt={item.alt}
-                      fill
-                      priority={index < 3}
-                      placeholder="blur"
-                      sizes={spot.stretch ? "(min-width: 1024px) 33vw, 66vw" : "(min-width: 1024px) 25vw, 50vw"}
-                      className="object-cover"
-                    />
-                  </div>
-                  <figcaption className="type-caption mt-1.5 flex flex-wrap gap-x-1.5">
-                    <span className="font-semibold">{item.name}</span>
-                    <span className="text-muted">{item.prep}</span>
-                  </figcaption>
-                </figure>
-              </li>
-            );
-          })}
-        </ul>
       </Container>
     </section>
   );

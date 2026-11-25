@@ -12,7 +12,7 @@ import { linkIn, signInToAdmin, waitForEmail } from "./helpers";
 
 test.skip(!process.env.E2E_PERF, "set E2E_PERF=1 to measure");
 
-type Timing = { ttfb: number; dcl: number; load: number; lcp: number | null; bytes: number };
+type Timing = { ttfb: number; dcl: number; load: number; lcp: number | null; cls: number; bytes: number };
 
 async function measure(page: Page, url: string): Promise<Timing> {
   await page.goto(url, { waitUntil: "load" });
@@ -26,9 +26,14 @@ async function measure(page: Page, url: string): Promise<Timing> {
           const last = list.getEntries().at(-1);
           if (last) lcp = last.startTime;
         }).observe({ type: "largest-contentful-paint", buffered: true });
+        // Cumulative layout shift (shifts not caused by recent input), as the web-vitals definition sums them.
+        let cls = 0;
+        new PerformanceObserver((list) => {
+          for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) if (!e.hadRecentInput) cls += e.value;
+        }).observe({ type: "layout-shift", buffered: true });
         setTimeout(
-          () => resolve({ ttfb: nav.responseStart, dcl: nav.domContentLoadedEventEnd, load: nav.loadEventEnd, lcp, bytes }),
-          300,
+          () => resolve({ ttfb: nav.responseStart, dcl: nav.domContentLoadedEventEnd, load: nav.loadEventEnd, lcp, cls, bytes }),
+          1500,
         );
       }),
   );
@@ -39,12 +44,12 @@ const median = (xs: number[]) => {
   return Math.round(s[Math.floor(s.length / 2)]!);
 };
 
-async function report(page: Page, name: string, url: string) {
+async function report(page: Page, name: string, url: string, viewport = { width: 1366, height: 850 }) {
   const runs: Timing[] = [];
   const state = await page.context().storageState();
   for (let i = 0; i < 5; i++) {
     // A fresh browser context each run: empty HTTP cache (cold load), same session cookies.
-    const ctx = await page.context().browser()!.newContext({ storageState: state, viewport: { width: 1366, height: 850 } });
+    const ctx = await page.context().browser()!.newContext({ storageState: state, viewport });
     const p = await ctx.newPage();
     runs.push(await measure(p, url));
     await ctx.close();
@@ -55,6 +60,7 @@ async function report(page: Page, name: string, url: string) {
     dcl: median(runs.map((r) => r.dcl)),
     load: median(runs.map((r) => r.load)),
     lcp: runs.every((r) => r.lcp !== null) ? median(runs.map((r) => r.lcp!)) : null,
+    cls: Math.max(...runs.map((r) => r.cls)).toFixed(3),
     kb: Math.round(median(runs.map((r) => r.bytes)) / 1024),
   };
   console.log("PERF", JSON.stringify(out));
@@ -67,11 +73,12 @@ test("public pages", async ({ page }) => {
   const meal = await page.locator("main article h3 a").first().getAttribute("href");
   for (const [name, url] of [
     ["landing", urls.site],
+    ["landing (phone 390)", urls.site],
     ["catalogue", `${urls.web}/meals`],
     ["meal detail", `${urls.web}${meal}`],
     ["plans", `${urls.web}/plans`],
   ] as const) {
-    await report(page, name, url);
+    await report(page, name, url, name.includes("phone") ? { width: 390, height: 844 } : undefined);
   }
 });
 

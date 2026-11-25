@@ -13,6 +13,7 @@ export function SiteFooter() {
               <Wordmark />
             </p>
             <p className="type-body-lg mt-4 max-w-[28ch] text-surface/75">{footer.line}</p>
+            <p className="type-caption mt-3 max-w-[40ch] text-surface/70">{footer.photoNote}</p>
           </div>
 
           <nav aria-label="Footer" className="md:col-span-3 md:col-start-8">

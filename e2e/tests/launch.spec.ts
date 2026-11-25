@@ -220,3 +220,23 @@ test("staff see launch readiness and system status, never 'ready' while gates ar
     expect(results.violations.map((v) => `${path} ${v.id}: ${v.help}`)).toEqual([]);
   }
 });
+
+test("the hero is one photograph, honestly captioned, with calls to action that work", async ({ page, request }) => {
+  await page.goto(urls.site);
+  const hero = page.locator("section", { has: page.locator("#hero-title") });
+  // One dominant photograph: no collage, mosaic or carousel.
+  await expect(hero.locator("img")).toHaveCount(1);
+  await expect(hero.locator("img")).toHaveAttribute("alt", /jerk chicken/);
+  await expect(hero.getByText("Stock photograph, not a Mise kit.")).toBeVisible();
+  // Every call to action in the hero reaches a page that answers.
+  const links = await hero.getByRole("link").evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href));
+  expect(links.length).toBeGreaterThanOrEqual(2);
+  for (const href of links) {
+    if (href.includes("#")) continue;
+    expect((await request.get(href)).status(), href).toBe(200);
+  }
+  // On a phone the main action is on the first screen.
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto(urls.site);
+  await expect(hero.getByRole("link").first()).toBeInViewport();
+});

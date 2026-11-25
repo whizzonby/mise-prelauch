@@ -6,7 +6,7 @@ import { createLeadViaApi, fillWaitlist, submitWaitlist, uniqueEmail, verifyByEm
 test("a visitor joins the waitlist, confirms their email and reaches their Mise page", async ({ page, request }) => {
   const email = uniqueEmail("visitor");
   await page.goto("/?utm_source=e2e&utm_campaign=waitlist-test");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Everything\s+in its place\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Good food\.\s+Fresh ingredients\.\s+Made by you\./);
 
   await page.getByRole("link", { name: "Join the waitlist" }).first().click();
   await submitWaitlist(page, { name: "Asha", email });

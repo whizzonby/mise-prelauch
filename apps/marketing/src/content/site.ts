@@ -44,6 +44,7 @@ export const signIn = launch ? { label: "Sign in", href: `${env.appUrl}/sign-in`
 
 export const footer = {
   line: "Caribbean meal kits, prepped in Trinidad & Tobago.",
+  photoNote: "Photographs on this site are stock images until Mise's own are ready.",
   legal: [
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },

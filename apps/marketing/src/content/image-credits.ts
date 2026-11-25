@@ -15,44 +15,12 @@ export interface ImageCredit {
 
 export const imageCredits: ImageCredit[] = [
   {
-    "file": "ingredient-coconut.jpg",
-    "title": "Broken coconuts",
-    "author": "Bogdan Krupin",
+    "file": "hero-caribbean-plate.jpg",
+    "title": "Traditional Caribbean cuisine (jerk chicken, rice and peas, fried plantain)",
+    "author": "Snappr",
     "license": "Pexels License",
     "licenseUrl": "https://www.pexels.com/license/",
-    "source": "https://www.pexels.com/photo/broken-coconuts-3986709/"
-  },
-  {
-    "file": "ingredient-lime.jpg",
-    "title": "Limes and a class with cold water",
-    "author": "Mateusz Feliksik",
-    "license": "Pexels License",
-    "licenseUrl": "https://www.pexels.com/license/",
-    "source": "https://www.pexels.com/photo/limes-and-a-class-with-cold-water-13428078/"
-  },
-  {
-    "file": "ingredient-garlic.jpg",
-    "title": "Composition of cut in half and pieces of garlic",
-    "author": "Karolina Grabowska",
-    "license": "Pexels License",
-    "licenseUrl": "https://www.pexels.com/license/",
-    "source": "https://www.pexels.com/photo/composition-of-cut-in-half-and-pieces-of-garlic-4022586/"
-  },
-  {
-    "file": "ingredient-okra.jpg",
-    "title": "Chopped natural okra on ceramic plate",
-    "author": "Pietro Jeng",
-    "license": "Pexels License",
-    "licenseUrl": "https://www.pexels.com/license/",
-    "source": "https://www.pexels.com/photo/chopped-natural-okra-on-ceramic-plate-671963/"
-  },
-  {
-    "file": "ingredient-pepper.jpg",
-    "title": "Three red chili peppers on a white surface",
-    "author": "Oscar Helgstrand",
-    "license": "Pexels License",
-    "licenseUrl": "https://www.pexels.com/license/",
-    "source": "https://www.pexels.com/photo/three-red-chili-peppers-on-a-white-surface-5957547/"
+    "source": "https://www.pexels.com/photo/traditional-caribbean-cuisine-27556985/"
   },
   {
     "file": "story-farm.jpg",

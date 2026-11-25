@@ -79,9 +79,12 @@ export default async function HomePage() {
         <SectionView section="plans">
           <Plans plans={plans} />
         </SectionView>
-        <SectionView section="chefs">
-          <ChefFeature />
-        </SectionView>
+        {/* Guest chefs are a pre-launch plan, not an approved commitment: shown only on the waitlist site. */}
+        {env.siteMode === "launch" ? null : (
+          <SectionView section="chefs">
+            <ChefFeature />
+          </SectionView>
+        )}
         <SectionView section="sustainability">
           <IngredientStory />
         </SectionView>

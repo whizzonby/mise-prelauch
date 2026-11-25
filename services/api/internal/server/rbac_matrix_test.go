@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"mise.tt/api/internal/payments/testpay"
 )
@@ -137,6 +138,14 @@ func TestEveryRoleReachesExactlyTheAdminEndpointsItIsGranted(t *testing.T) {
 		var body any
 		if r.method != http.MethodGet && r.method != http.MethodDelete {
 			body = map[string]any{}
+		}
+		if strings.HasSuffix(path, "/stream") {
+			// A permitted stream stays open by design: end it shortly after it starts.
+			opts = append(opts, func(req *http.Request) {
+				ctx, cancel := context.WithTimeout(req.Context(), 300*time.Millisecond)
+				t.Cleanup(cancel)
+				*req = *req.WithContext(ctx)
+			})
 		}
 		return h.do(r.method, path, body, opts...).Status
 	}

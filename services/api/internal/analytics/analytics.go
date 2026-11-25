@@ -252,6 +252,13 @@ var dashboards = map[string]dashboardSpec{
 			[]func(context.Context, *Service, db.Querier, Range, Filters) (Table, error){ledgerCheck}},
 		{"Movements", "", []string{"inventory.issue_movements", "inventory.waste_movements"}, nil},
 	}},
+	"support": {"Support chat", identity.PermSupportChatAnalytics, nil, []sectionSpec{
+		{"Volume", "Counts only.", []string{"support.conversations_new", "support.conversations_resolved", "support.open_now",
+			"support.unassigned_now", "support.backlog_now"}, nil},
+		{"Speed", "Clock hours, including outside business hours.", []string{"support.first_response_hours", "support.resolution_hours"}, nil},
+		{"Feedback", "Customers rate a conversation 1 to 5 if they choose to; shown as counts, never averaged into a score.",
+			[]string{"support.feedback_responses", "support.feedback_low", "support.feedback_high"}, nil},
+	}},
 	"delivery": {"Delivery", identity.PermAnalyticsDeliveryRead, []string{"zone"}, []sectionSpec{
 		{"Outcomes", "Corrected outcomes count under their corrected status; disputed deliveries are never counted as delivered.",
 			[]string{"delivery.scheduled", "delivery.delivered", "delivery.failed_attempts", "delivery.first_attempt_rate", "delivery.on_time_rate",
@@ -260,7 +267,7 @@ var dashboards = map[string]dashboardSpec{
 }
 
 // DashboardKinds lists the dashboards in navigation order.
-var DashboardKinds = []string{"overview", "revenue", "customers", "meals", "production", "procurement", "inventory", "delivery"}
+var DashboardKinds = []string{"overview", "revenue", "customers", "meals", "production", "procurement", "inventory", "delivery", "support"}
 
 // Permission returns the dashboard's permission.
 func Permission(kind string) (identity.Permission, bool) {

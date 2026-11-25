@@ -95,6 +95,8 @@ func run() error {
 	ff := server.NewFulfilment(cfg, pool, com, bo, prod)
 	runner.Register(fulfillment.JobBatchReady, ff.Fulfillment.HandleBatchReady)
 	(&notifications.DeliverySender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
+	// Sprint 9.1: "you have a reply" chat emails (one per conversation per window).
+	(&notifications.ChatSender{DB: pool, Identity: ids, Sender: sender, AppURL: cfg.CustomerAppURL}).Register(runner)
 	go ff.Fulfillment.RunDispatcher(ctx, cfg.Commerce.SchedulerInterval)
 	// Sprint 8: analytics snapshots (hourly, on events, idempotent).
 	an := server.NewAnalytics(pool, com)

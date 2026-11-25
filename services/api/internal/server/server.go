@@ -52,6 +52,7 @@ import (
 	"mise.tt/api/internal/subscriptions"
 	"mise.tt/api/internal/suppliers"
 	"mise.tt/api/internal/support"
+	"mise.tt/api/internal/supportchat"
 )
 
 // NewLeadService builds the lead service from configuration. The worker uses
@@ -414,6 +415,9 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&automation.Handler{S: au, R: reports, Identity: ids}).Routes(mux)
 	(&forecasting.Handler{S: NewForecasting(pool, com), Identity: ids}).Routes(mux)
 	(&launch.Handler{S: NewLaunch(cfg, pool, com), Identity: ids}).Routes(mux)
+	chat := supportchat.NewService(pool)
+	chat.Alerts, chat.Cases = bo, bo.Support
+	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

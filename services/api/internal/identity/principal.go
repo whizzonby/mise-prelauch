@@ -146,6 +146,18 @@ const (
 	PermPaymentProvidersRead     Permission = "payment_providers.read"
 	PermPaymentProvidersManage   Permission = "payment_providers.manage"
 	PermPaymentProvidersActivate Permission = "payment_providers.activate"
+
+	// Sprint 9.1: Mise Chat and the help centre.
+	PermSupportChatRead          Permission = "support_chat.read"
+	PermSupportChatReply         Permission = "support_chat.reply"
+	PermSupportChatAssign        Permission = "support_chat.assign"
+	PermSupportChatTransfer      Permission = "support_chat.transfer"
+	PermSupportChatResolve       Permission = "support_chat.resolve"
+	PermSupportChatInternalNotes Permission = "support_chat.internal_notes"
+	PermSupportChatManage        Permission = "support_chat.manage"
+	PermSupportChatAnalytics     Permission = "support_chat.analytics"
+	PermHelpCentreEdit           Permission = "help_centre.edit"
+	PermHelpCentrePublish        Permission = "help_centre.publish"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -177,6 +189,8 @@ var AllPermissions = []Permission{
 	PermAutomationApprove, PermForecastingRead, PermForecastingRun, PermForecastingConfigure,
 	PermLaunchRead, PermLaunchSignoff,
 	PermPaymentProvidersRead, PermPaymentProvidersManage, PermPaymentProvidersActivate,
+	PermSupportChatRead, PermSupportChatReply, PermSupportChatAssign, PermSupportChatTransfer, PermSupportChatResolve,
+	PermSupportChatInternalNotes, PermSupportChatManage, PermSupportChatAnalytics, PermHelpCentreEdit, PermHelpCentrePublish,
 }
 
 // RoleCustomer is the role every registered customer holds.

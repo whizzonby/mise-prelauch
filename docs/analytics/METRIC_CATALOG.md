@@ -909,3 +909,175 @@ Renewal weeks paid in the range (a paid renewal billing cycle).
 | Owner | Commerce |
 | Permission | `analytics_revenue.read` |
 
+## Support
+
+### `support.backlog_now` — Backlog
+
+Conversations not resolved (waiting for the team or for the customer), right now.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_conversations.status` |
+| Calculation | count where status is not resolved |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | Point-in-time: the range does not apply. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.conversations_new` — New conversations
+
+Chat conversations started in the range, by customers and guests.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_conversations.created_at` |
+| Calculation | count |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | A guest conversation later joined to an account counts once, when it was started. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.conversations_resolved` — Resolved conversations
+
+Conversations resolved in the range and still resolved now.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_conversations.resolved_at` |
+| Calculation | count where resolved_at in the range |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | A conversation the customer reopened leaves this count until it is resolved again. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.feedback_high` — Ratings of 4 or 5
+
+Of those, ratings of 4 or 5.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_feedback.rating` |
+| Calculation | count where rating is 4 or more |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | See satisfaction responses. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.feedback_low` — Ratings of 1 or 2
+
+Of those, ratings of 1 or 2.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_feedback.rating` |
+| Calculation | count where rating is 2 or less |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | See satisfaction responses. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.feedback_responses` — Satisfaction responses
+
+Ratings (1 to 5) given in the range. A count, not a score.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_feedback.rating`, `support_feedback.updated_at` |
+| Calculation | count |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | Only customers who chose to answer; a changed rating counts when it was last changed. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.first_response_hours` — First human response time
+
+Average hours from a conversation starting to the team's first reply, for conversations started in the range that have one.
+
+| | |
+|---|---|
+| Kind | hours |
+| Source fields | `support_conversations.created_at`, `support_conversations.first_human_response_at` |
+| Calculation | avg(first_human_response_at − created_at) |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | Undefined with no replied conversations |
+| Currency | not money |
+| Limitations | Counts clock hours, including outside business hours; conversations not yet answered are excluded, which flatters the figure. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.open_now` — Waiting for the team
+
+Conversations whose last word is the customer's (status open), right now.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_conversations.status` |
+| Calculation | count where status = open |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | Point-in-time: the range does not apply. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.resolution_hours` — Resolution time
+
+Average hours from a conversation starting to being resolved, for conversations resolved in the range.
+
+| | |
+|---|---|
+| Kind | hours |
+| Source fields | `support_conversations.created_at`, `support_conversations.resolved_at` |
+| Calculation | avg(resolved_at − created_at) |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | Undefined with no resolved conversations |
+| Currency | not money |
+| Limitations | Clock hours; a reopened conversation is measured to its latest resolution. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+
+### `support.unassigned_now` — Unassigned
+
+Conversations not resolved and assigned to nobody, right now.
+
+| | |
+|---|---|
+| Kind | count |
+| Source fields | `support_conversations.assignee_id`, `support_conversations.status` |
+| Calculation | count where status is not resolved and assignee_id is null |
+| Filters | none |
+| Update | Computed on request from the authoritative tables |
+| Missing data | 0 |
+| Currency | not money |
+| Limitations | Point-in-time: the range does not apply. |
+| Owner | Support |
+| Permission | `support_chat.analytics` |
+

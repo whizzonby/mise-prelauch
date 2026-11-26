@@ -67,14 +67,14 @@ export default function ChatPanel({ onClose, onUnread, signInUrl }: PanelProps) 
         if (e.key === "Escape") onClose();
       }}
     >
-      <header className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
+      <div className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
         <h2 id="mise-chat-title" ref={titleRef} tabIndex={-1} className="font-display text-[1.25rem] leading-tight outline-none">
           Mise help
         </h2>
         <button type="button" onClick={onClose} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-white/10" aria-label="Close chat">
           <span aria-hidden="true" className="text-[1.25rem]">×</span>
         </button>
-      </header>
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {view.tab === "home" ? (

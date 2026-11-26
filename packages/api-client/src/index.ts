@@ -1730,10 +1730,11 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
 
     /** Sprint 9.1: the public help centre (published articles only). */
     help: {
-      categories: () => request<{ items: HelpCategory[] }>("/help/categories", { next: { revalidate: 60 } }),
+      // Not cached: an article taken off the site must disappear at once.
+      categories: () => request<{ items: HelpCategory[] }>("/help/categories", { cache: "no-store" }),
       articles: (query: { q?: string; category?: string } = {}) =>
         request<{ items: HelpArticleSummary[] }>("/help/articles", { query, cache: "no-store" }),
-      article: (slug: string) => request<HelpArticle>(`/help/articles/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } }),
+      article: (slug: string) => request<HelpArticle>(`/help/articles/${encodeURIComponent(slug)}`, { cache: "no-store" }),
     },
 
     /** The test payment simulator (never available in production). */

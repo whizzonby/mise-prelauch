@@ -66,7 +66,7 @@ export default async function SupportChatPage({ searchParams }: { searchParams: 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[2rem] leading-tight">Support chat</h1>
-          <InboxLive currentId={detail?.id} lastSeq={detail?.last_seq} />
+          <InboxLive key={detail?.id ?? "inbox"} currentId={detail?.id} lastSeq={detail?.last_seq} />
         </div>
         {can(admin, "support_chat.manage") ? (
           <Link href="/support/chat/settings" className={buttonClasses("secondary")}>
@@ -249,7 +249,8 @@ function Context({ d, admin, agents }: { d: ChatDetail; admin: Parameters<typeof
             {d.team ? ` · Team: ${d.team}` : ""}
           </p>
           <div className="mt-3">
-            <KForm action={assignConversation} submit={d.assignee_id && can(admin, "support_chat.transfer") ? "Transfer" : "Assign"} pending="Saving…" label="Assign the conversation" variant="secondary">
+            {/* Keyed by the current values: a live refresh must not leave stale defaults in the form. */}
+            <KForm key={`assign-${d.assignee_id ?? ""}-${d.team ?? ""}`} action={assignConversation} submit={d.assignee_id && can(admin, "support_chat.transfer") ? "Transfer" : "Assign"} pending="Saving…" label="Assign the conversation" variant="secondary">
               <input type="hidden" name="conversation_id" value={d.id} />
               <input type="hidden" name="mode" value={d.assignee_id && can(admin, "support_chat.transfer") ? "transfer" : "assign"} />
               <Labelled label="Agent">
@@ -277,7 +278,7 @@ function Context({ d, admin, agents }: { d: ChatDetail; admin: Parameters<typeof
         <section className="rounded-lg border border-border bg-surface p-4">
           <h2 className="type-h4">Details</h2>
           <div className="mt-3">
-            <KForm action={updateConversation} submit="Save" pending="Saving…" label="Priority, tags and links" variant="secondary">
+            <KForm key={`details-${d.priority}-${d.tags.join(",")}-${d.order_id ?? ""}-${d.subscription_id ?? ""}`} action={updateConversation} submit="Save" pending="Saving…" label="Priority, tags and links" variant="secondary">
               <input type="hidden" name="conversation_id" value={d.id} />
               <Labelled label="Priority">
                 <SelectInput name="priority" defaultValue={d.priority}>

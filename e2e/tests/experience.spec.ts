@@ -68,6 +68,33 @@ test("with motion allowed, the story pins on a wide screen", async ({ page }) =>
   await expect(page.locator("[data-story]")).toHaveAttribute("data-enhanced", "true");
 });
 
+// Sprint 9.1 regression: a stock-photo note under the title once pushed every stage to the bottom of the
+// pinned screen (mostly off it), overlapping the progress labels. The pinned stage must fit the screen.
+test("the pinned story's stage, photograph and progress all fit on the screen", async ({ page }) => {
+  await page.goto("/");
+  await page.mouse.wheel(0, 400);
+  const story = page.locator("[data-story]");
+  await expect(story).toHaveAttribute("data-enhanced", "true");
+  const top = await story.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  await page.evaluate((y) => window.scrollTo(0, y + 20), top);
+  await page.waitForTimeout(800);
+  const vh = page.viewportSize()!.height;
+  const within = async (name: string, box: { y: number; height: number } | null) => {
+    expect(box, `${name} is laid out`).not.toBeNull();
+    expect(box!.y, `${name} starts on screen`).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height, `${name} ends on screen`).toBeLessThanOrEqual(vh);
+  };
+  const firstText = story.locator("[data-story-text]").first();
+  const firstMedia = story.locator("[data-story-media]").first();
+  const progress = story.locator("[data-story-progress]");
+  await within("first stage text", await firstText.boundingBox());
+  await within("first photograph", await firstMedia.boundingBox());
+  await within("progress", await progress.boundingBox());
+  // The stage sits above the progress labels, never on top of them.
+  const textBox = (await firstText.boundingBox())!;
+  expect(textBox.y + textBox.height).toBeLessThanOrEqual((await progress.boundingBox())!.y);
+});
+
 test.describe("accessibility", () => {
   const pages: [string, string][] = [
     ["home page", "/"],

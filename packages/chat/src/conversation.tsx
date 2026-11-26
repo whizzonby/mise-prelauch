@@ -42,6 +42,7 @@ export function ConversationView({
   const [problem, setProblem] = useState<string | null>(null);
   const [live, setLive] = useState(true);
   const [draft, setDraft] = useState("");
+  const [ratedHere, setRatedHere] = useState(false);
   const lastSeq = useRef(0);
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -184,7 +185,7 @@ export function ConversationView({
 
   return (
     <section className={cx("flex min-h-0 flex-1 flex-col", className)} aria-label={conv ? `Conversation ${conv.number}` : "Conversation"}>
-      <header className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         {onBack ? (
           <button type="button" onClick={onBack} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-surface" aria-label="Back to messages">
             <span aria-hidden="true">←</span>
@@ -196,7 +197,7 @@ export function ConversationView({
             {conv?.status === "resolved" ? "Resolved. Write again to reopen it." : live ? "The Mise team" : "Checking for replies every few seconds"}
           </p>
         </div>
-      </header>
+      </div>
 
       {problem ? (
         <p role="alert" className="type-body-sm m-4 border-l-4 border-error pl-3">
@@ -240,7 +241,16 @@ export function ConversationView({
         ) : null}
       </ol>
 
-      {conv?.status === "resolved" && conv.feedback_rating == null ? <Feedback id={id} onDone={(r) => setConv({ ...conv, feedback_rating: r })} /> : null}
+      {/* Offered once resolved; stays (with its thanks) after the customer answers here. */}
+      {conv?.status === "resolved" && (conv.feedback_rating == null || ratedHere) ? (
+        <Feedback
+          id={id}
+          onDone={(r) => {
+            setRatedHere(true);
+            setConv({ ...conv, feedback_rating: r });
+          }}
+        />
+      ) : null}
 
       <form onSubmit={submit} className="flex items-end gap-2 border-t border-border p-3">
         <label htmlFor={`chat-input-${id}`} className="sr-only">

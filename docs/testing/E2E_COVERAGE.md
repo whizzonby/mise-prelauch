@@ -71,3 +71,16 @@ weeks. On the real clock, no single test run can take a brand-new customer from 
 - Payments use the test provider only. No real-provider sandbox exists, so "sandbox payment" means the simulator (`payment_provider`
   gate stays blocked).
 - Emails are verified in Mailpit only; no production email provider evidence.
+
+## Sprint 9.1 additions
+
+| Area | Tests |
+|---|---|
+| Landing story layout (pinned stage fits the screen) | `experience.spec.ts` |
+| Payment options, provider admin page (masked, Scotiabank refused), launch gate wording | `payment-providers.spec.ts`; Go `payment_providers_test.go`, adapter tests |
+| Guest chat → agent inbox → live reply, typing, Seen, note isolation, resolve and rating, httpOnly guest cookie, axe | `chat.spec.ts` |
+| Widget by keyboard alone | `chat.spec.ts` |
+| Signed-in customer on a phone: full screen, clear of the tab bar, live reply, reply-email page, hidden on checkout | `chat.spec.ts` |
+| Help article draft → review → publish → search (page and widget) → revise | `chat.spec.ts` |
+| Messaging server behaviour (isolation, SSE catch-up, flooding, settings, help workflow) | Go `support_chat_test.go` |
+

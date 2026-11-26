@@ -29,6 +29,8 @@ type fakeStripeAPI struct {
 	next     int
 	sessions map[string]*fakeSession
 	expired  []string
+	// Off-session renewal charges received (idempotency key → count).
+	charges map[string]int
 }
 
 type fakeSession struct {
@@ -63,6 +65,15 @@ func (f *fakeStripeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			intent = s.intent
 		}
 		fmt.Fprintf(w, `{"id":"x","status":%q,"amount_total":%d,"currency":"ttd","payment_intent":%s}`, s.status, s.amount, intent)
+	case r.Method == http.MethodPost && path == "/v1/payment_intents":
+		_ = r.ParseForm()
+		if f.charges == nil {
+			f.charges = map[string]int{}
+		}
+		key := r.Header.Get("Idempotency-Key")
+		f.charges[key]++
+		fmt.Fprintf(w, `{"id":"pi_renew_%d","status":"succeeded","amount":%s,"currency":%q,"customer":%q,"payment_method":%q}`,
+			len(f.charges), r.PostForm.Get("amount"), r.PostForm.Get("currency"), r.PostForm.Get("customer"), r.PostForm.Get("payment_method"))
 	case r.Method == http.MethodPost && strings.HasSuffix(path, "/expire"):
 		id := strings.TrimSuffix(strings.TrimPrefix(path, "/v1/checkout/sessions/"), "/expire")
 		s := f.sessions[id]
@@ -382,5 +393,63 @@ func TestReturnPageAsksTheProvider(t *testing.T) {
 	}
 	if st := s.subscription(tok)["status"]; st != "active" {
 		t.Fatalf("subscription = %v", st)
+	}
+}
+
+// Recurring billing where the provider supports it: Mise (the billing
+// authority) charges the card Stripe saved, once per renewal, and the
+// payment events the analytics consumers read name the provider.
+func TestStripeRenewalIsChargedOnceByMise(t *testing.T) {
+	s, fake := newProviderShop(t)
+	h := s.h
+	ctx := context.Background()
+	admin := bearer(h.adminLogin("ops-admin@mise.test", "admin"))
+	h.wantStatus(h.do("PATCH", "/api/v1/admin/payment-providers/stripe", map[string]any{"enabled": true}, admin), http.StatusOK)
+	// Only Stripe takes payments, so the first payment is made with it.
+	h.wantStatus(h.do("PATCH", "/api/v1/admin/payment-providers/testpay", map[string]any{"enabled": false}, admin), http.StatusOK)
+
+	tok, addr := s.customer("renews-by-card@example.com")
+	res := h.do("POST", "/api/v1/me/subscriptions", map[string]any{"plan_id": s.basic, "address_id": addr, "provider": "stripe"}, tok)
+	h.wantStatus(res, http.StatusCreated)
+	fake.set("cs_test_1", func(fs *fakeSession) {
+		fs.status = "complete"
+		fs.intent = `{"id":"pi_first","status":"succeeded","amount":33000,"currency":"ttd","customer":"cus_42",
+			"payment_method":{"id":"pm_42","card":{"brand":"visa","last4":"4242"}}}`
+	})
+	h.wantStatus(stripeWebhook(t, h, "evt_first", "cs_test_1"), http.StatusOK)
+	h.drainJobs()
+	if st := s.subscription(tok)["status"]; st != "active" {
+		t.Fatalf("status = %v", st)
+	}
+	var methodRef, billingProvider string
+	if err := h.pool.QueryRow(ctx, `SELECT pm.provider_ref, s.billing_provider FROM subscriptions s JOIN payment_methods pm ON pm.id = s.payment_method_id
+		JOIN customers c ON c.id = s.customer_id JOIN users u ON u.id = c.user_id WHERE u.email = 'renews-by-card@example.com'`).Scan(&methodRef, &billingProvider); err != nil {
+		t.Fatal(err)
+	}
+	if methodRef != "cus_42|pm_42" || billingProvider != "stripe" {
+		t.Fatalf("saved method = %q via %q", methodRef, billingProvider)
+	}
+	var events int
+	_ = h.pool.QueryRow(ctx, `SELECT count(*) FROM domain_events WHERE type = 'payment.succeeded' AND payload->>'provider' = 'stripe'`).Scan(&events)
+	if events != 1 {
+		t.Fatalf("payment.succeeded events for stripe = %d", events)
+	}
+
+	s.tick("2026-11-13 00:30") // week of 23 Nov created
+	s.tick("2026-11-18 00:30") // renewal: Mise charges the saved card off-session
+	s.tick("2026-11-18 00:31") // a second tick charges nothing
+	total := 0
+	for _, n := range fake.charges {
+		total += n
+	}
+	if len(fake.charges) != 1 || total != 1 {
+		t.Fatalf("off-session charges at Stripe = %v, want exactly one", fake.charges)
+	}
+	if c := s.weekCycle(tok, "2026-11-23"); obj(t, c["billing"])["status"] != "paid" {
+		t.Fatalf("renewal billing = %v", c["billing"])
+	}
+	_ = h.pool.QueryRow(ctx, `SELECT count(*) FROM domain_events WHERE type = 'payment.succeeded' AND payload->>'provider' = 'stripe'`).Scan(&events)
+	if events != 2 {
+		t.Fatalf("payment.succeeded events after renewal = %d, want 2", events)
 	}
 }

@@ -179,7 +179,8 @@ test("admin: plans, menus, subscriptions and payments are visible to staff", asy
   await page.goto(`${urls.admin}/subscriptions`);
   await expect(page.getByRole("heading", { name: "Subscriptions" })).toBeVisible();
   await page.goto(`${urls.admin}/payments`);
-  await expect(page.getByText("No payment provider has been chosen")).toBeVisible();
+  // Sprint 9.1: several providers; the page says which payments moved no real money.
+  await expect(page.getByText("Payments marked test moved no real money")).toBeVisible();
   await page.goto(`${urls.admin}/orders`);
   await expect(page.getByRole("heading", { name: /Demand for the week of/ })).toBeVisible();
   await page.goto(`${urls.admin}/promotions`);

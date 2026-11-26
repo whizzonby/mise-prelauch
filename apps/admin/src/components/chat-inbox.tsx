@@ -15,7 +15,8 @@ import { agentTyping, markRead, sendFromComposer } from "@/app/(console)/support
 export function InboxLive({ currentId, lastSeq }: { currentId?: string; lastSeq?: number }) {
   const router = useRouter();
   const [typing, setTyping] = useState(false);
-  const [connected, setConnected] = useState(true);
+  // "Live" only once the stream is actually open.
+  const [link, setLink] = useState<"connecting" | "live" | "down">("connecting");
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -25,8 +26,8 @@ export function InboxLive({ currentId, lastSeq }: { currentId?: string; lastSeq?
       timer = setTimeout(() => startTransition(() => router.refresh()), 400);
     };
     const source = new EventSource("/api/chat/stream");
-    source.onopen = () => setConnected(true);
-    source.onerror = () => setConnected(source.readyState !== EventSource.CLOSED);
+    source.onopen = () => setLink("live");
+    source.onerror = () => setLink(source.readyState === EventSource.CLOSED ? "down" : "connecting");
     for (const kind of ["message", "status", "read"]) source.addEventListener(kind, refresh);
     source.addEventListener("typing", (e) => {
       const data = JSON.parse((e as MessageEvent).data) as { conversation_id: string; actor: string };
@@ -37,7 +38,7 @@ export function InboxLive({ currentId, lastSeq }: { currentId?: string; lastSeq?
     });
     source.addEventListener("end", () => {
       source.close();
-      setConnected(false);
+      setLink("down");
     });
     // Without a live connection, fall back to a refresh every 20 seconds.
     const poll = setInterval(() => {
@@ -58,8 +59,8 @@ export function InboxLive({ currentId, lastSeq }: { currentId?: string; lastSeq?
   return (
     <div className="type-caption flex min-h-6 items-center gap-3 text-muted" aria-live="polite">
       <span className="inline-flex items-center gap-1.5">
-        <span aria-hidden="true" className={cx("inline-block size-2 rounded-full", connected ? "bg-success" : "bg-warning")} />
-        {connected ? "Live" : "Reconnecting: refreshing every 20 seconds"}
+        <span aria-hidden="true" className={cx("inline-block size-2 rounded-full", link === "live" ? "bg-success" : "bg-warning")} />
+        {link === "live" ? "Live" : link === "connecting" ? "Connecting…" : "Not live: refreshing every 20 seconds"}
       </span>
       {typing ? <span>The customer is typing…</span> : null}
     </div>

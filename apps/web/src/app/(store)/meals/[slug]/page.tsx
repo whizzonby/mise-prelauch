@@ -12,6 +12,7 @@ import { openMenus, savedMealIds } from "@/lib/data";
 import { minutes } from "@/lib/format";
 import { shortDateTime } from "@/lib/greeting";
 import { api, optionalSession } from "@/lib/session";
+import { Track } from "@/components/track";
 
 type Params = Promise<{ slug: string }>;
 
@@ -55,6 +56,7 @@ export default async function MealPage({ params }: { params: Params }) {
 
   return (
     <article>
+      <Track name="meal_viewed" properties={{ meal: meal.slug }} />
       <Container className="pt-6 md:pt-10">
         <Link href="/meals" className="type-body-sm inline-flex min-h-11 items-center gap-2 font-semibold text-muted hover:text-foreground">
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} /> All meals

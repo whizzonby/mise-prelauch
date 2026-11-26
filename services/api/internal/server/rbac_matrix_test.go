@@ -80,6 +80,7 @@ func adminRoutes(t *testing.T) []adminRoute {
 // record, after the router's permission check: a holder of the permission can
 // still be refused for a particular record. Each entry says why.
 var scopedInHandler = map[string]string{
+	"GET /api/v1/admin/intelligence/segments/{key}/members":  "names customers, so customers.read is also required",
 	"GET /api/v1/admin/delivery/deliveries":                  "delivery scope: dispatch roles see all, a courier only assigned deliveries",
 	"GET /api/v1/admin/delivery/deliveries/{id}":             "delivery scope",
 	"GET /api/v1/admin/delivery/dispatch-runs":               "delivery scope",

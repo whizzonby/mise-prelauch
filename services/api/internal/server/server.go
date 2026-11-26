@@ -16,6 +16,7 @@ import (
 	"mise.tt/api/internal/analytics"
 	"mise.tt/api/internal/automation"
 	"mise.tt/api/internal/backoffice"
+	"mise.tt/api/internal/behavior"
 	"mise.tt/api/internal/billing"
 	"mise.tt/api/internal/catalog"
 	"mise.tt/api/internal/commerce"
@@ -106,6 +107,13 @@ type Commerce struct {
 	Service  *commerce.Service
 	// Testpay is the payment simulator, when PAYMENTS_TEST_PROVIDER is on.
 	Testpay *testpay.Provider
+}
+
+// NewBehavior builds the customer behaviour service on the commerce clock.
+func NewBehavior(pool *pgxpool.Pool, com *Commerce) *behavior.Service {
+	b := behavior.NewService(pool)
+	b.Now = func() time.Time { return com.Service.Now() }
+	return b
 }
 
 // NewFinance builds the management finance service on the commerce clock.
@@ -431,6 +439,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	}
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
 	(&finance.Handler{S: NewFinance(pool, com), Identity: ids}).Routes(mux)
+	(&behavior.Handler{S: NewBehavior(pool, com), Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

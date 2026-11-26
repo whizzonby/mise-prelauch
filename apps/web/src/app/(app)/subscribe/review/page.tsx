@@ -10,6 +10,7 @@ import { deadline, formatMoney } from "@/lib/commerce";
 import { api, requireCustomer } from "@/lib/session";
 
 import { startSubscription } from "../actions";
+import { Track } from "@/components/track";
 
 export const metadata: Metadata = { title: "Review your subscription" };
 
@@ -40,6 +41,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   return (
     <Container className="py-10 md:py-14">
       <Steps current={2} />
+      <Track name="checkout_started" properties={{ kind: "subscription", plan: plan.slug }} />
       <h1 className="type-h1 mt-6">Review</h1>
       {problem || !quote ? (
         <div className="mt-8 max-w-[40rem]">

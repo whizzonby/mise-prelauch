@@ -7237,6 +7237,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/behavior/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Customer-app behaviour events (contract v1; docs/analytics/BEHAVIOR_EVENTS.md). Unknown events, properties outside an event's contract and malformed values are refused. A repeated event_id is stored once. Requests carrying Sec-GPC: 1 or DNT: 1 are accepted and nothing is stored. A customer bearer token attributes the events; without one an anonymous_id is required. */
+        post: operations["recordBehaviorEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/funnel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_customer.read. Customer-app funnel by distinct person, payments from the payment ledger, checkout abandonment (24-hour rule) and the data's limitations. */
+        get: operations["intelligenceFunnel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_customer.read. Rule-based customer segments with their definitions and sources (no sensitive attributes, no predictions). */
+        get: operations["intelligenceSegments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/segments/{key}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_customer.read and customers.read. Up to 500 customers in a segment. */
+        get: operations["intelligenceSegmentMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/cancellation-reasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_customer.read. Reasons customers chose when cancelling; missing reasons are counted as not recorded, never inferred. */
+        get: operations["intelligenceCancellationReasons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7467,7 +7552,7 @@ export interface components {
             /** @description The most senior staff role, for display. Authorise with permissions. */
             role: string;
             roles: string[];
-            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure" | "launch.read" | "launch.signoff" | "payment_providers.read" | "payment_providers.manage" | "payment_providers.activate" | "support_chat.read" | "support_chat.reply" | "support_chat.assign" | "support_chat.transfer" | "support_chat.resolve" | "support_chat.internal_notes" | "support_chat.manage" | "support_chat.analytics" | "help_centre.edit" | "help_centre.publish" | "finance_expenses.read" | "finance_expenses.manage" | "finance_expenses.approve")[];
+            permissions: ("admin.access" | "analytics.view" | "leads.read" | "leads.update" | "leads.export" | "leads.erase" | "users.read" | "users.manage" | "catalog.read" | "catalog.manage" | "catalog.publish" | "nutrition.verify" | "plans.manage" | "menus.manage" | "menus.publish" | "subscriptions.read" | "orders.read" | "payments.read" | "payments.refund" | "promotions.manage" | "customers.read" | "customers.sensitive" | "customers.export" | "leads.manage" | "cases.read" | "cases.manage" | "campaigns.manage" | "subscriptions.manage" | "reports.read" | "audit.read" | "settings.manage" | "ingredients.read" | "ingredients.manage" | "recipes.read" | "recipes.create" | "recipes.edit" | "recipes.submit" | "recipes.review" | "recipes.approve" | "recipes.publish" | "nutrition.read" | "nutrition.review" | "nutrition.approve" | "chefs.manage" | "production.read" | "production.plan" | "production.approve" | "production.execute" | "production.configure" | "quality.read" | "quality.inspect" | "quality.release_hold" | "packaging.manage" | "waste.record" | "production_reports.read" | "suppliers.read" | "suppliers.manage" | "suppliers.approve" | "supplier_products.read" | "supplier_products.manage" | "procurement.read" | "procurement.plan" | "procurement.approve" | "procurement.configure" | "purchase_orders.read" | "purchase_orders.create" | "purchase_orders.approve" | "purchase_orders.approve_above_limit" | "purchase_orders.issue" | "receiving.read" | "receiving.manage" | "receiving.inspect" | "inventory.read" | "inventory.reserve" | "inventory.issue" | "inventory.adjust" | "inventory.count" | "inventory.configure" | "traceability.read" | "supplier_reports.read" | "fulfillment.read" | "fulfillment.verify" | "fulfillment.release" | "delivery.read" | "delivery.read_assigned" | "delivery.plan" | "delivery.assign" | "delivery.dispatch" | "delivery.update_status" | "delivery.reschedule" | "delivery.confirm" | "delivery.reconcile" | "delivery_partners.read" | "delivery_partners.manage" | "delivery_partners.approve" | "delivery_zones.read" | "delivery_zones.manage" | "delivery_proof.read" | "delivery_proof.create" | "delivery_exceptions.read" | "delivery_exceptions.manage" | "delivery_reports.read" | "delivery_settings.manage" | "analytics_executive.read" | "analytics_revenue.read" | "analytics_customers.read" | "analytics_production.read" | "analytics_procurement.read" | "analytics_inventory.read" | "analytics_delivery.read" | "analytics.export" | "automation.read" | "automation.manage" | "automation.execute" | "automation.approve" | "forecasting.read" | "forecasting.run" | "forecasting.configure" | "launch.read" | "launch.signoff" | "payment_providers.read" | "payment_providers.manage" | "payment_providers.activate" | "support_chat.read" | "support_chat.reply" | "support_chat.assign" | "support_chat.transfer" | "support_chat.resolve" | "support_chat.internal_notes" | "support_chat.manage" | "support_chat.analytics" | "help_centre.edit" | "help_centre.publish" | "finance_expenses.read" | "finance_expenses.manage" | "finance_expenses.approve" | "intelligence.read" | "intelligence.ask" | "intelligence_executive.read" | "intelligence_financial.read" | "intelligence_customer.read" | "intelligence_operational.read" | "intelligence_scenario.run" | "intelligence_recommendation.review" | "intelligence.configure" | "intelligence.export")[];
             mfa: components["schemas"]["MFAState"];
         };
         Bucket: {
@@ -13567,6 +13652,58 @@ export interface components {
             /** Format: date-time */
             generated_at: string;
             statement: string;
+        };
+        BehaviorEvent: {
+            /** Format: uuid */
+            event_id: string;
+            /** @enum {string} */
+            name: "catalogue_viewed" | "meal_viewed" | "plan_viewed" | "plan_selected" | "meal_selected" | "checkout_started";
+            /** @enum {integer} */
+            version: 1;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        BehaviorBatch: {
+            anonymous_id?: string;
+            session_id?: string;
+            events: components["schemas"]["BehaviorEvent"][];
+        };
+        BehaviorFunnel: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            steps: {
+                key: string;
+                label: string;
+                people: number;
+                events: number;
+                source: string;
+            }[];
+            checkouts_started: number;
+            checkouts_abandoned: number;
+            checkouts_pending: number;
+            abandon_rule: string;
+            includes_test_payments: boolean;
+            limitations: string[];
+            /** Format: date-time */
+            first_event_at: string | null;
+        };
+        CustomerSegment: {
+            key: string;
+            name: string;
+            definition: string;
+            sources: string[];
+            count: number;
+            /** Format: date-time */
+            as_of: string;
+        };
+        SegmentMember: {
+            /** Format: uuid */
+            customer_id: string;
+            name: string;
+            email: string;
         };
     };
     responses: {
@@ -28956,6 +29093,161 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    recordBehaviorEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BehaviorBatch"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            accepted: number;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    intelligenceFunnel: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BehaviorFunnel"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceSegments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["CustomerSegment"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceSegmentMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["SegmentMember"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    intelligenceCancellationReasons: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: {
+                                reason: string;
+                                count: number;
+                            }[];
+                            total: number;
+                            note: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             422: components["responses"]["Error"];

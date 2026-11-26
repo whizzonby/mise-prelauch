@@ -9,6 +9,7 @@ import { FilterForm, FilterPanel } from "@/components/filter-form";
 import { EmptyState, MealCard, MealGrid } from "@/components/meal-card";
 import { reference, savedMealIds } from "@/lib/data";
 import { api, optionalSession } from "@/lib/session";
+import { Track } from "@/components/track";
 
 export const metadata: Metadata = {
   title: "Meal kits",
@@ -84,6 +85,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Search
 
   return (
     <Container className="py-10 md:py-14">
+      <Track name="catalogue_viewed" properties={{ ...(filter.category && /^[a-z0-9][a-z0-9-]{0,99}$/.test(filter.category) ? { category: filter.category } : {}), filters: Math.min(active, 50) }} />
       <h1 className="type-h1">Explore meals</h1>
       <p className="type-body-lg mt-4 max-w-[44rem] text-muted">
         Each Mise kit brings the measured ingredients and a recipe card. You do the cooking.

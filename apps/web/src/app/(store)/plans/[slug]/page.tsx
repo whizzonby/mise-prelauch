@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { TestModeNotice } from "@/components/commerce-bits";
 import { PlanCard } from "@/components/plan-card";
 import { api } from "@/lib/session";
+import { Track } from "@/components/track";
 
 async function load(slug: string) {
   try {
@@ -28,6 +29,7 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
   const [plan, info] = await Promise.all([load(slug), api.shop.info()]);
   return (
     <Container className="py-10 md:py-14">
+      <Track name="plan_viewed" properties={{ plan: plan.slug }} />
       <Link href="/plans" className="type-body-sm inline-flex min-h-11 items-center gap-2 font-semibold underline-offset-4 hover:underline">
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={1.75} /> All plans
       </Link>

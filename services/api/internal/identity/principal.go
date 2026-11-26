@@ -163,6 +163,18 @@ const (
 	PermFinanceExpensesRead    Permission = "finance_expenses.read"
 	PermFinanceExpensesManage  Permission = "finance_expenses.manage"
 	PermFinanceExpensesApprove Permission = "finance_expenses.approve"
+
+	// Sprint 9.2: Mise Intelligence (admin only).
+	PermIntelligenceRead                 Permission = "intelligence.read"
+	PermIntelligenceAsk                  Permission = "intelligence.ask"
+	PermIntelligenceExecutiveRead        Permission = "intelligence_executive.read"
+	PermIntelligenceFinancialRead        Permission = "intelligence_financial.read"
+	PermIntelligenceCustomerRead         Permission = "intelligence_customer.read"
+	PermIntelligenceOperationalRead      Permission = "intelligence_operational.read"
+	PermIntelligenceScenarioRun          Permission = "intelligence_scenario.run"
+	PermIntelligenceRecommendationReview Permission = "intelligence_recommendation.review"
+	PermIntelligenceConfigure            Permission = "intelligence.configure"
+	PermIntelligenceExport               Permission = "intelligence.export"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -197,6 +209,8 @@ var AllPermissions = []Permission{
 	PermSupportChatRead, PermSupportChatReply, PermSupportChatAssign, PermSupportChatTransfer, PermSupportChatResolve,
 	PermSupportChatInternalNotes, PermSupportChatManage, PermSupportChatAnalytics, PermHelpCentreEdit, PermHelpCentrePublish,
 	PermFinanceExpensesRead, PermFinanceExpensesManage, PermFinanceExpensesApprove,
+	PermIntelligenceRead, PermIntelligenceAsk, PermIntelligenceExecutiveRead, PermIntelligenceFinancialRead, PermIntelligenceCustomerRead,
+	PermIntelligenceOperationalRead, PermIntelligenceScenarioRun, PermIntelligenceRecommendationReview, PermIntelligenceConfigure, PermIntelligenceExport,
 }
 
 // RoleCustomer is the role every registered customer holds.

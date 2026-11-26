@@ -8,6 +8,7 @@ import { Steps, TestModeNotice } from "@/components/commerce-bits";
 import { formatMoney } from "@/lib/commerce";
 import { availabilityText } from "@/lib/format";
 import { api, requireCustomer } from "@/lib/session";
+import { Track } from "@/components/track";
 
 export const metadata: Metadata = { title: "Subscribe" };
 
@@ -38,6 +39,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
   return (
     <Container className="py-10 md:py-14">
       <Steps current={1} />
+      <Track name="plan_selected" properties={{ plan: plan.slug }} />
       <h1 className="type-h1 mt-6">Your {plan.name} plan</h1>
       <p className="type-body-lg mt-3 text-muted">
         {plan.meals_per_week} meal kits a week{plan.price ? `, ${formatMoney(plan.price.amount_minor, plan.price.currency)} a week` : ""}.{" "}

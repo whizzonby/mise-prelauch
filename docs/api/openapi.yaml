@@ -107,6 +107,10 @@ tags:
     description: Writing, reviewing and publishing help articles.
   - name: admin-finance
     description: "Management finance (Sprint 9.2): expenses, recurring costs, coverage, cash balances, the management summary."
+  - name: behavior
+    description: "Customer-app behaviour events (Sprint 9.2)."
+  - name: admin-intelligence
+    description: "Mise Intelligence (Sprint 9.2): admin-only executive intelligence."
 paths:
   /api/v1/health:
     get:
@@ -13166,6 +13170,114 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/behavior/events:
+    post:
+      tags: [behavior]
+      operationId: recordBehaviorEvents
+      description: "Customer-app behaviour events (contract v1; docs/analytics/BEHAVIOR_EVENTS.md). Unknown events, properties outside an event's contract and malformed values are refused. A repeated event_id is stored once. Requests carrying Sec-GPC: 1 or DNT: 1 are accepted and nothing is stored. A customer bearer token attributes the events; without one an anonymous_id is required."
+      security: [{}, { customerSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BehaviorBatch" }
+      responses:
+        "202":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [accepted], properties: { accepted: { type: integer } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/funnel:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceFunnel
+      description: "Needs intelligence_customer.read. Customer-app funnel by distinct person, payments from the payment ledger, checkout abandonment (24-hour rule) and the data's limitations."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: true, schema: { type: string, format: date } }, { name: to, in: query, required: true, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/BehaviorFunnel" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/segments:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceSegments
+      description: "Needs intelligence_customer.read. Rule-based customer segments with their definitions and sources (no sensitive attributes, no predictions)."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/CustomerSegment" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/segments/{key}/members:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceSegmentMembers
+      description: "Needs intelligence_customer.read and customers.read. Up to 500 customers in a segment."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/SegmentMember" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/cancellation-reasons:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceCancellationReasons
+      description: "Needs intelligence_customer.read. Reasons customers chose when cancelling; missing reasons are counted as not recorded, never inferred."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: true, schema: { type: string, format: date } }, { name: to, in: query, required: true, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, total, note], properties: { items: { type: array, items: { type: object, required: [reason, count], properties: { reason: { type: string }, count: { type: integer } } } }, total: { type: integer }, note: { type: string } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -13574,7 +13686,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure, launch.read, launch.signoff, payment_providers.read, payment_providers.manage, payment_providers.activate, support_chat.read, support_chat.reply, support_chat.assign, support_chat.transfer, support_chat.resolve, support_chat.internal_notes, support_chat.manage, support_chat.analytics, help_centre.edit, help_centre.publish, finance_expenses.read, finance_expenses.manage, finance_expenses.approve]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure, launch.read, launch.signoff, payment_providers.read, payment_providers.manage, payment_providers.activate, support_chat.read, support_chat.reply, support_chat.assign, support_chat.transfer, support_chat.resolve, support_chat.internal_notes, support_chat.manage, support_chat.analytics, help_centre.edit, help_centre.publish, finance_expenses.read, finance_expenses.manage, finance_expenses.approve, intelligence.read, intelligence.ask, intelligence_executive.read, intelligence_financial.read, intelligence_customer.read, intelligence_operational.read, intelligence_scenario.run, intelligence_recommendation.review, intelligence.configure, intelligence.export]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -20240,3 +20352,59 @@ components:
         notes: { type: array, items: { type: string } }
         generated_at: { type: string, format: date-time }
         statement: { type: string }
+    BehaviorEvent:
+      type: object
+      required: [event_id, name, version]
+      properties:
+        event_id: { type: string, format: uuid }
+        name: { type: string, enum: [catalogue_viewed, meal_viewed, plan_viewed, plan_selected, meal_selected, checkout_started] }
+        version: { type: integer, enum: [1] }
+        properties: { type: object, additionalProperties: true }
+    BehaviorBatch:
+      type: object
+      required: [events]
+      properties:
+        anonymous_id: { type: string, pattern: "^[A-Za-z0-9_-]{8,64}$" }
+        session_id: { type: string, pattern: "^[A-Za-z0-9_-]{8,64}$" }
+        events: { type: array, minItems: 1, maxItems: 20, items: { $ref: "#/components/schemas/BehaviorEvent" } }
+    BehaviorFunnel:
+      type: object
+      required: [from, to, steps, checkouts_started, checkouts_abandoned, checkouts_pending, abandon_rule, includes_test_payments, limitations, first_event_at]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [key, label, people, events, source]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              people: { type: integer }
+              events: { type: integer }
+              source: { type: string }
+        checkouts_started: { type: integer }
+        checkouts_abandoned: { type: integer }
+        checkouts_pending: { type: integer }
+        abandon_rule: { type: string }
+        includes_test_payments: { type: boolean }
+        limitations: { type: array, items: { type: string } }
+        first_event_at: { type: string, format: date-time, nullable: true }
+    CustomerSegment:
+      type: object
+      required: [key, name, definition, sources, count, as_of]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        definition: { type: string }
+        sources: { type: array, items: { type: string } }
+        count: { type: integer }
+        as_of: { type: string, format: date-time }
+    SegmentMember:
+      type: object
+      required: [customer_id, name, email]
+      properties:
+        customer_id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }

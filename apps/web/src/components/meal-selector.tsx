@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { saveMeals } from "@/app/(app)/menu/actions";
+import { track } from "@/lib/behavior";
 import { deadline, timeLeft } from "@/lib/commerce";
 import { minutes } from "@/lib/format";
 import { addMeal, countOf, removeMeal, sameChoice, toItems, type Choice } from "@/lib/selection";
@@ -41,6 +42,11 @@ export function MealSelector({ initial }: { initial: SelectionPage }) {
     start(async () => {
       const res = await saveMeals(page.cycle.id, toItems(choice), page.selection?.version ?? null, confirm);
       if (res.page) {
+        // Behaviour (contract v1): each meal newly added in this save.
+        for (const [id, q] of Object.entries(choice)) {
+          const m = byId.get(id);
+          if (m && q > (saved[id] ?? 0)) track("meal_selected", { meal: m.slug, week: page.cycle.week });
+        }
         setPage(res.page);
         setChoice(fromPage(res.page));
         setNotice(confirm ? "Your meals are confirmed." : "Saved. Confirm your meals before the deadline.");

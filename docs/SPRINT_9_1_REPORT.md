@@ -249,5 +249,5 @@ store layout's `index, follow` tag; search engines apply the stricter one, but t
 
 ## 24. Commit
 
-Committed on `sprint-9.1/experience-payments-chat`; the hash is recorded in the follow-up commit. Not pushed (local checkpoints were
+Committed on `sprint-9.1/experience-payments-chat` as `0497ddd`. Not pushed (local checkpoints were
 `f2ead1d`, `3e39999`, `4023b4d`, `7e53ed9`, `953b0ff`, `1776733`).

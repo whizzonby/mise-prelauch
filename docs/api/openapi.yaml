@@ -105,6 +105,8 @@ tags:
     description: The support inbox, saved replies and chat settings.
   - name: admin-help
     description: Writing, reviewing and publishing help articles.
+  - name: admin-finance
+    description: "Management finance (Sprint 9.2): expenses, recurring costs, coverage, cash balances, the management summary."
 paths:
   /api/v1/health:
     get:
@@ -12869,6 +12871,301 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/expense-categories:
+    get:
+      tags: [admin-finance]
+      operationId: financeCategories
+      description: "Needs finance_expenses.read. The expense categories and how each enters the results (cost class)."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/FinanceCategory" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/expenses:
+    get:
+      tags: [admin-finance]
+      operationId: financeExpenses
+      description: "Needs finance_expenses.read. Expenses, newest first (filters: status, category, from, to)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, schema: { type: string } }, { name: category, in: query, schema: { type: string } }, { name: from, in: query, schema: { type: string, format: date } }, { name: to, in: query, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/FinanceExpense" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-finance]
+      operationId: financeCreateExpense
+      description: "Needs finance_expenses.manage. Records an expense as a draft. Audited."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceExpenseInput" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceExpense" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/expenses/{id}:
+    get:
+      tags: [admin-finance]
+      operationId: financeExpense
+      description: "Needs finance_expenses.read. One expense with its audit history."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceExpense" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [admin-finance]
+      operationId: financeUpdateExpense
+      description: "Needs finance_expenses.manage. Edits a draft or rejected expense. Audited."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceExpenseInput" }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceExpense" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/expenses/{id}/{action}:
+    post:
+      tags: [admin-finance]
+      operationId: financeExpenseTransition
+      description: "Needs finance_expenses.manage; approve and reject also need finance_expenses.approve, and only a super admin may approve an expense they recorded. submit, approve, reject (note required), void (note required). Audited."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [submit, approve, reject, void] } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceExpense" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/recurring-expenses:
+    get:
+      tags: [admin-finance]
+      operationId: financeRecurring
+      description: "Needs finance_expenses.read. Recurring costs."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/FinanceRecurring" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-finance]
+      operationId: financeCreateRecurring
+      description: "Needs finance_expenses.manage. A recurring cost (draft until approved). Approved schedules count as estimates until each occurrence is recorded."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceRecurringInput" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceRecurring" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/recurring-expenses/{id}/{action}:
+    post:
+      tags: [admin-finance]
+      operationId: financeRecurringStatus
+      description: "Needs finance_expenses.manage; approve also needs finance_expenses.approve. approve or end. Audited."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, end] } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceRecurring" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/coverage:
+    put:
+      tags: [admin-finance]
+      operationId: financeCoverage
+      description: "Needs finance_expenses.manage. Confirms (or withdraws) that a category has nothing to record for a month: the only way a missing category counts as zero. Audited."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceCoverageInput" }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [ok], properties: { ok: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/cash-balances:
+    get:
+      tags: [admin-finance]
+      operationId: financeCashBalances
+      description: "Needs finance_expenses.read. Recorded cash balances."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/FinanceCashBalance" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-finance]
+      operationId: financeRecordCashBalance
+      description: "Needs finance_expenses.approve. Records an approved balance with its source reference. Audited."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceCashBalanceInput" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceCashBalance" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/finance/summary:
+    get:
+      tags: [admin-finance]
+      operationId: financeSummary
+      description: "Needs finance_expenses.read. Deterministic management summary for a period (TTD): every line with its sources and coverage; contribution margin, gross margin and operating result are withheld (with reasons) unless every input is covered; recognised revenue is withheld (no approved policy); test-provider payments are excluded and reported apart. Not audited statements."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: true, schema: { type: string, format: date } }, { name: to, in: query, required: true, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/FinanceSummary" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -13277,7 +13574,7 @@ components:
           type: array
           items:
             type: string
-            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure, launch.read, launch.signoff, payment_providers.read, payment_providers.manage, payment_providers.activate, support_chat.read, support_chat.reply, support_chat.assign, support_chat.transfer, support_chat.resolve, support_chat.internal_notes, support_chat.manage, support_chat.analytics, help_centre.edit, help_centre.publish]
+            enum: [admin.access, analytics.view, leads.read, leads.update, leads.export, leads.erase, users.read, users.manage, catalog.read, catalog.manage, catalog.publish, nutrition.verify, plans.manage, menus.manage, menus.publish, subscriptions.read, orders.read, payments.read, payments.refund, promotions.manage, customers.read, customers.sensitive, customers.export, leads.manage, cases.read, cases.manage, campaigns.manage, subscriptions.manage, reports.read, audit.read, settings.manage, ingredients.read, ingredients.manage, recipes.read, recipes.create, recipes.edit, recipes.submit, recipes.review, recipes.approve, recipes.publish, nutrition.read, nutrition.review, nutrition.approve, chefs.manage, production.read, production.plan, production.approve, production.execute, production.configure, quality.read, quality.inspect, quality.release_hold, packaging.manage, waste.record, production_reports.read, suppliers.read, suppliers.manage, suppliers.approve, supplier_products.read, supplier_products.manage, procurement.read, procurement.plan, procurement.approve, procurement.configure, purchase_orders.read, purchase_orders.create, purchase_orders.approve, purchase_orders.approve_above_limit, purchase_orders.issue, receiving.read, receiving.manage, receiving.inspect, inventory.read, inventory.reserve, inventory.issue, inventory.adjust, inventory.count, inventory.configure, traceability.read, supplier_reports.read, fulfillment.read, fulfillment.verify, fulfillment.release, delivery.read, delivery.read_assigned, delivery.plan, delivery.assign, delivery.dispatch, delivery.update_status, delivery.reschedule, delivery.confirm, delivery.reconcile, delivery_partners.read, delivery_partners.manage, delivery_partners.approve, delivery_zones.read, delivery_zones.manage, delivery_proof.read, delivery_proof.create, delivery_exceptions.read, delivery_exceptions.manage, delivery_reports.read, delivery_settings.manage, analytics_executive.read, analytics_revenue.read, analytics_customers.read, analytics_production.read, analytics_procurement.read, analytics_inventory.read, analytics_delivery.read, analytics.export, automation.read, automation.manage, automation.execute, automation.approve, forecasting.read, forecasting.run, forecasting.configure, launch.read, launch.signoff, payment_providers.read, payment_providers.manage, payment_providers.activate, support_chat.read, support_chat.reply, support_chat.assign, support_chat.transfer, support_chat.resolve, support_chat.internal_notes, support_chat.manage, support_chat.analytics, help_centre.edit, help_centre.publish, finance_expenses.read, finance_expenses.manage, finance_expenses.approve]
         mfa: { $ref: "#/components/schemas/MFAState" }
 
     # ---- admin
@@ -19767,3 +20064,179 @@ components:
         summary: { type: string, maxLength: 300 }
         body: { type: string, maxLength: 20000 }
         note: { type: string, maxLength: 1000 }
+    FinanceCategory:
+      type: object
+      required: [key, name, cost_class, description]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        cost_class: { type: string, enum: [variable, fixed, labor, marketing] }
+        description: { type: string }
+    FinanceEvent:
+      type: object
+      required: [action, from_status, to_status, changes, note, actor_id, actor_name, created_at]
+      properties:
+        action: { type: string }
+        from_status: { type: string }
+        to_status: { type: string }
+        changes: { type: object, additionalProperties: true }
+        note: { type: string }
+        actor_id: { type: string, nullable: true }
+        actor_name: { type: string }
+        created_at: { type: string, format: date-time }
+    FinanceExpense:
+      type: object
+      required: [id, category, description, amount_minor, currency, kind, expense_date, payment_date, reference, status, recurring_id, created_by, approved_by, approved_at, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        category: { type: string }
+        description: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        kind: { type: string, enum: [actual, estimated] }
+        expense_date: { type: string, format: date }
+        payment_date: { type: string, format: date, nullable: true }
+        reference: { type: string }
+        status: { type: string, enum: [draft, submitted, approved, rejected, void] }
+        recurring_id: { type: string, nullable: true }
+        created_by: { type: string, nullable: true }
+        approved_by: { type: string, nullable: true }
+        approved_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        history: { type: array, items: { $ref: "#/components/schemas/FinanceEvent" } }
+    FinanceExpenseInput:
+      type: object
+      required: [category, description, amount_minor, kind, expense_date]
+      properties:
+        category: { type: string }
+        description: { type: string, maxLength: 300 }
+        amount_minor: { type: integer, minimum: 0 }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        kind: { type: string, enum: [actual, estimated] }
+        expense_date: { type: string, format: date }
+        payment_date: { type: string, format: date, nullable: true }
+        reference: { type: string, maxLength: 300 }
+        recurring_id: { type: string, nullable: true }
+        note: { type: string }
+    FinanceRecurring:
+      type: object
+      required: [id, category, description, amount_minor, currency, cadence, starts_on, ends_on, status, reference, approved_by, approved_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        category: { type: string }
+        description: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        cadence: { type: string, enum: [weekly, monthly, quarterly, yearly] }
+        starts_on: { type: string, format: date }
+        ends_on: { type: string, format: date, nullable: true }
+        status: { type: string, enum: [draft, approved, ended] }
+        reference: { type: string }
+        approved_by: { type: string, nullable: true }
+        approved_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    FinanceRecurringInput:
+      type: object
+      required: [category, description, amount_minor, cadence, starts_on]
+      properties:
+        category: { type: string }
+        description: { type: string, maxLength: 300 }
+        amount_minor: { type: integer, minimum: 1 }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        cadence: { type: string, enum: [weekly, monthly, quarterly, yearly] }
+        starts_on: { type: string, format: date }
+        ends_on: { type: string, format: date, nullable: true }
+        reference: { type: string, maxLength: 300 }
+    FinanceCoverageInput:
+      type: object
+      required: [category, month, confirmed]
+      properties:
+        category: { type: string }
+        month: { type: string, pattern: "^[0-9]{4}-[0-9]{2}$" }
+        note: { type: string, maxLength: 500 }
+        confirmed: { type: boolean }
+    FinanceCashBalance:
+      type: object
+      required: [id, as_of, account_label, amount_minor, currency, reference, recorded_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        as_of: { type: string, format: date }
+        account_label: { type: string }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        reference: { type: string }
+        recorded_by: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+    FinanceCashBalanceInput:
+      type: object
+      required: [as_of, account_label, amount_minor, reference]
+      properties:
+        as_of: { type: string, format: date }
+        account_label: { type: string, maxLength: 100 }
+        amount_minor: { type: integer }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        reference: { type: string, maxLength: 300 }
+    FinanceLine:
+      type: object
+      required: [key, label, amount_minor, coverage, notes, sources]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        amount_minor: { type: integer, nullable: true }
+        coverage: { type: string, enum: [complete, estimated, partial, missing] }
+        notes: { type: array, items: { type: string } }
+        sources: { type: array, items: { type: string } }
+    FinanceResult:
+      type: object
+      required: [key, label, amount_minor, withheld, estimated, formula, reasons]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        amount_minor: { type: integer, nullable: true }
+        withheld: { type: boolean }
+        estimated: { type: boolean }
+        formula: { type: string }
+        reasons: { type: array, items: { type: string } }
+    FinanceCategoryCoverage:
+      type: object
+      required: [key, name, cost_class, actual_minor, estimated_minor, coverage, missing_months, estimate_months]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        cost_class: { type: string }
+        actual_minor: { type: integer }
+        estimated_minor: { type: integer }
+        coverage: { type: string, enum: [complete, estimated, partial, missing] }
+        missing_months: { type: array, items: { type: string } }
+        estimate_months: { type: array, items: { type: string } }
+    FinanceCash:
+      type: object
+      required: [inflows_minor, inflow_basis, outflows_minor, complete, reasons, recorded_balance_minor, recorded_balance_as_of, recorded_balance_accounts]
+      properties:
+        inflows_minor: { type: integer }
+        inflow_basis: { type: string, enum: [settlement, collections] }
+        outflows_minor: { type: integer }
+        complete: { type: boolean }
+        reasons: { type: array, items: { type: string } }
+        recorded_balance_minor: { type: integer, nullable: true }
+        recorded_balance_as_of: { type: string, nullable: true }
+        recorded_balance_accounts: { type: integer }
+    FinanceSummary:
+      type: object
+      required: [from, to, currency, lines, results, categories, cash, test_collections_minor, test_payments, real_payments, excluded_other_currency_records, notes, generated_at, statement]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        currency: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/FinanceLine" } }
+        results: { type: array, items: { $ref: "#/components/schemas/FinanceResult" } }
+        categories: { type: array, items: { $ref: "#/components/schemas/FinanceCategoryCoverage" } }
+        cash: { $ref: "#/components/schemas/FinanceCash" }
+        test_collections_minor: { type: integer }
+        test_payments: { type: integer }
+        real_payments: { type: integer }
+        excluded_other_currency_records: { type: integer }
+        notes: { type: array, items: { type: string } }
+        generated_at: { type: string, format: date-time }
+        statement: { type: string }

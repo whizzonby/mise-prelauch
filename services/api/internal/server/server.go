@@ -25,6 +25,7 @@ import (
 	"mise.tt/api/internal/delivery"
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
+	"mise.tt/api/internal/finance"
 	"mise.tt/api/internal/forecasting"
 	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
@@ -105,6 +106,13 @@ type Commerce struct {
 	Service  *commerce.Service
 	// Testpay is the payment simulator, when PAYMENTS_TEST_PROVIDER is on.
 	Testpay *testpay.Provider
+}
+
+// NewFinance builds the management finance service on the commerce clock.
+func NewFinance(pool *pgxpool.Pool, com *Commerce) *finance.Service {
+	f := finance.NewService(pool)
+	f.Now = func() time.Time { return com.Service.Now() }
+	return f
 }
 
 // NewLaunch builds the launch readiness service from configuration.
@@ -422,6 +430,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 		chat.SendLimit = nil // local automated test runs only (config refuses it elsewhere)
 	}
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
+	(&finance.Handler{S: NewFinance(pool, com), Identity: ids}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

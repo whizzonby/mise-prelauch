@@ -158,6 +158,11 @@ const (
 	PermSupportChatAnalytics     Permission = "support_chat.analytics"
 	PermHelpCentreEdit           Permission = "help_centre.edit"
 	PermHelpCentrePublish        Permission = "help_centre.publish"
+
+	// Sprint 9.2: management finance.
+	PermFinanceExpensesRead    Permission = "finance_expenses.read"
+	PermFinanceExpensesManage  Permission = "finance_expenses.manage"
+	PermFinanceExpensesApprove Permission = "finance_expenses.approve"
 )
 
 // AllPermissions lists every permission the code checks.
@@ -191,6 +196,7 @@ var AllPermissions = []Permission{
 	PermPaymentProvidersRead, PermPaymentProvidersManage, PermPaymentProvidersActivate,
 	PermSupportChatRead, PermSupportChatReply, PermSupportChatAssign, PermSupportChatTransfer, PermSupportChatResolve,
 	PermSupportChatInternalNotes, PermSupportChatManage, PermSupportChatAnalytics, PermHelpCentreEdit, PermHelpCentrePublish,
+	PermFinanceExpensesRead, PermFinanceExpensesManage, PermFinanceExpensesApprove,
 }
 
 // RoleCustomer is the role every registered customer holds.

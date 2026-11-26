@@ -132,7 +132,7 @@ later. Playwright for the command center, expenses, scenarios and assistant (una
 Resume from the first unchecked item.
 
 - [x] Stage 1 — Audit (`SPRINT_9_2_AUDIT.md`), this plan
-- [ ] Stage 2 — Finance: migration, expenses + approval + audit, recurring, coverage, cash balances; financial summary; tests
+- [x] Stage 2 — Finance: migration, expenses + approval + audit, recurring, coverage, cash balances; financial summary; tests — 25 Nov: migration 00017 (permissions renamed `finance_expenses.*`: the database requires `domain.action`); `internal/finance` (expenses.go, recurring.go, summary.go, http.go); 13 admin routes in OpenAPI + client. Tests `finance_test.go`: coverage honesty (results withheld while any input is missing; test payments excluded; partial fees withhold contribution), exact deterministic results, settlement vs collections, cash balance approval, other currency excluded, workflow guards (own-approval, edit after approval, void needs a note), immutable history, permissions; recurring estimate replaced by the actual (never counted twice); month-end clamping.
 - [ ] Stage 3 — Behaviour events (contract v1, BFF recording, dedupe, abandonment) and segments; tests
 - [ ] Stage 4 — Intelligence tools and evidence contracts; readiness; tests
 - [ ] Stage 5 — AI provider interface (OpenAI adapter + mock), assistant with validation, history, usage and budgets; tests

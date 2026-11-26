@@ -1,0 +1,77 @@
+# A review server for the owner: Mise on a server that already hosts other sites.
+# Layered on docker-compose.prod.yml:
+#
+#   docker compose -p mise -f docker-compose.prod.yml -f docker-compose.review.yml --env-file .env.production up -d
+#
+# Full steps: docs/launch/REVIEW_SERVER.md
+#
+# Differences from production, all deliberate for a review:
+#   - MISE_ENV=staging: the test payment provider (no real money) and the demo menus are allowed.
+#   - PostgreSQL runs in its own container with a named volume; nothing is installed on the host.
+#   - Every email is caught by Mailpit (nothing reaches real inboxes); the owner reads them at
+#     https://mail.<DOMAIN>, behind a password.
+#   - Nothing listens on a public port: the host's web server (Apache here) forwards
+#     <DOMAIN>, app.<DOMAIN>, admin.<DOMAIN> and mail.<DOMAIN> to 127.0.0.1.
+
+x-review-api: &review-api
+  environment:
+    MISE_ENV: staging
+    DATABASE_URL: postgres://mise:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}@postgres:5432/mise?sslmode=disable
+    MAIL_DRIVER: smtp
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_STARTTLS: "false"
+    SMTP_USERNAME: ""
+    SMTP_PASSWORD: ""
+    PAYMENTS_TEST_PROVIDER: "true"
+    CATALOG_DEMO_ENABLED: "true"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: mise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mise
+    volumes:
+      - mise-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mise -d mise"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    environment:
+      MP_UI_AUTH: "${MAILPIT_USER:-owner}:${MAILPIT_PASSWORD:?set MAILPIT_PASSWORD in .env.production}"
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      - "127.0.0.1:8025:8025"
+    restart: unless-stopped
+
+  migrate:
+    <<: *review-api
+  api:
+    <<: *review-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+  worker:
+    <<: *review-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  mise-pgdata:

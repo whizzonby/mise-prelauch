@@ -22,6 +22,7 @@ COPY packages/ui/package.json packages/ui/
 COPY packages/validation/package.json packages/validation/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/analytics/package.json packages/analytics/
+COPY packages/chat/package.json packages/chat/
 ARG APP
 RUN pnpm install --frozen-lockfile --filter "@mise/${APP}..."
 

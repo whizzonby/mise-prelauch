@@ -7322,6 +7322,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. The read-only tools this caller may use: each needs the intelligence permission of its domain and the permission of the data it reads. */
+        get: operations["intelligenceTools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/tools/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence.read plus the tool's own permissions. Runs one read-only tool. Arguments outside the tool's contract are refused. */
+        post: operations["intelligenceRunTool"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Which data Mise Intelligence can rely on, and whether AI is available. */
+        get: operations["intelligenceReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -13704,6 +13755,78 @@ export interface components {
             customer_id: string;
             name: string;
             email: string;
+        };
+        IntelligenceToolInfo: {
+            name: string;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            domain: "executive" | "financial" | "customer" | "operational" | "general";
+            requires: string[];
+            schema: {
+                [key: string]: unknown;
+            };
+        };
+        IntelligenceFact: {
+            key: string;
+            label: string;
+            /** @description null means not available (missing or withheld), never zero. */
+            value: number | null;
+            unit: string;
+            currency?: string;
+            definition?: string;
+            note?: string;
+        };
+        IntelligenceEvidence: {
+            ref: string;
+            tool: string;
+            domain: string;
+            from?: string;
+            to?: string;
+            filters: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            freshness: string;
+            sources: string[];
+        };
+        IntelligenceTable: {
+            title: string;
+            note: string;
+            columns: string[];
+            rows: string[][];
+            link?: string;
+        };
+        IntelligenceToolResult: {
+            tool: string;
+            title: string;
+            evidence: components["schemas"]["IntelligenceEvidence"];
+            facts: components["schemas"]["IntelligenceFact"][];
+            tables: components["schemas"]["IntelligenceTable"][];
+            limitations: string[];
+            notes: string[];
+        };
+        IntelligenceAIStatus: {
+            available: boolean;
+            provider: string;
+            model: string;
+            reason: string;
+        };
+        IntelligenceReadiness: {
+            /** @enum {string} */
+            overall: "ready" | "limited" | "not_ready";
+            checks: {
+                key: string;
+                label: string;
+                /** @enum {string} */
+                status: "ready" | "limited" | "not_ready";
+                detail: string;
+                value: number | null;
+                unit: string;
+            }[];
+            ai: components["schemas"]["IntelligenceAIStatus"];
+            /** Format: date-time */
+            generated_at: string;
         };
     };
     responses: {
@@ -29251,6 +29374,96 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             422: components["responses"]["Error"];
+        };
+    };
+    intelligenceTools: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceToolInfo"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceRunTool: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    args?: {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceToolResult"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceReadiness"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
         };
     };
 }

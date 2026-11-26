@@ -30,6 +30,7 @@ import (
 	"mise.tt/api/internal/forecasting"
 	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
+	"mise.tt/api/internal/intelligence"
 	"mise.tt/api/internal/inventory"
 	"mise.tt/api/internal/launch"
 	"mise.tt/api/internal/leads"
@@ -430,7 +431,8 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&analytics.Handler{S: an, Identity: ids}).Routes(mux)
 	au, reports := NewAutomation(cfg, pool, com, bo, ids, an, nil)
 	(&automation.Handler{S: au, R: reports, Identity: ids}).Routes(mux)
-	(&forecasting.Handler{S: NewForecasting(pool, com), Identity: ids}).Routes(mux)
+	fc := NewForecasting(pool, com)
+	(&forecasting.Handler{S: fc, Identity: ids}).Routes(mux)
 	(&launch.Handler{S: NewLaunch(cfg, pool, com), Identity: ids}).Routes(mux)
 	chat := supportchat.NewService(pool)
 	chat.Alerts, chat.Cases = bo, bo.Support
@@ -438,8 +440,11 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 		chat.SendLimit = nil // local automated test runs only (config refuses it elsewhere)
 	}
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
-	(&finance.Handler{S: NewFinance(pool, com), Identity: ids}).Routes(mux)
-	(&behavior.Handler{S: NewBehavior(pool, com), Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
+	fin, bx := NewFinance(pool, com), NewBehavior(pool, com)
+	(&finance.Handler{S: fin, Identity: ids}).Routes(mux)
+	(&intelligence.Handler{Box: &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
+		Now: func() time.Time { return com.Service.Now() }}, Identity: ids}).Routes(mux)
+	(&behavior.Handler{S: bx, Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, httpx.ErrNotFound)

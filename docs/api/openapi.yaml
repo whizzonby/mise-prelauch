@@ -13278,6 +13278,72 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/tools:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceTools
+      description: "Needs intelligence.read. The read-only tools this caller may use: each needs the intelligence permission of its domain and the permission of the data it reads."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceToolInfo" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/tools/{name}:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceRunTool
+      description: "Needs intelligence.read plus the tool's own permissions. Runs one read-only tool. Arguments outside the tool's contract are refused."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: name, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, properties: { args: { type: object, additionalProperties: { type: string } } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceToolResult" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/readiness:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceReadiness
+      description: "Needs intelligence.read. Which data Mise Intelligence can rely on, and whether AI is available."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceReadiness" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -20408,3 +20474,83 @@ components:
         customer_id: { type: string, format: uuid }
         name: { type: string }
         email: { type: string }
+    IntelligenceToolInfo:
+      type: object
+      required: [name, title, description, domain, requires, schema]
+      properties:
+        name: { type: string }
+        title: { type: string }
+        description: { type: string }
+        domain: { type: string, enum: [executive, financial, customer, operational, general] }
+        requires: { type: array, items: { type: string } }
+        schema: { type: object, additionalProperties: true }
+    IntelligenceFact:
+      type: object
+      required: [key, label, value, unit]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: number, nullable: true, description: "null means not available (missing or withheld), never zero." }
+        unit: { type: string }
+        currency: { type: string }
+        definition: { type: string }
+        note: { type: string }
+    IntelligenceEvidence:
+      type: object
+      required: [ref, tool, domain, filters, freshness, sources]
+      properties:
+        ref: { type: string }
+        tool: { type: string }
+        domain: { type: string }
+        from: { type: string }
+        to: { type: string }
+        filters: { type: object, additionalProperties: { type: string } }
+        freshness: { type: string, format: date-time }
+        sources: { type: array, items: { type: string } }
+    IntelligenceTable:
+      type: object
+      required: [title, note, columns, rows]
+      properties:
+        title: { type: string }
+        note: { type: string }
+        columns: { type: array, items: { type: string } }
+        rows: { type: array, items: { type: array, items: { type: string } } }
+        link: { type: string }
+    IntelligenceToolResult:
+      type: object
+      required: [tool, title, evidence, facts, tables, limitations, notes]
+      properties:
+        tool: { type: string }
+        title: { type: string }
+        evidence: { $ref: "#/components/schemas/IntelligenceEvidence" }
+        facts: { type: array, items: { $ref: "#/components/schemas/IntelligenceFact" } }
+        tables: { type: array, items: { $ref: "#/components/schemas/IntelligenceTable" } }
+        limitations: { type: array, items: { type: string } }
+        notes: { type: array, items: { type: string } }
+    IntelligenceAIStatus:
+      type: object
+      required: [available, provider, model, reason]
+      properties:
+        available: { type: boolean }
+        provider: { type: string }
+        model: { type: string }
+        reason: { type: string }
+    IntelligenceReadiness:
+      type: object
+      required: [overall, checks, ai, generated_at]
+      properties:
+        overall: { type: string, enum: [ready, limited, not_ready] }
+        checks:
+          type: array
+          items:
+            type: object
+            required: [key, label, status, detail, value, unit]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              status: { type: string, enum: [ready, limited, not_ready] }
+              detail: { type: string }
+              value: { type: number, nullable: true }
+              unit: { type: string }
+        ai: { $ref: "#/components/schemas/IntelligenceAIStatus" }
+        generated_at: { type: string, format: date-time }

@@ -7612,6 +7612,263 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/meals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_operational.read and analytics_production.read. Meal performance with availability-adjusted demand (kits per week on a published menu), repeat customers, waste records, recipe cost per serving and rule-based labels. Default period: the last 12 weeks. */
+        get: operations["intelligenceMeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/risks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. The deterministic risk indicators the caller's permissions allow, for the period (default: the last 28 days) against the previous period. No probabilities. */
+        get: operations["intelligenceRisks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/risk-thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Every indicator's thresholds; engineering defaults are marked. */
+        get: operations["intelligenceRiskThresholds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/risk-thresholds/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Needs intelligence.configure. Changes one threshold, with a reason (audited). Critical must be at least as severe as warn. */
+        put: operations["intelligenceSetRiskThreshold"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Observed opportunities in the caller's domains (meals offered too rarely for their demand, meals to review, supplier price increases, retention follow-ups). Observations, not forecasts. */
+        get: operations["intelligenceOpportunities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Recommendations in the caller's domains, newest first. */
+        get: operations["intelligenceRecommendations"];
+        put?: never;
+        /** @description Needs intelligence_recommendation.review and the domain's permission. Stores a business proposal written by a person. */
+        post: operations["intelligenceProposeRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/recommendations/from-risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_recommendation.review. Re-evaluates the risk and stores it for review if triggered (201); an open item for the same risk and period is returned instead (200). 409 when not triggered. */
+        post: operations["intelligenceSaveRisk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/recommendations/from-opportunity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_recommendation.review. Re-computes the opportunity and stores it for review (201), or returns the open item (200). */
+        post: operations["intelligenceSaveOpportunity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/recommendations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read and the item's domain. One recommendation with its review history. */
+        get: operations["intelligenceRecommendation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/recommendations/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_recommendation.review. action: save, assign (assignee: a staff user who can open Mise Intelligence), dismiss (note), done, validate (note; the basis becomes validated). Changes only the recommendation. */
+        post: operations["intelligenceReviewRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/meal-proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_operational.read. Draft meal concepts, newest first (evidence on the detail only). */
+        get: operations["intelligenceMealProposals"];
+        put?: never;
+        /** @description Needs intelligence_recommendation.review. Stores a manager's draft concept with the current evidence pack. Never creates a meal or recipe. */
+        post: operations["intelligenceCreateMealProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/meal-proposals/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_operational.read. The deterministic evidence pack (last 12 weeks): demand by category, top meals, approved supplier products and prices, availability issues, category preferences. */
+        get: operations["intelligenceMealEvidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/meal-proposals/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_recommendation.review and intelligence.ask. Asks the AI for up to three draft concepts from the evidence pack; numbers not in the evidence are marked [unverified]. 503 ai_unavailable when AI is not available. */
+        post: operations["intelligenceGenerateMealConcepts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/meal-proposals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_operational.read. One proposal with its evidence and history. */
+        get: operations["intelligenceMealProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/meal-proposals/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_recommendation.review. action: review, approve (note), reject (note), link_recipe (recipe_id of a recipe created in the culinary workflow), close. Changes only the proposal. */
+        post: operations["intelligenceTransitionMealProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -14391,6 +14648,189 @@ export interface components {
             }[];
             note: string;
             statement: string;
+        };
+        IntelligenceSaveFrom: {
+            key: string;
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+        };
+        MealIntelligence: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            weeks_in_period: number;
+            meals: {
+                /** Format: uuid */
+                meal_id: string;
+                name: string;
+                slug: string;
+                category: string;
+                demo: boolean;
+                weeks_on_menu: number;
+                kits_ordered: number;
+                kits_per_week_on_menu: number | null;
+                customers: number;
+                repeat_customers: number;
+                repeat_share: number | null;
+                waste_records: number;
+                /** Format: int64 */
+                cost_per_serving_minor: number | null;
+                cost_complete: boolean;
+                cost_note: string;
+                prep_minutes: number;
+                labels: ("high_demand" | "availability_constrained" | "underperforming" | "high_cost")[];
+            }[];
+            rules: string[];
+            limitations: string[];
+        };
+        IntelligenceRiskThreshold: {
+            key: string;
+            enabled: boolean;
+            warn: number;
+            critical: number;
+            /** @enum {string} */
+            direction: "above" | "below";
+            unit: string;
+            is_default: boolean;
+            note: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        IntelligenceRisk: {
+            key: string;
+            title: string;
+            domain: string;
+            /** @enum {string} */
+            status: "triggered" | "clear" | "not_evaluable";
+            /** @enum {string} */
+            severity: "none" | "watch" | "high";
+            measure: string;
+            value: number | null;
+            threshold: components["schemas"]["IntelligenceRiskThreshold"];
+            metrics: {
+                id: string;
+                label: string;
+                current: number | null;
+                previous: number | null;
+                unit: string;
+            }[];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** Format: date */
+            previous_from: string;
+            /** Format: date */
+            previous_to: string;
+            explanation: string;
+            review_action: string;
+            review_href: string;
+            /** Format: date-time */
+            freshness: string;
+            limitations: string[];
+        };
+        IntelligenceOpportunity: {
+            key: string;
+            title: string;
+            domain: string;
+            /** @enum {string} */
+            basis: "observed" | "ai_hypothesis" | "business_proposal" | "validated";
+            summary: string;
+            evidence: {
+                [key: string]: string;
+            };
+            review: string;
+            review_href: string;
+            caution: string;
+            from?: string;
+            to?: string;
+            /** Format: date-time */
+            generated_at: string;
+        };
+        IntelligenceReviewEvent: {
+            action: string;
+            from_status: string;
+            to_status: string;
+            note: string;
+            /** Format: uuid */
+            actor: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        IntelligenceRecommendation: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "risk" | "opportunity" | "ai_suggestion" | "proposal";
+            /** @enum {string} */
+            basis: "observed" | "ai_hypothesis" | "business_proposal" | "validated";
+            domain: string;
+            source_key: string;
+            title: string;
+            summary: string;
+            evidence: {
+                [key: string]: unknown;
+            };
+            review_href: string;
+            /** @enum {string} */
+            status: "open" | "saved" | "assigned" | "dismissed" | "done";
+            /** Format: uuid */
+            assigned_to: string | null;
+            /** Format: uuid */
+            run_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            events: components["schemas"]["IntelligenceReviewEvent"][];
+        };
+        IntelligenceMealProposalIngredient: {
+            name: string;
+            quantity: string;
+            note: string;
+            /** Format: uuid */
+            ingredient_id?: string | null;
+        };
+        IntelligenceMealProposalInput: {
+            name: string;
+            description?: string;
+            target_audience?: string;
+            ingredients?: components["schemas"]["IntelligenceMealProposalIngredient"][];
+            /** @enum {string} */
+            complexity?: "low" | "medium" | "high" | "unknown";
+        };
+        IntelligenceMealProposal: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            origin: "ai" | "manual";
+            name: string;
+            description: string;
+            target_audience: string;
+            ingredients: components["schemas"]["IntelligenceMealProposalIngredient"][];
+            complexity: string;
+            availability_notes: string[];
+            limitations: string[];
+            evidence: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            status: "proposed" | "in_review" | "approved_for_development" | "in_development" | "closed" | "rejected";
+            /** Format: uuid */
+            recipe_id: string | null;
+            recipe_status: string | null;
+            /** Format: uuid */
+            run_id: string | null;
+            required_approvals: string[];
+            /** Format: int64 */
+            estimated_cost_minor: number | null;
+            cost_note: string;
+            /** Format: date-time */
+            created_at: string;
+            events: components["schemas"]["IntelligenceReviewEvent"][];
         };
     };
     responses: {
@@ -30498,6 +30938,582 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    intelligenceMeals: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MealIntelligence"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceRisks: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceRisk"][];
+                            note: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceRiskThresholds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceRiskThreshold"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceSetRiskThreshold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                    warn: number;
+                    critical: number;
+                    note: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRiskThreshold"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceOpportunities: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceOpportunity"][];
+                            note: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceRecommendations: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceRecommendation"][];
+                            advisory: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceProposeRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    domain: "executive" | "financial" | "customer" | "operational" | "general";
+                    title: string;
+                    summary?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceSaveRisk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceSaveFrom"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceSaveOpportunity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceSaveFrom"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    intelligenceReviewRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    note?: string;
+                    /** Format: uuid */
+                    assignee?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRecommendation"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceMealProposals: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceMealProposal"][];
+                            required_approvals: string[];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceCreateMealProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceMealProposalInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceMealProposal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceMealEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceGenerateMealConcepts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    brief?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceMealProposal"][];
+                            run: components["schemas"]["IntelligenceRun"];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    intelligenceMealProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceMealProposal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    intelligenceTransitionMealProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    note?: string;
+                    /** Format: uuid */
+                    recipe_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceMealProposal"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
         };
     };
 }

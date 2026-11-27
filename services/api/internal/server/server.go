@@ -456,6 +456,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&finance.Handler{S: fin, Identity: ids}).Routes(mux)
 	box := &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
 		Scenarios: &scenario.Service{Pool: pool, Finance: fin, Now: func() time.Time { return com.Service.Now() }},
+		Culinary:  culinaryFor(pool, com),
 		Now:       func() time.Time { return com.Service.Now() }}
 	asst := NewAssistant(cfg, box)
 	box.AI = asst.Status
@@ -475,4 +476,11 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 		httpx.WithCORS(cfg.CORSOrigins),
 		limits.General.ByIP,
 	), mux.patterns, nil
+}
+
+// culinaryFor is a read-only culinary service for intelligence (recipe costing).
+func culinaryFor(pool *pgxpool.Pool, com *Commerce) *culinary.Service {
+	c := culinary.NewService(pool)
+	c.Now = func() time.Time { return com.Service.Now() }
+	return c
 }

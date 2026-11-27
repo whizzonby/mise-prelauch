@@ -156,7 +156,11 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		// Sprint 9.1: chat settings ship empty (no hours, no promises).
 		`INSERT INTO support_chat_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
 		// Sprint 9.2: AI ships switched off with no budget (TRUNCATE users CASCADE empties it).
-		`TRUNCATE intelligence_runs`,
+		`TRUNCATE intelligence_runs, intelligence_recommendations, intelligence_meal_proposals CASCADE`,
+		`INSERT INTO intelligence_risk_thresholds (key, warn, critical) VALUES ('renewals_declining', -10, -25), ('payment_failures', 3, 10),
+			('refunds_growing', 5, 10), ('ingredient_costs_rising', 5, 15), ('contribution_falling', -5, -10), ('inventory_expiry', 1, 5),
+			('supplier_delays', 90, 75), ('excessive_waste', 5, 10), ('delivery_failures', 95, 85), ('incomplete_financial_records', 1, 4), ('cash_shortage', 13, 4)
+			ON CONFLICT (key) DO UPDATE SET warn = excluded.warn, critical = excluded.critical, enabled = true, is_default = true, note = '', updated_by = NULL`,
 		`INSERT INTO intelligence_ai_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
 		`UPDATE intelligence_ai_settings SET enabled = false, monthly_budget_usd_micros = NULL, input_price_usd_micros_per_mtok = NULL,
 			output_price_usd_micros_per_mtok = NULL, price_reference = '', user_daily_requests = 20, max_output_tokens = 1500, max_input_tokens = 30000,

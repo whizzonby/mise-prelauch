@@ -61,6 +61,11 @@ func answerReply(a map[string]any) string {
 	for k, v := range a {
 		full[k] = v
 	}
+	return answerReplyRaw(full)
+}
+
+// answerReplyRaw is a completion whose content is exactly this JSON object.
+func answerReplyRaw(full map[string]any) string {
 	content, _ := json.Marshal(full)
 	c, _ := json.Marshal(string(content))
 	return `{"model":"fake-model-1","choices":[{"finish_reason":"stop","message":{"role":"assistant","content":` + string(c) + `}}],"usage":{"prompt_tokens":2000,"completion_tokens":200}}`

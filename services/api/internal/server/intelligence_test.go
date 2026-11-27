@@ -42,9 +42,9 @@ func factOf(t *testing.T, res map[string]any, key string) (float64, bool) {
 func TestIntelligenceToolsFollowPermissions(t *testing.T) {
 	h := newHarness(t)
 	want := map[string]string{
-		"finance":    "data_readiness,expense_breakdown,financial_summary,knowledge_search,revenue_and_subscriptions,run_financial_scenario",
-		"operations": "data_readiness,delivery_metrics,knowledge_search,meal_performance,production_metrics,support_trends",
-		"marketing":  "cancellation_reasons,conversion_funnel,customer_segments,data_readiness,knowledge_search",
+		"finance":    "business_risks,data_readiness,expense_breakdown,financial_summary,knowledge_search,revenue_and_subscriptions,run_financial_scenario",
+		"operations": "business_risks,data_readiness,delivery_metrics,knowledge_search,meal_intelligence,meal_performance,production_metrics,support_trends",
+		"marketing":  "business_risks,cancellation_reasons,conversion_funnel,customer_segments,data_readiness,knowledge_search",
 	}
 	for role, names := range want {
 		if got := strings.Join(toolNames(t, h, bearer(h.adminLogin(role+"-tools@mise.test", role))), ","); got != names {
@@ -52,8 +52,8 @@ func TestIntelligenceToolsFollowPermissions(t *testing.T) {
 		}
 	}
 	owner := bearer(h.adminLogin("owner-tools@mise.test", "super_admin"))
-	if n := len(toolNames(t, h, owner)); n != 18 {
-		t.Errorf("super admin sees %d tools, want 18", n)
+	if n := len(toolNames(t, h, owner)); n != 20 {
+		t.Errorf("super admin sees %d tools, want 20", n)
 	}
 
 	// Staff without intelligence, customers and guests are refused.
@@ -86,7 +86,7 @@ func TestIntelligenceToolsReturnTheAuthoritativeNumbers(t *testing.T) {
 	for _, name := range toolNames(t, h, owner) {
 		args := period
 		switch name {
-		case "customer_segments", "demand_forecast", "data_readiness", "run_financial_scenario":
+		case "customer_segments", "demand_forecast", "data_readiness", "run_financial_scenario", "business_risks":
 			args = nil
 		case "knowledge_search":
 			args = map[string]any{"query": "collected payments"}

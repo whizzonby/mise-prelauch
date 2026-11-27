@@ -166,6 +166,22 @@ Resume from the first unchecked item.
   inputs, drift, cash, capacity, no break-even, rounding, validation, presets, what-ifs) and intelligence_scenario_test.go (observed
   missing-not-zero, incomplete run, full run, refusals, save/dedupe/version/reproduce/compare/archive/audit, access by role, the AI tool,
   test-paid subscriptions not counted).
-- [ ] Stage 7 — Meal proposals; operational intelligence; risks and opportunities; recommendations; tests
+- [x] Stage 7 — Meal proposals; operational intelligence; risks and opportunities; recommendations; tests — 27 Nov (real date):
+  migration 00021 (risk thresholds seeded as engineering defaults, recommendations + events, meal proposals + events). meals.go: per meal
+  weeks on a published menu, kits ordered, kits per week on menu (availability-adjusted), repeat customers, waste records, recipe cost per
+  serving (culinary reference costing), rule labels high_demand / availability_constrained / underperforming / high_cost (median rules,
+  stated); ratings and per-meal margin reported as not available. risks.go: 11 indicators (renewals, payment failures, refunds, ingredient
+  costs, contribution margin, expired stock, supplier delays, waste, delivery failures, incomplete financial records, cash via the base
+  scenario) with value, comparison period, metrics, threshold, severity, explanation, review action, freshness; not_evaluable with the
+  reason when data is missing; filtered by the caller's domain and data permissions; thresholds editable (configure, reason, direction
+  check, audited). opportunities.go: observed only (meal availability, meal review, meal cost, supplier price rises ≥ 10 %, retention
+  segments) with a caution. recommendations.go: from risk/opportunity (recomputed server-side, idempotent per open item), business
+  proposals, review actions save/assign/dismiss/done/validate (basis observed → validated), domain-scoped. proposals.go: evidence pack,
+  manual and AI drafts (concepts-v1; numbers not in the evidence marked [unverified]; stored run kind meal_concepts), lifecycle proposed →
+  in_review → approved_for_development → in_development (links an existing recipe) → closed / rejected; 6 required culinary approvals;
+  no cost or nutrition/allergen claims. AI tools meal_intelligence and business_risks (20 tools; the principal travels in the tool context).
+  17 routes (OpenAPI + client; RBAC scope notes for meals and generate). Tests intelligence_insights_test.go (risk explanations, domain
+  filtering, idempotent save, thresholds, tool parity; recommendations scoped, review flow, nothing operational changed; meal intelligence;
+  proposals lifecycle, no meal/recipe changed, AI unavailable; AI concepts with an invented number marked and a malformed concept skipped).
 - [ ] Stage 8 — Briefings; command center and finance UI
 - [ ] Stage 9 — Docs, security and AI evaluation, Playwright, regression, screenshots, report, commit

@@ -13697,6 +13697,428 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meals:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceMeals
+      description: "Needs intelligence_operational.read and analytics_production.read. Meal performance with availability-adjusted demand (kits per week on a published menu), repeat customers, waste records, recipe cost per serving and rule-based labels. Default period: the last 12 weeks."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: false, schema: { type: string, format: date } }, { name: to, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/MealIntelligence" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/risks:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRisks
+      description: "Needs intelligence.read. The deterministic risk indicators the caller's permissions allow, for the period (default: the last 28 days) against the previous period. No probabilities."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: false, schema: { type: string, format: date } }, { name: to, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, note], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceRisk" } }, note: { type: string } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/risk-thresholds:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRiskThresholds
+      description: "Needs intelligence.read. Every indicator's thresholds; engineering defaults are marked."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceRiskThreshold" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/risk-thresholds/{key}:
+    put:
+      tags: [admin-intelligence]
+      operationId: intelligenceSetRiskThreshold
+      description: "Needs intelligence.configure. Changes one threshold, with a reason (audited). Critical must be at least as severe as warn."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: key, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [enabled, warn, critical, note], properties: { enabled: { type: boolean }, warn: { type: number }, critical: { type: number }, note: { type: string, maxLength: 300 } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRiskThreshold" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/opportunities:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceOpportunities
+      description: "Needs intelligence.read. Observed opportunities in the caller's domains (meals offered too rarely for their demand, meals to review, supplier price increases, retention follow-ups). Observations, not forecasts."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: from, in: query, required: false, schema: { type: string, format: date } }, { name: to, in: query, required: false, schema: { type: string, format: date } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, note], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceOpportunity" } }, note: { type: string } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/recommendations:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRecommendations
+      description: "Needs intelligence.read. Recommendations in the caller's domains, newest first."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, advisory], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceRecommendation" } }, advisory: { type: string } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceProposeRecommendation
+      description: "Needs intelligence_recommendation.review and the domain's permission. Stores a business proposal written by a person."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [domain, title], properties: { domain: { type: string, enum: [executive, financial, customer, operational, general] }, title: { type: string, maxLength: 200 }, summary: { type: string, maxLength: 2000 } } }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/recommendations/from-risk:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceSaveRisk
+      description: "Needs intelligence_recommendation.review. Re-evaluates the risk and stores it for review if triggered (201); an open item for the same risk and period is returned instead (200). 409 when not triggered."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntelligenceSaveFrom" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/recommendations/from-opportunity:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceSaveOpportunity
+      description: "Needs intelligence_recommendation.review. Re-computes the opportunity and stores it for review (201), or returns the open item (200)."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntelligenceSaveFrom" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/recommendations/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRecommendation
+      description: "Needs intelligence.read and the item's domain. One recommendation with its review history."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/recommendations/{id}/{action}:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceReviewRecommendation
+      description: "Needs intelligence_recommendation.review. action: save, assign (assignee: a staff user who can open Mise Intelligence), dismiss (note), done, validate (note; the basis becomes validated). Changes only the recommendation."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 1000 }, assignee: { type: string, format: uuid } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRecommendation" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meal-proposals:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceMealProposals
+      description: "Needs intelligence_operational.read. Draft meal concepts, newest first (evidence on the detail only)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: status, in: query, required: false, schema: { type: string } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, required_approvals], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceMealProposal" } }, required_approvals: { type: array, items: { type: string } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceCreateMealProposal
+      description: "Needs intelligence_recommendation.review. Stores a manager's draft concept with the current evidence pack. Never creates a meal or recipe."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntelligenceMealProposalInput" }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceMealProposal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meal-proposals/evidence:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceMealEvidence
+      description: "Needs intelligence_operational.read. The deterministic evidence pack (last 12 weeks): demand by category, top meals, approved supplier products and prices, availability issues, category preferences."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, additionalProperties: true }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meal-proposals/generate:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceGenerateMealConcepts
+      description: "Needs intelligence_recommendation.review and intelligence.ask. Asks the AI for up to three draft concepts from the evidence pack; numbers not in the evidence are marked [unverified]. 503 ai_unavailable when AI is not available."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { brief: { type: string, maxLength: 1000 } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, run], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceMealProposal" } }, run: { $ref: "#/components/schemas/IntelligenceRun" } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meal-proposals/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceMealProposal
+      description: "Needs intelligence_operational.read. One proposal with its evidence and history."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceMealProposal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/meal-proposals/{id}/{action}:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceTransitionMealProposal
+      description: "Needs intelligence_recommendation.review. action: review, approve (note), reject (note), link_recipe (recipe_id of a recipe created in the culinary workflow), close. Changes only the proposal."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 1000 }, recipe_id: { type: string, format: uuid } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceMealProposal" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -21237,3 +21659,172 @@ components:
               assumptions: { type: array, items: { type: string } }
         note: { type: string }
         statement: { type: string }
+    IntelligenceSaveFrom:
+      type: object
+      required: [key]
+      properties:
+        key: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+    MealIntelligence:
+      type: object
+      required: [from, to, weeks_in_period, meals, rules, limitations]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        weeks_in_period: { type: integer }
+        meals:
+          type: array
+          items:
+            type: object
+            required: [meal_id, name, slug, category, demo, weeks_on_menu, kits_ordered, kits_per_week_on_menu, customers, repeat_customers, repeat_share, waste_records, cost_per_serving_minor, cost_complete, cost_note, prep_minutes, labels]
+            properties:
+              meal_id: { type: string, format: uuid }
+              name: { type: string }
+              slug: { type: string }
+              category: { type: string }
+              demo: { type: boolean }
+              weeks_on_menu: { type: integer }
+              kits_ordered: { type: integer }
+              kits_per_week_on_menu: { type: number, nullable: true }
+              customers: { type: integer }
+              repeat_customers: { type: integer }
+              repeat_share: { type: number, nullable: true }
+              waste_records: { type: integer }
+              cost_per_serving_minor: { type: integer, format: int64, nullable: true }
+              cost_complete: { type: boolean }
+              cost_note: { type: string }
+              prep_minutes: { type: integer }
+              labels: { type: array, items: { type: string, enum: [high_demand, availability_constrained, underperforming, high_cost] } }
+        rules: { type: array, items: { type: string } }
+        limitations: { type: array, items: { type: string } }
+    IntelligenceRiskThreshold:
+      type: object
+      required: [key, enabled, warn, critical, direction, unit, is_default, note, updated_at]
+      properties:
+        key: { type: string }
+        enabled: { type: boolean }
+        warn: { type: number }
+        critical: { type: number }
+        direction: { type: string, enum: [above, below] }
+        unit: { type: string }
+        is_default: { type: boolean }
+        note: { type: string }
+        updated_at: { type: string, format: date-time }
+    IntelligenceRisk:
+      type: object
+      required: [key, title, domain, status, severity, measure, value, threshold, metrics, from, to, previous_from, previous_to, explanation, review_action, review_href, freshness, limitations]
+      properties:
+        key: { type: string }
+        title: { type: string }
+        domain: { type: string }
+        status: { type: string, enum: [triggered, clear, not_evaluable] }
+        severity: { type: string, enum: [none, watch, high] }
+        measure: { type: string }
+        value: { type: number, nullable: true }
+        threshold: { $ref: "#/components/schemas/IntelligenceRiskThreshold" }
+        metrics:
+          type: array
+          items:
+            type: object
+            required: [id, label, current, previous, unit]
+            properties:
+              id: { type: string }
+              label: { type: string }
+              current: { type: number, nullable: true }
+              previous: { type: number, nullable: true }
+              unit: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        previous_from: { type: string, format: date }
+        previous_to: { type: string, format: date }
+        explanation: { type: string }
+        review_action: { type: string }
+        review_href: { type: string }
+        freshness: { type: string, format: date-time }
+        limitations: { type: array, items: { type: string } }
+    IntelligenceOpportunity:
+      type: object
+      required: [key, title, domain, basis, summary, evidence, review, review_href, caution, generated_at]
+      properties:
+        key: { type: string }
+        title: { type: string }
+        domain: { type: string }
+        basis: { type: string, enum: [observed, ai_hypothesis, business_proposal, validated] }
+        summary: { type: string }
+        evidence: { type: object, additionalProperties: { type: string } }
+        review: { type: string }
+        review_href: { type: string }
+        caution: { type: string }
+        from: { type: string }
+        to: { type: string }
+        generated_at: { type: string, format: date-time }
+    IntelligenceReviewEvent:
+      type: object
+      required: [action, from_status, to_status, note, actor, created_at]
+      properties:
+        action: { type: string }
+        from_status: { type: string }
+        to_status: { type: string }
+        note: { type: string }
+        actor: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+    IntelligenceRecommendation:
+      type: object
+      required: [id, kind, basis, domain, source_key, title, summary, evidence, review_href, status, assigned_to, run_id, created_at, updated_at, events]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [risk, opportunity, ai_suggestion, proposal] }
+        basis: { type: string, enum: [observed, ai_hypothesis, business_proposal, validated] }
+        domain: { type: string }
+        source_key: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        evidence: { type: object, additionalProperties: true }
+        review_href: { type: string }
+        status: { type: string, enum: [open, saved, assigned, dismissed, done] }
+        assigned_to: { type: string, format: uuid, nullable: true }
+        run_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        events: { type: array, items: { $ref: "#/components/schemas/IntelligenceReviewEvent" } }
+    IntelligenceMealProposalIngredient:
+      type: object
+      required: [name, quantity, note]
+      properties:
+        name: { type: string, maxLength: 120 }
+        quantity: { type: string, maxLength: 60 }
+        note: { type: string, maxLength: 300 }
+        ingredient_id: { type: string, format: uuid, nullable: true }
+    IntelligenceMealProposalInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        target_audience: { type: string, maxLength: 500 }
+        ingredients: { type: array, maxItems: 40, items: { $ref: "#/components/schemas/IntelligenceMealProposalIngredient" } }
+        complexity: { type: string, enum: [low, medium, high, unknown] }
+    IntelligenceMealProposal:
+      type: object
+      required: [id, origin, name, description, target_audience, ingredients, complexity, availability_notes, limitations, evidence, status, recipe_id, recipe_status, run_id, required_approvals, estimated_cost_minor, cost_note, created_at, events]
+      properties:
+        id: { type: string, format: uuid }
+        origin: { type: string, enum: [ai, manual] }
+        name: { type: string }
+        description: { type: string }
+        target_audience: { type: string }
+        ingredients: { type: array, items: { $ref: "#/components/schemas/IntelligenceMealProposalIngredient" } }
+        complexity: { type: string }
+        availability_notes: { type: array, items: { type: string } }
+        limitations: { type: array, items: { type: string } }
+        evidence: { type: object, additionalProperties: true }
+        status: { type: string, enum: [proposed, in_review, approved_for_development, in_development, closed, rejected] }
+        recipe_id: { type: string, format: uuid, nullable: true }
+        recipe_status: { type: string, nullable: true }
+        run_id: { type: string, format: uuid, nullable: true }
+        required_approvals: { type: array, items: { type: string } }
+        estimated_cost_minor: { type: integer, format: int64, nullable: true }
+        cost_note: { type: string }
+        created_at: { type: string, format: date-time }
+        events: { type: array, items: { $ref: "#/components/schemas/IntelligenceReviewEvent" } }

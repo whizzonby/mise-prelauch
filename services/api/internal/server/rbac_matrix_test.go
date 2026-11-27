@@ -81,6 +81,8 @@ func adminRoutes(t *testing.T) []adminRoute {
 // still be refused for a particular record. Each entry says why.
 var scopedInHandler = map[string]string{
 	"POST /api/v1/admin/intelligence/tools/{name}":           "each tool also needs its domain permission and the permission of the data it reads",
+	"GET /api/v1/admin/intelligence/meals":                   "also needs analytics_production.read (the data it reads)",
+	"POST /api/v1/admin/intelligence/meal-proposals/generate": "also needs intelligence.ask (it calls the model)",
 	"GET /api/v1/admin/intelligence/segments/{key}/members":  "names customers, so customers.read is also required",
 	"GET /api/v1/admin/delivery/deliveries":                  "delivery scope: dispatch roles see all, a courier only assigned deliveries",
 	"GET /api/v1/admin/delivery/deliveries/{id}":             "delivery scope",

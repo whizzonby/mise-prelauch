@@ -1,6 +1,7 @@
 package intelligence
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -40,6 +41,25 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("POST /api/v1/admin/intelligence/scenarios/{id}/versions", adm(identity.PermIntelligenceScenarioRun, h.scenarioVersion))
 	mux.Handle("POST /api/v1/admin/intelligence/scenarios/{id}/archive", adm(identity.PermIntelligenceScenarioRun, h.scenarioArchive))
 	mux.Handle("GET /api/v1/admin/intelligence/scenario-versions/{id}", adm(identity.PermIntelligenceScenarioRun, h.scenarioVersionGet))
+
+	// Stage 7: meals, risks, opportunities, recommendations, meal proposals. All advisory.
+	mux.Handle("GET /api/v1/admin/intelligence/meals", adm(identity.PermIntelligenceOperationalRead, h.meals))
+	mux.Handle("GET /api/v1/admin/intelligence/risks", adm(identity.PermIntelligenceRead, h.risks))
+	mux.Handle("GET /api/v1/admin/intelligence/risk-thresholds", adm(identity.PermIntelligenceRead, h.thresholds))
+	mux.Handle("PUT /api/v1/admin/intelligence/risk-thresholds/{key}", adm(identity.PermIntelligenceConfigure, h.setThreshold))
+	mux.Handle("GET /api/v1/admin/intelligence/opportunities", adm(identity.PermIntelligenceRead, h.opportunities))
+	mux.Handle("GET /api/v1/admin/intelligence/recommendations", adm(identity.PermIntelligenceRead, h.recommendations))
+	mux.Handle("POST /api/v1/admin/intelligence/recommendations", adm(identity.PermIntelligenceRecommendationReview, h.propose))
+	mux.Handle("POST /api/v1/admin/intelligence/recommendations/from-risk", adm(identity.PermIntelligenceRecommendationReview, h.saveRisk))
+	mux.Handle("POST /api/v1/admin/intelligence/recommendations/from-opportunity", adm(identity.PermIntelligenceRecommendationReview, h.saveOpportunity))
+	mux.Handle("GET /api/v1/admin/intelligence/recommendations/{id}", adm(identity.PermIntelligenceRead, h.recommendation))
+	mux.Handle("POST /api/v1/admin/intelligence/recommendations/{id}/{action}", adm(identity.PermIntelligenceRecommendationReview, h.reviewRecommendation))
+	mux.Handle("GET /api/v1/admin/intelligence/meal-proposals", adm(identity.PermIntelligenceOperationalRead, h.proposals))
+	mux.Handle("GET /api/v1/admin/intelligence/meal-proposals/evidence", adm(identity.PermIntelligenceOperationalRead, h.proposalEvidence))
+	mux.Handle("POST /api/v1/admin/intelligence/meal-proposals", adm(identity.PermIntelligenceRecommendationReview, h.createProposal))
+	mux.Handle("POST /api/v1/admin/intelligence/meal-proposals/generate", adm(identity.PermIntelligenceRecommendationReview, h.generateProposals))
+	mux.Handle("GET /api/v1/admin/intelligence/meal-proposals/{id}", adm(identity.PermIntelligenceOperationalRead, h.proposal))
+	mux.Handle("POST /api/v1/admin/intelligence/meal-proposals/{id}/{action}", adm(identity.PermIntelligenceRecommendationReview, h.transitionProposal))
 }
 
 // aiInfo: availability, the caller's usage and (for configure) the settings.
@@ -258,4 +278,174 @@ func (h *Handler) scenarioCompare(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := h.Box.Scenarios.Compare(r.Context(), b.VersionIDs)
 	reply(w, r, c, err)
+}
+
+func (h *Handler) meals(w http.ResponseWriter, r *http.Request) {
+	if !identity.PrincipalFrom(r.Context()).Can(identity.PermAnalyticsProductionRead) {
+		httpx.Fail(w, r, httpx.ErrForbidden)
+		return
+	}
+	q := r.URL.Query()
+	mi, err := h.Box.Meals(r.Context(), q.Get("from"), q.Get("to"))
+	reply(w, r, mi, err)
+}
+
+func (h *Handler) risks(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	risks, err := h.Box.Risks(r.Context(), identity.PrincipalFrom(r.Context()), q.Get("from"), q.Get("to"))
+	reply(w, r, map[string]any{"items": risks, "note": "Deterministic indicators with thresholds. No probabilities are given."}, err)
+}
+
+func (h *Handler) thresholds(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.ThresholdList(r.Context())
+	reply(w, r, map[string]any{"items": items}, err)
+}
+
+func (h *Handler) setThreshold(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Enabled  bool    `json:"enabled"`
+		Warn     float64 `json:"warn"`
+		Critical float64 `json:"critical"`
+		Note     string  `json:"note"`
+	}
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	t, err := h.Box.SetThreshold(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("key"), b.Enabled, b.Warn, b.Critical, b.Note)
+	reply(w, r, t, err)
+}
+
+func (h *Handler) opportunities(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	ops, err := h.Box.Opportunities(r.Context(), identity.PrincipalFrom(r.Context()), q.Get("from"), q.Get("to"))
+	reply(w, r, map[string]any{"items": ops, "note": caution}, err)
+}
+
+func (h *Handler) recommendations(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.Recommendations(r.Context(), identity.PrincipalFrom(r.Context()), r.URL.Query().Get("status"))
+	reply(w, r, map[string]any{"items": items, "advisory": Advisory}, err)
+}
+
+func (h *Handler) recommendation(w http.ResponseWriter, r *http.Request) {
+	rec, err := h.Box.Recommendation(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"))
+	reply(w, r, rec, err)
+}
+
+func (h *Handler) propose(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Domain  string `json:"domain"`
+		Title   string `json:"title"`
+		Summary string `json:"summary"`
+	}
+	if err := httpx.Decode(w, r, &b, 8<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	rec, err := h.Box.Propose(r.Context(), identity.PrincipalFrom(r.Context()), b.Domain, b.Title, b.Summary)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusCreated, rec)
+}
+
+type saveBody struct {
+	Key  string `json:"key"`
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func (h *Handler) saveFrom(w http.ResponseWriter, r *http.Request, fn func(context.Context, *identity.Principal, string, string, string) (*Recommendation, bool, error)) {
+	var b saveBody
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	rec, created, err := fn(r.Context(), identity.PrincipalFrom(r.Context()), b.Key, b.From, b.To)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	status := http.StatusOK
+	if created {
+		status = http.StatusCreated
+	}
+	httpx.JSON(w, r, status, rec)
+}
+
+func (h *Handler) saveRisk(w http.ResponseWriter, r *http.Request)        { h.saveFrom(w, r, h.Box.SaveRisk) }
+func (h *Handler) saveOpportunity(w http.ResponseWriter, r *http.Request) { h.saveFrom(w, r, h.Box.SaveOpportunity) }
+
+func (h *Handler) reviewRecommendation(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Note     string `json:"note"`
+		Assignee string `json:"assignee"`
+	}
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	rec, err := h.Box.ReviewRecommendation(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"), r.PathValue("action"), b.Note, b.Assignee)
+	reply(w, r, rec, err)
+}
+
+func (h *Handler) proposals(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.Proposals(r.Context(), r.URL.Query().Get("status"))
+	reply(w, r, map[string]any{"items": items, "required_approvals": RequiredApprovals}, err)
+}
+
+func (h *Handler) proposalEvidence(w http.ResponseWriter, r *http.Request) {
+	ev, err := h.Box.Evidence(r.Context())
+	reply(w, r, ev, err)
+}
+
+func (h *Handler) proposal(w http.ResponseWriter, r *http.Request) {
+	x, err := h.Box.Proposal(r.Context(), r.PathValue("id"))
+	reply(w, r, x, err)
+}
+
+func (h *Handler) createProposal(w http.ResponseWriter, r *http.Request) {
+	var in ProposalInput
+	if err := httpx.Decode(w, r, &in, 32<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	x, err := h.Box.CreateProposal(r.Context(), identity.PrincipalFrom(r.Context()), in)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusCreated, x)
+}
+
+// generateProposals also needs intelligence.ask (it calls the model).
+func (h *Handler) generateProposals(w http.ResponseWriter, r *http.Request) {
+	p := identity.PrincipalFrom(r.Context())
+	if !p.Can(identity.PermIntelligenceAsk) {
+		httpx.Fail(w, r, httpx.ErrForbidden)
+		return
+	}
+	var b struct {
+		Brief string `json:"brief"`
+	}
+	if err := httpx.Decode(w, r, &b, 8<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	items, run, err := h.Assistant.GenerateConcepts(r.Context(), p, b.Brief)
+	reply(w, r, map[string]any{"items": items, "run": run}, err)
+}
+
+func (h *Handler) transitionProposal(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Note     string `json:"note"`
+		RecipeID string `json:"recipe_id"`
+	}
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	x, err := h.Box.TransitionProposal(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"), r.PathValue("action"), b.Note, b.RecipeID)
+	reply(w, r, x, err)
 }

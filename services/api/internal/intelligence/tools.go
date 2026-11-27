@@ -22,6 +22,7 @@ import (
 
 	"mise.tt/api/internal/analytics"
 	"mise.tt/api/internal/behavior"
+	"mise.tt/api/internal/culinary"
 	"mise.tt/api/internal/finance"
 	"mise.tt/api/internal/finance/scenario"
 	"mise.tt/api/internal/forecasting"
@@ -166,6 +167,7 @@ type Toolbox struct {
 	Behavior    *behavior.Service
 	Forecasting *forecasting.Service
 	Scenarios   *scenario.Service
+	Culinary    *culinary.Service
 	Now         func() time.Time
 	AI          func(context.Context) AIStatus
 }
@@ -285,6 +287,12 @@ var Tools = []Tool{
 	{Name: "run_financial_scenario", Title: "Financial scenario", Domain: DomainFinancial, Requires: []identity.Permission{identity.PermIntelligenceScenarioRun},
 		Description: "Runs the deterministic scenario engine on observed values with a preset (base, conservative or optimistic): sales, costs, contribution, operating result, break-even subscriptions. Inputs that cannot be observed are reported missing and nothing is projected. Not a forecast.",
 		Args: []string{"preset", "horizon_days"}, run: scenarioTool},
+	{Name: "meal_intelligence", Title: "Meal intelligence", Domain: DomainOperational, Requires: []identity.Permission{identity.PermAnalyticsProductionRead},
+		Description: "Per meal: weeks on a published menu, kits ordered, kits per week on menu (availability-adjusted demand), repeat customers, waste records, recipe cost per serving, and labels (high demand, availability constrained, underperforming, high cost) with their rules.",
+		Args: []string{"from", "to"}, run: mealTool},
+	{Name: "business_risks", Title: "Business risks", Domain: DomainGeneral,
+		Description: "Deterministic risk indicators you may see (renewals, payment failures, refunds, ingredient costs, contribution margin, expired stock, supplier delays, waste, delivery failures, incomplete financial records, cash): value, comparison period, threshold, severity and review action. No probabilities.",
+		Args: []string{"from", "to"}, run: risksTool},
 	{Name: "knowledge_search", Title: "Knowledge search", Domain: DomainGeneral, Description: "Searches metric definitions and published help-centre articles.",
 		Args: []string{"query"}, Required: []string{"query"}, run: knowledgeTool},
 }
@@ -359,7 +367,7 @@ func (b *Toolbox) Run(ctx context.Context, p *identity.Principal, name string, r
 	if err != nil {
 		return nil, err
 	}
-	res, err := t.run(ctx, b, a)
+	res, err := t.run(context.WithValue(ctx, principalKey{}, p), b, a)
 	if err != nil {
 		return nil, err
 	}
@@ -717,5 +725,63 @@ func scenarioTool(ctx context.Context, b *Toolbox, a Args) (*Result, error) {
 	}
 	res.fact("scenario.break_even_subscriptions", "Break-even active subscriptions", be, "count", "", "Weekly fixed costs / contribution per active subscription per week, rounded up.")
 	res.Notes = append(res.Notes, proj.Assumptions...)
+	return res, nil
+}
+
+type principalKey struct{}
+
+func principalOf(ctx context.Context) *identity.Principal {
+	p, _ := ctx.Value(principalKey{}).(*identity.Principal)
+	return p
+}
+
+func mealTool(ctx context.Context, b *Toolbox, a Args) (*Result, error) {
+	mi, err := b.Meals(ctx, a.From, a.To)
+	if err != nil {
+		return nil, err
+	}
+	res := &Result{Evidence: Evidence{From: mi.From, To: mi.To, Freshness: b.Now(),
+		Sources: []string{"weekly_menus (published)", "order_items (confirmed orders)", "recipes and reference costs", "production_waste"}}}
+	res.Tables = []analytics.Table{mealsAsTable(mi)}
+	res.Limitations = append(res.Limitations, mi.Limitations...)
+	res.Notes = append(res.Notes, mi.Rules...)
+	w := float64(mi.WeeksInPeriod)
+	res.fact("meals.weeks_in_period", "Weeks with a published menu", &w, "count", "", "")
+	for _, m := range mi.Meals {
+		if m.KitsPerWeekOn != nil {
+			v := *m.KitsPerWeekOn
+			res.fact("meal."+m.Slug+".kits_per_week_on_menu", m.Name+": kits per week on menu", &v, "number", "", "Availability-adjusted demand.")
+		}
+	}
+	return res, nil
+}
+
+func risksTool(ctx context.Context, b *Toolbox, a Args) (*Result, error) {
+	p := principalOf(ctx)
+	if p == nil {
+		return nil, httpx.ErrForbidden
+	}
+	risks, err := b.Risks(ctx, p, a.From, a.To)
+	if err != nil {
+		return nil, err
+	}
+	res := &Result{Evidence: Evidence{Freshness: b.Now(), Sources: []string{"analytics metric registry", "finance summary", "intelligence_risk_thresholds"}}}
+	t := analytics.Table{Title: "Risk indicators", Note: "Deterministic indicators with thresholds; no probabilities.",
+		Columns: []string{"Risk", "Status", "Severity", "Measure", "Value", "Watch at", "High at", "Review"}}
+	for _, r := range risks {
+		res.Evidence.From, res.Evidence.To = r.From, r.To
+		v := "n/a"
+		if r.Value != nil {
+			v = strconv.FormatFloat(*r.Value, 'f', -1, 64)
+		}
+		t.Rows = append(t.Rows, []string{r.Title, r.Status, r.Severity, r.Measure, v, strconv.FormatFloat(r.Threshold.Warn, 'f', -1, 64),
+			strconv.FormatFloat(r.Threshold.Critical, 'f', -1, 64), r.ReviewAction})
+		res.fact("risk."+r.Key, r.Title, r.Value, r.Threshold.Unit, "", r.Explanation)
+		if r.Status == NotEval {
+			res.Limitations = append(res.Limitations, r.Title+": "+r.Explanation)
+		}
+	}
+	res.Tables = []analytics.Table{t}
+	res.Notes = append(res.Notes, "Only the indicators your permissions allow are listed.", "Thresholds marked as engineering defaults are not business-approved.")
 	return res, nil
 }

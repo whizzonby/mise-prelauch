@@ -1,7 +1,7 @@
 # Sprint 9.2 report: Mise Intelligence
 
 Branch `sprint-9.2/intelligence` (from `2274003`). Authorised 25 November 2026; completed 27 November 2026 (real date: the development
-PC's clock runs about a week behind, so some file and log dates read 20–21 November). Commit hash: recorded at the end of this report.
+PC's clock runs about a week behind, so some file and log dates read 20–21 November). Commit: `fb4fd5e` (end of this report).
 
 **Outcome.** Mise Intelligence is built and verified as an **admin-only**, **advisory** executive system inside the existing console:
 management finance, a deterministic scenario engine, first-party behaviour events and segments, meal and operational intelligence,
@@ -263,5 +263,6 @@ Flutter app needs nothing from this sprint. **Sprint 10 was not started** and ne
 
 ---
 
-Working tree at the time of the final commit: clean apart from the commit itself (see below). Commit hash: recorded in the follow-up
-commit.
+**Commit**: `fb4fd5e` (final Sprint 9.2 commit, 27 November 2026) on `sprint-9.2/intelligence`, after the stage checkpoints `c7c7d73`,
+`83946b1`, `e13c634`, `d9d9464`, `658029f`, `76b1871`, `39fc08b`, `9da1f1c`, `b9b1ad3`. Working tree after the commit: clean
+(`git status --short` empty). This note is the only change in the follow-up commit. Not pushed: pushing needs the owner's go-ahead.

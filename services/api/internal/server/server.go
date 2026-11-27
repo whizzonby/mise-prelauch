@@ -127,6 +127,22 @@ func NewFinance(pool *pgxpool.Pool, com *Commerce) *finance.Service {
 }
 
 // NewLaunch builds the launch readiness service from configuration.
+// NewToolbox is Mise Intelligence over the authoritative services, with its assistant.
+func NewToolbox(cfg config.Config, pool *pgxpool.Pool, com *Commerce, an *analytics.Service, fin *finance.Service, bx *behavior.Service, fc *forecasting.Service) (*intelligence.Toolbox, *intelligence.Assistant) {
+	now := func() time.Time { return com.Service.Now() }
+	box := &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
+		Scenarios: &scenario.Service{Pool: pool, Finance: fin, Now: now}, Culinary: culinaryFor(pool, com), Now: now}
+	asst := NewAssistant(cfg, box)
+	box.AI = asst.Status
+	return box, asst
+}
+
+// NewBriefings is the scheduled briefing sender (worker).
+func NewBriefings(cfg config.Config, pool *pgxpool.Pool, com *Commerce, an *analytics.Service, ids *identity.Service, mailer intelligence.Mailer) *intelligence.BriefingSender {
+	box, _ := NewToolbox(cfg, pool, com, an, NewFinance(pool, com), NewBehavior(pool, com), NewForecasting(pool, com))
+	return &intelligence.BriefingSender{Box: box, Mailer: mailer, Contacts: staffContacts{pool: pool, ids: ids}, AppURL: cfg.AdminAppURL}
+}
+
 // NewAssistant is Ask Mise AI over the configured provider (none: AI unavailable).
 func NewAssistant(cfg config.Config, box *intelligence.Toolbox) *intelligence.Assistant {
 	a := &intelligence.Assistant{Box: box, Model: cfg.AI.Model}
@@ -454,12 +470,7 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
 	fin, bx := NewFinance(pool, com), NewBehavior(pool, com)
 	(&finance.Handler{S: fin, Identity: ids}).Routes(mux)
-	box := &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
-		Scenarios: &scenario.Service{Pool: pool, Finance: fin, Now: func() time.Time { return com.Service.Now() }},
-		Culinary:  culinaryFor(pool, com),
-		Now:       func() time.Time { return com.Service.Now() }}
-	asst := NewAssistant(cfg, box)
-	box.AI = asst.Status
+	box, asst := NewToolbox(cfg, pool, com, an, fin, bx, fc)
 	(&intelligence.Handler{Box: box, Assistant: asst, Identity: ids}).Routes(mux)
 	(&behavior.Handler{S: bx, Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
 

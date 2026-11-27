@@ -7869,6 +7869,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/briefings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_executive.read. Briefing versions, newest first. */
+        get: operations["intelligenceBriefings"];
+        put?: never;
+        /** @description Needs intelligence_executive.read. Computes the briefing for the last complete period; stores a new version (201) unless identical content exists (200, the existing version). */
+        post: operations["intelligenceGenerateBriefing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/briefings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_executive.read. One briefing version. */
+        get: operations["intelligenceBriefing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/briefings/{id}/narrative": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_executive.read and intelligence.ask. Adds an AI narrative to the version (once; numbers not in the briefing are marked [unverified]). 503 ai_unavailable when AI is not available; 502 ai_failed when the provider fails. */
+        post: operations["intelligenceBriefingNarrative"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/briefing-schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_executive.read. The daily, weekly and monthly schedules (disabled as shipped). */
+        get: operations["intelligenceBriefingSchedules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/briefing-schedules/{cadence}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Needs intelligence.configure. Recipients are staff account ids allowed to read executive intelligence; turning a schedule on needs recipients and an approval reference (audited). */
+        put: operations["intelligenceSetBriefingSchedule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -14831,6 +14917,80 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             events: components["schemas"]["IntelligenceReviewEvent"][];
+        };
+        IntelligenceBriefingMetric: {
+            id: string;
+            name: string;
+            unit: string;
+            current: number | null;
+            previous: number | null;
+            change_pct: number | null;
+            definition: string;
+        };
+        IntelligenceBriefingItem: {
+            title: string;
+            detail: string;
+            href?: string;
+            level?: string;
+        };
+        IntelligenceBriefing: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            cadence: "daily" | "weekly" | "monthly";
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            version: number;
+            input_hash: string;
+            content: {
+                cadence: string;
+                /** Format: date */
+                from: string;
+                /** Format: date */
+                to: string;
+                /** Format: date */
+                previous_from: string;
+                /** Format: date */
+                previous_to: string;
+                performance: components["schemas"]["IntelligenceBriefingMetric"][];
+                significant_changes: components["schemas"]["IntelligenceBriefingItem"][];
+                financial_position: components["schemas"]["IntelligenceBriefingItem"][];
+                customer_trends: components["schemas"]["IntelligenceBriefingMetric"][];
+                operational_exceptions: components["schemas"]["IntelligenceBriefingItem"][];
+                key_risks: components["schemas"]["IntelligenceBriefingItem"][];
+                growth_opportunities: components["schemas"]["IntelligenceBriefingItem"][];
+                recommended_actions: components["schemas"]["IntelligenceBriefingItem"][];
+                data_limitations: string[];
+                statement: string;
+            };
+            narrative: {
+                text: string;
+                model: string;
+                prompt_version: string;
+                validation: {
+                    [key: string]: unknown;
+                };
+                /** Format: date-time */
+                generated_at: string;
+            } | null;
+            ai_note: string;
+            /** @enum {string} */
+            source: "manual" | "schedule";
+            created: boolean;
+            /** Format: date-time */
+            created_at: string;
+        };
+        IntelligenceBriefingSchedule: {
+            cadence: string;
+            enabled: boolean;
+            recipients: string[];
+            approval_ref: string;
+            /** Format: date */
+            last_period_from: string | null;
+            /** Format: date-time */
+            updated_at: string;
         };
     };
     responses: {
@@ -31513,6 +31673,206 @@ export interface operations {
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceBriefings: {
+        parameters: {
+            query?: {
+                cadence?: "daily" | "weekly" | "monthly";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceBriefing"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceGenerateBriefing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    cadence: "daily" | "weekly" | "monthly";
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceBriefing"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceBriefing"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceBriefing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceBriefing"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    intelligenceBriefingNarrative: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceBriefing"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            502: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    intelligenceBriefingSchedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceBriefingSchedule"][];
+                            note: string;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceSetBriefingSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cadence: "daily" | "weekly" | "monthly";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    enabled: boolean;
+                    recipients?: string[];
+                    approval_ref?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceBriefingSchedule"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
             422: components["responses"]["Error"];
         };
     };

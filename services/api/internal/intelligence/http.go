@@ -60,6 +60,14 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("POST /api/v1/admin/intelligence/meal-proposals/generate", adm(identity.PermIntelligenceRecommendationReview, h.generateProposals))
 	mux.Handle("GET /api/v1/admin/intelligence/meal-proposals/{id}", adm(identity.PermIntelligenceOperationalRead, h.proposal))
 	mux.Handle("POST /api/v1/admin/intelligence/meal-proposals/{id}/{action}", adm(identity.PermIntelligenceRecommendationReview, h.transitionProposal))
+
+	// Stage 8: executive briefings.
+	mux.Handle("GET /api/v1/admin/intelligence/briefings", adm(identity.PermIntelligenceExecutiveRead, h.briefings))
+	mux.Handle("POST /api/v1/admin/intelligence/briefings", adm(identity.PermIntelligenceExecutiveRead, h.generateBriefing))
+	mux.Handle("GET /api/v1/admin/intelligence/briefings/{id}", adm(identity.PermIntelligenceExecutiveRead, h.briefing))
+	mux.Handle("POST /api/v1/admin/intelligence/briefings/{id}/narrative", adm(identity.PermIntelligenceExecutiveRead, h.narrate))
+	mux.Handle("GET /api/v1/admin/intelligence/briefing-schedules", adm(identity.PermIntelligenceExecutiveRead, h.schedules))
+	mux.Handle("PUT /api/v1/admin/intelligence/briefing-schedules/{cadence}", adm(identity.PermIntelligenceConfigure, h.setSchedule))
 }
 
 // aiInfo: availability, the caller's usage and (for configure) the settings.
@@ -448,4 +456,78 @@ func (h *Handler) transitionProposal(w http.ResponseWriter, r *http.Request) {
 	}
 	x, err := h.Box.TransitionProposal(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"), r.PathValue("action"), b.Note, b.RecipeID)
 	reply(w, r, x, err)
+}
+
+func (h *Handler) withAINote(ctx context.Context, b *Briefing) *Briefing {
+	if b != nil && b.Narrative == nil {
+		if st := h.Assistant.Status(ctx); st.Available {
+			b.AINote = "No AI narrative yet for this version."
+		} else {
+			b.AINote = "AI unavailable: " + st.Reason + " The briefing is complete without it."
+		}
+	}
+	return b
+}
+
+func (h *Handler) briefings(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.Briefings(r.Context(), r.URL.Query().Get("cadence"))
+	for _, b := range items {
+		h.withAINote(r.Context(), b)
+	}
+	reply(w, r, map[string]any{"items": items}, err)
+}
+
+func (h *Handler) generateBriefing(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Cadence string `json:"cadence"`
+	}
+	if err := httpx.Decode(w, r, &b, 1<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	br, err := h.Box.GenerateBriefing(r.Context(), identity.PrincipalFrom(r.Context()).UserID, b.Cadence, "manual")
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	status := http.StatusOK
+	if br.Created {
+		status = http.StatusCreated
+	}
+	httpx.JSON(w, r, status, h.withAINote(r.Context(), br))
+}
+
+func (h *Handler) briefing(w http.ResponseWriter, r *http.Request) {
+	br, err := h.Box.GetBriefing(r.Context(), r.PathValue("id"))
+	reply(w, r, h.withAINote(r.Context(), br), err)
+}
+
+// narrate also needs intelligence.ask (it calls the model).
+func (h *Handler) narrate(w http.ResponseWriter, r *http.Request) {
+	p := identity.PrincipalFrom(r.Context())
+	if !p.Can(identity.PermIntelligenceAsk) {
+		httpx.Fail(w, r, httpx.ErrForbidden)
+		return
+	}
+	br, err := h.Assistant.Narrate(r.Context(), p, r.PathValue("id"))
+	reply(w, r, br, err)
+}
+
+func (h *Handler) schedules(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.Schedules(r.Context())
+	reply(w, r, map[string]any{"items": items, "note": "Schedules ship disabled. Recipients are staff accounts allowed to read executive intelligence, checked again before each email."}, err)
+}
+
+func (h *Handler) setSchedule(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Enabled     bool     `json:"enabled"`
+		Recipients  []string `json:"recipients"`
+		ApprovalRef string   `json:"approval_ref"`
+	}
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	s, err := h.Box.SetSchedule(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("cadence"), b.Enabled, b.Recipients, b.ApprovalRef)
+	reply(w, r, s, err)
 }

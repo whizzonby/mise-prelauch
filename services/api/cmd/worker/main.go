@@ -112,6 +112,9 @@ func run() error {
 	au, reports := server.NewAutomation(cfg, pool, com, bo, ids, an, reportMailer)
 	// Sprint 9.2: intelligence runs past the retention setting are deleted.
 	runsRetention := &intelligence.Assistant{Box: &intelligence.Toolbox{Pool: pool, Now: time.Now}}
+	// Sprint 9.2: executive briefings on approved schedules (disabled until configured).
+	briefings := server.NewBriefings(cfg, pool, com, an, ids, reportMailer)
+	runner.Register(intelligence.JobBriefingEmail, briefings.Handle)
 	runner.Register(automation.JobExecute, au.HandleExecute)
 	runner.Register(automation.JobEvent, au.HandleEvent)
 	runner.Register(automation.JobReportEmail, reports.HandleEmail)
@@ -127,6 +130,9 @@ func run() error {
 			}
 			if _, err := reports.Due(ctx); err != nil && ctx.Err() == nil {
 				slog.ErrorContext(ctx, "scheduled reports failed", "error", err.Error())
+			}
+			if _, err := briefings.Box.DueBriefings(ctx); err != nil && ctx.Err() == nil {
+				slog.ErrorContext(ctx, "scheduled briefings failed", "error", err.Error())
 			}
 			if n, err := runsRetention.Purge(ctx); err != nil && ctx.Err() == nil {
 				slog.ErrorContext(ctx, "intelligence retention failed", "error", err.Error())

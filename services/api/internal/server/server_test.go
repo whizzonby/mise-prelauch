@@ -157,6 +157,9 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		`INSERT INTO support_chat_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
 		// Sprint 9.2: AI ships switched off with no budget (TRUNCATE users CASCADE empties it).
 		`TRUNCATE intelligence_runs, intelligence_recommendations, intelligence_meal_proposals CASCADE`,
+		`TRUNCATE intelligence_briefings CASCADE`,
+		`INSERT INTO intelligence_briefing_schedules (cadence) VALUES ('daily'), ('weekly'), ('monthly')
+			ON CONFLICT (cadence) DO UPDATE SET enabled = false, recipients = '{}', approval_ref = '', last_period_from = NULL, updated_by = NULL`,
 		`INSERT INTO intelligence_risk_thresholds (key, warn, critical) VALUES ('renewals_declining', -10, -25), ('payment_failures', 3, 10),
 			('refunds_growing', 5, 10), ('ingredient_costs_rising', 5, 15), ('contribution_falling', -5, -10), ('inventory_expiry', 1, 5),
 			('supplier_delays', 90, 75), ('excessive_waste', 5, 10), ('delivery_failures', 95, 85), ('incomplete_financial_records', 1, 4), ('cash_shortage', 13, 4)

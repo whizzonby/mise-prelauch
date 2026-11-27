@@ -14119,6 +14119,153 @@ paths:
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/briefings:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceBriefings
+      description: "Needs intelligence_executive.read. Briefing versions, newest first."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: cadence, in: query, required: false, schema: { type: string, enum: [daily, weekly, monthly] } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefing" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceGenerateBriefing
+      description: "Needs intelligence_executive.read. Computes the briefing for the last complete period; stores a new version (201) unless identical content exists (200, the existing version)."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [cadence], properties: { cadence: { type: string, enum: [daily, weekly, monthly] } } }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceBriefing" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceBriefing" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/briefings/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceBriefing
+      description: "Needs intelligence_executive.read. One briefing version."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceBriefing" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/briefings/{id}/narrative:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceBriefingNarrative
+      description: "Needs intelligence_executive.read and intelligence.ask. Adds an AI narrative to the version (once; numbers not in the briefing are marked [unverified]). 503 ai_unavailable when AI is not available; 502 ai_failed when the provider fails."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceBriefing" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/briefing-schedules:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceBriefingSchedules
+      description: "Needs intelligence_executive.read. The daily, weekly and monthly schedules (disabled as shipped)."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items, note], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingSchedule" } }, note: { type: string } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/briefing-schedules/{cadence}:
+    put:
+      tags: [admin-intelligence]
+      operationId: intelligenceSetBriefingSchedule
+      description: "Needs intelligence.configure. Recipients are staff account ids allowed to read executive intelligence; turning a schedule on needs recipients and an approval reference (audited)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: cadence, in: path, required: true, schema: { type: string, enum: [daily, weekly, monthly] } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [enabled], properties: { enabled: { type: boolean }, recipients: { type: array, maxItems: 20, items: { type: string, format: uuid } }, approval_ref: { type: string, maxLength: 300 } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceBriefingSchedule" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -21828,3 +21975,75 @@ components:
         cost_note: { type: string }
         created_at: { type: string, format: date-time }
         events: { type: array, items: { $ref: "#/components/schemas/IntelligenceReviewEvent" } }
+    IntelligenceBriefingMetric:
+      type: object
+      required: [id, name, unit, current, previous, change_pct, definition]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        unit: { type: string }
+        current: { type: number, nullable: true }
+        previous: { type: number, nullable: true }
+        change_pct: { type: number, nullable: true }
+        definition: { type: string }
+    IntelligenceBriefingItem:
+      type: object
+      required: [title, detail]
+      properties:
+        title: { type: string }
+        detail: { type: string }
+        href: { type: string }
+        level: { type: string }
+    IntelligenceBriefing:
+      type: object
+      required: [id, cadence, from, to, version, input_hash, content, narrative, ai_note, source, created, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        cadence: { type: string, enum: [daily, weekly, monthly] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        version: { type: integer }
+        input_hash: { type: string }
+        content:
+          type: object
+          required: [cadence, from, to, previous_from, previous_to, performance, significant_changes, financial_position, customer_trends, operational_exceptions, key_risks, growth_opportunities, recommended_actions, data_limitations, statement]
+          properties:
+            cadence: { type: string }
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            previous_from: { type: string, format: date }
+            previous_to: { type: string, format: date }
+            performance: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingMetric" } }
+            significant_changes: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            financial_position: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            customer_trends: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingMetric" } }
+            operational_exceptions: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            key_risks: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            growth_opportunities: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            recommended_actions: { type: array, items: { $ref: "#/components/schemas/IntelligenceBriefingItem" } }
+            data_limitations: { type: array, items: { type: string } }
+            statement: { type: string }
+        narrative:
+          type: object
+          nullable: true
+          required: [text, model, prompt_version, validation, generated_at]
+          properties:
+            text: { type: string }
+            model: { type: string }
+            prompt_version: { type: string }
+            validation: { type: object, additionalProperties: true }
+            generated_at: { type: string, format: date-time }
+        ai_note: { type: string }
+        source: { type: string, enum: [manual, schedule] }
+        created: { type: boolean }
+        created_at: { type: string, format: date-time }
+    IntelligenceBriefingSchedule:
+      type: object
+      required: [cadence, enabled, recipients, approval_ref, last_period_from, updated_at]
+      properties:
+        cadence: { type: string }
+        enabled: { type: boolean }
+        recipients: { type: array, items: { type: string, format: uuid } }
+        approval_ref: { type: string }
+        last_period_from: { type: string, format: date, nullable: true }
+        updated_at: { type: string, format: date-time }

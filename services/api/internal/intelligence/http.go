@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"mise.tt/api/internal/finance/scenario"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/platform/httpx"
 )
@@ -28,6 +29,17 @@ func (h *Handler) Routes(mux httpx.Router) {
 	mux.Handle("GET /api/v1/admin/intelligence/runs", adm(identity.PermIntelligenceRead, h.runs))
 	mux.Handle("GET /api/v1/admin/intelligence/runs/{id}", adm(identity.PermIntelligenceRead, h.getRun))
 	mux.Handle("POST /api/v1/admin/intelligence/runs/{id}/review", adm(identity.PermIntelligenceRead, h.reviewRun))
+
+	// Scenarios (Stage 6): deterministic and advisory; they change no record but their own.
+	mux.Handle("GET /api/v1/admin/intelligence/scenarios/observed", adm(identity.PermIntelligenceScenarioRun, h.scenarioObserved))
+	mux.Handle("POST /api/v1/admin/intelligence/scenarios/run", adm(identity.PermIntelligenceScenarioRun, h.scenarioRun))
+	mux.Handle("POST /api/v1/admin/intelligence/scenarios/compare", adm(identity.PermIntelligenceScenarioRun, h.scenarioCompare))
+	mux.Handle("GET /api/v1/admin/intelligence/scenarios", adm(identity.PermIntelligenceScenarioRun, h.scenarioList))
+	mux.Handle("POST /api/v1/admin/intelligence/scenarios", adm(identity.PermIntelligenceScenarioRun, h.scenarioCreate))
+	mux.Handle("GET /api/v1/admin/intelligence/scenarios/{id}", adm(identity.PermIntelligenceScenarioRun, h.scenarioGet))
+	mux.Handle("POST /api/v1/admin/intelligence/scenarios/{id}/versions", adm(identity.PermIntelligenceScenarioRun, h.scenarioVersion))
+	mux.Handle("POST /api/v1/admin/intelligence/scenarios/{id}/archive", adm(identity.PermIntelligenceScenarioRun, h.scenarioArchive))
+	mux.Handle("GET /api/v1/admin/intelligence/scenario-versions/{id}", adm(identity.PermIntelligenceScenarioRun, h.scenarioVersionGet))
 }
 
 // aiInfo: availability, the caller's usage and (for configure) the settings.
@@ -144,4 +156,106 @@ func (h *Handler) run(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) readiness(w http.ResponseWriter, r *http.Request) {
 	rd, err := h.Box.Readiness(r.Context())
 	reply(w, r, rd, err)
+}
+
+func (h *Handler) scenarioObserved(w http.ResponseWriter, r *http.Request) {
+	months, _ := strconv.Atoi(r.URL.Query().Get("months"))
+	obs, err := h.Box.Scenarios.Observe(r.Context(), months)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	kinds := []map[string]any{}
+	for _, k := range []string{"price_increase", "customer_growth", "churn_change", "ingredient_cost", "hire", "kitchen_expansion",
+		"delivery_expansion", "new_meal_kit", "marketing", "supplier_change"} {
+		kinds = append(kinds, map[string]any{"kind": k, "params": scenario.ChangeKinds[k]})
+	}
+	vars := []map[string]any{}
+	for _, v := range scenario.Variables {
+		vars = append(vars, map[string]any{"key": v.Key, "label": v.Label, "unit": v.Unit, "required": v.Required, "description": v.Description, "min": v.Min, "max": v.Max})
+	}
+	reply(w, r, map[string]any{"observed": obs, "variables": vars, "horizons": scenario.Horizons, "change_kinds": kinds,
+		"presets": []string{scenario.Base, scenario.Conservative, scenario.Optimistic, scenario.Custom}, "preset_note": scenario.PresetNote,
+		"engine_version": scenario.EngineVersion}, nil)
+}
+
+type scenarioBody struct {
+	scenario.Request
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Note        string `json:"note"`
+}
+
+func (h *Handler) scenarioRun(w http.ResponseWriter, r *http.Request) {
+	var b scenario.Request
+	if err := httpx.Decode(w, r, &b, 32<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	p, _, err := h.Box.Scenarios.Resolve(r.Context(), b)
+	reply(w, r, p, err)
+}
+
+func (h *Handler) scenarioCreate(w http.ResponseWriter, r *http.Request) {
+	var b scenarioBody
+	if err := httpx.Decode(w, r, &b, 32<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	sc, err := h.Box.Scenarios.Create(r.Context(), identity.PrincipalFrom(r.Context()), b.Name, b.Description, b.Request)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, r, http.StatusCreated, sc)
+}
+
+func (h *Handler) scenarioVersion(w http.ResponseWriter, r *http.Request) {
+	var b scenarioBody
+	if err := httpx.Decode(w, r, &b, 32<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	v, err := h.Box.Scenarios.AddVersion(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"), b.Request, b.Note)
+	reply(w, r, v, err)
+}
+
+func (h *Handler) scenarioList(w http.ResponseWriter, r *http.Request) {
+	items, err := h.Box.Scenarios.List(r.Context(), r.URL.Query().Get("archived") == "true")
+	reply(w, r, map[string]any{"items": items}, err)
+}
+
+func (h *Handler) scenarioGet(w http.ResponseWriter, r *http.Request) {
+	sc, err := h.Box.Scenarios.Get(r.Context(), r.PathValue("id"))
+	reply(w, r, sc, err)
+}
+
+func (h *Handler) scenarioArchive(w http.ResponseWriter, r *http.Request) {
+	sc, err := h.Box.Scenarios.Archive(r.Context(), identity.PrincipalFrom(r.Context()), r.PathValue("id"))
+	reply(w, r, sc, err)
+}
+
+// scenarioVersionGet returns a stored version and whether recomputing it
+// from its stored inputs gives the stored output (reproducibility).
+func (h *Handler) scenarioVersionGet(w http.ResponseWriter, r *http.Request) {
+	v, err := h.Box.Scenarios.GetVersion(r.Context(), r.PathValue("id"))
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	again, _ := json.Marshal(h.Box.Scenarios.Rerun(v))
+	stored, _ := json.Marshal(v.Projection.Output)
+	reply(w, r, map[string]any{"version": v, "reproduced": v.EngineVersion == scenario.EngineVersion && string(again) == string(stored)}, nil)
+}
+
+func (h *Handler) scenarioCompare(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		VersionIDs []string `json:"version_ids"`
+	}
+	if err := httpx.Decode(w, r, &b, 4<<10); err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	c, err := h.Box.Scenarios.Compare(r.Context(), b.VersionIDs)
+	reply(w, r, c, err)
 }

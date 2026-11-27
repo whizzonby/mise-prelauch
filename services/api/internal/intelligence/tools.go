@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"mise.tt/api/internal/analytics"
 	"mise.tt/api/internal/behavior"
 	"mise.tt/api/internal/finance"
+	"mise.tt/api/internal/finance/scenario"
 	"mise.tt/api/internal/forecasting"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/platform/httpx"
@@ -93,6 +95,8 @@ type Args struct {
 	Zone     string `json:"zone,omitempty"`
 	Supplier string `json:"supplier,omitempty"`
 	Query    string `json:"query,omitempty"`
+	Preset   string `json:"preset,omitempty"`
+	Horizon  string `json:"horizon_days,omitempty"`
 }
 
 var argDescriptions = map[string]string{
@@ -100,6 +104,8 @@ var argDescriptions = map[string]string{
 	"to":   "End date YYYY-MM-DD, inclusive. Default: today. At most two years after from.",
 	"plan": "Plan slug filter.", "meal": "Meal slug filter.", "zone": "Delivery zone filter.", "supplier": "Supplier filter.",
 	"query": "Search words (3 to 200 characters).",
+	"preset": "Scenario preset: base (observed values), conservative or optimistic (illustrative multipliers). Default base.",
+	"horizon_days": "Projection horizon in days: 30, 60, 90, 182 or 365. Default 90.",
 }
 
 // Tool is one read-only tool.
@@ -159,6 +165,7 @@ type Toolbox struct {
 	Finance     *finance.Service
 	Behavior    *behavior.Service
 	Forecasting *forecasting.Service
+	Scenarios   *scenario.Service
 	Now         func() time.Time
 	AI          func(context.Context) AIStatus
 }
@@ -275,6 +282,9 @@ var Tools = []Tool{
 		run:         forecastTool},
 	{Name: "data_readiness", Title: "Data readiness", Domain: DomainGeneral, Description: "Which data Mise Intelligence can rely on: real vs test payments, expense coverage, demand history, behaviour data, supplier costs, delivery costs, forecasting, AI availability.",
 		run: readinessTool},
+	{Name: "run_financial_scenario", Title: "Financial scenario", Domain: DomainFinancial, Requires: []identity.Permission{identity.PermIntelligenceScenarioRun},
+		Description: "Runs the deterministic scenario engine on observed values with a preset (base, conservative or optimistic): sales, costs, contribution, operating result, break-even subscriptions. Inputs that cannot be observed are reported missing and nothing is projected. Not a forecast.",
+		Args: []string{"preset", "horizon_days"}, run: scenarioTool},
 	{Name: "knowledge_search", Title: "Knowledge search", Domain: DomainGeneral, Description: "Searches metric definitions and published help-centre articles.",
 		Args: []string{"query"}, Required: []string{"query"}, run: knowledgeTool},
 }
@@ -647,4 +657,65 @@ func dedupe(s []string) []string {
 		}
 	}
 	return out
+}
+
+func scenarioTool(ctx context.Context, b *Toolbox, a Args) (*Result, error) {
+	h := 90
+	if a.Horizon != "" {
+		n, err := strconv.Atoi(a.Horizon)
+		if err != nil {
+			return nil, argErr("args.horizon_days", "Use 30, 60, 90, 182 or 365.")
+		}
+		h = n
+	}
+	if a.Preset == scenario.Custom {
+		return nil, argErr("args.preset", "Use base, conservative or optimistic.")
+	}
+	proj, _, err := b.Scenarios.Resolve(ctx, scenario.Request{HorizonDays: h, Preset: a.Preset})
+	if err != nil {
+		return nil, err
+	}
+	o := proj.Output
+	res := &Result{Title: "Financial scenario (" + proj.Preset + ")", Evidence: Evidence{From: proj.Observed.From, To: proj.Observed.To,
+		Filters:   map[string]string{"preset": proj.Preset, "horizon_days": strconv.Itoa(h), "engine": o.EngineVersion, "input_hash": o.InputHash},
+		Freshness: proj.Observed.GeneratedAt, Sources: []string{"scenario engine " + o.EngineVersion, "observed inputs " + proj.Observed.From + " to " + proj.Observed.To}}}
+	res.Limitations = append(append([]string{o.Statement, scenario.PresetNote}, o.Limitations...), proj.Observed.Notes...)
+	if !o.Complete {
+		res.Limitations = append(res.Limitations, "Missing inputs: "+strings.Join(o.Missing, ", ")+". Nothing was projected.")
+	}
+	t := analytics.Table{Title: "Inputs", Columns: []string{"Input", "Value", "Unit", "Source", "Basis"}}
+	for _, in := range proj.Inputs {
+		v := "missing"
+		var f *float64
+		if in.Value != nil {
+			v = strconv.FormatInt(*in.Value, 10)
+			f = f64(*in.Value)
+		}
+		t.Rows = append(t.Rows, []string{in.Label, v, in.Unit, in.Source, in.Basis})
+		cur := ""
+		if in.Unit == scenario.Minor {
+			cur = finance.Currency
+		}
+		res.fact("input."+in.Key, in.Label, f, in.Unit, cur, in.Source)
+	}
+	res.Tables = []analytics.Table{t}
+	total := func(get func(*scenario.Totals) int64) *float64 {
+		if !o.Complete || o.Totals == nil {
+			return nil
+		}
+		return f64(get(o.Totals))
+	}
+	res.fact("scenario.sales", "Projected sales", total(func(t *scenario.Totals) int64 { return t.Sales }), "money_minor", finance.Currency, "Over the horizon.")
+	res.fact("scenario.variable_costs", "Projected variable costs", total(func(t *scenario.Totals) int64 { return t.VariableCosts }), "money_minor", finance.Currency, "")
+	res.fact("scenario.contribution", "Projected contribution", total(func(t *scenario.Totals) int64 { return t.Contribution }), "money_minor", finance.Currency, "")
+	res.fact("scenario.fixed_costs", "Projected fixed costs", total(func(t *scenario.Totals) int64 { return t.FixedCosts }), "money_minor", finance.Currency, "")
+	res.fact("scenario.operating_result", "Projected operating result", total(func(t *scenario.Totals) int64 { return t.OperatingResult }), "money_minor", finance.Currency, "")
+	res.fact("scenario.end_active_subscriptions", "Active subscriptions at the end", total(func(t *scenario.Totals) int64 { return t.EndActive }), "count", "", "")
+	var be *float64
+	if o.Complete && o.BreakEven != nil && o.BreakEven.Subscriptions != nil {
+		be = f64(*o.BreakEven.Subscriptions)
+	}
+	res.fact("scenario.break_even_subscriptions", "Break-even active subscriptions", be, "count", "", "Weekly fixed costs / contribution per active subscription per week, rounded up.")
+	res.Notes = append(res.Notes, proj.Assumptions...)
+	return res, nil
 }

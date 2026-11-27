@@ -152,7 +152,20 @@ Resume from the first unchecked item.
   availability; provider failure; answer with evidence, usage and cost; fabricated number/citation regenerated then removed; history
   scope and review; prompt injection cannot reach finance tools, unknown tools or extra arguments; tool-call cap; daily limit; budget;
   retention). Streaming is in the adapter; the ask endpoint returns the validated answer only (unvalidated numbers are never shown).
-- [ ] Stage 6 — Scenario engine, presets, what-if, comparison, versions; tests
+- [x] Stage 6 — Scenario engine, presets, what-if, comparison, versions; tests — 27 Nov (real date): `internal/finance/scenario`
+  (engine.go: 16 inputs, exact `math/big` arithmetic, weekly steps over 30/60/90/182/365 days, half-away-from-zero rounding per week,
+  totals = sums of the rounded weeks, drift-free fixed costs, capacity breaches, cash view only with an opening balance, peak cash need,
+  break-even subscriptions rounded up, engine version `scenario-v1`, SHA-256 input hash; nothing projected while a required input is
+  missing. whatif.go: presets base/conservative/optimistic as labelled multipliers ("not probabilities"), 10 what-if kinds as assumption
+  deltas, refused on missing inputs or unknown params. service.go: observed inputs over the last complete calendar months (real
+  subscriptions = a real paid billing cycle; costs only from complete finance lines; per-kit costs divide by all paid kits since test
+  orders used real ingredients; nil with the reason otherwise; capacity never observed), resolve order observed → preset → entered →
+  what-if, saved scenarios and immutable versions (identical inputs return the existing version), rerun = stored output, compare 2-4,
+  archive; audited). Migration 00020. 9 routes under `/admin/intelligence/scenarios*` and `scenario-versions/{id}` (intelligence_scenario.run;
+  OpenAPI + client); AI tool `run_financial_scenario` (18 tools). Tests: engine_test.go (hand arithmetic, reproducibility, hash, missing
+  inputs, drift, cash, capacity, no break-even, rounding, validation, presets, what-ifs) and intelligence_scenario_test.go (observed
+  missing-not-zero, incomplete run, full run, refusals, save/dedupe/version/reproduce/compare/archive/audit, access by role, the AI tool,
+  test-paid subscriptions not counted).
 - [ ] Stage 7 — Meal proposals; operational intelligence; risks and opportunities; recommendations; tests
 - [ ] Stage 8 — Briefings; command center and finance UI
 - [ ] Stage 9 — Docs, security and AI evaluation, Playwright, regression, screenshots, report, commit

@@ -7475,6 +7475,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/scenarios/observed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_scenario.run. The observed starting values (last complete calendar months; null with the reason when the records cannot support a value, never zero), the engine's inputs, horizons, presets and what-if change kinds. */
+        get: operations["scenarioObserved"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_scenario.run. Runs a scenario without saving it: observed values, then the preset, then entered assumptions, then what-if changes. Deterministic; nothing is projected while a required input is missing. */
+        post: operations["scenarioRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_scenario.run. Puts 2 to 4 stored versions side by side. */
+        post: operations["scenarioCompare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_scenario.run. Saved scenarios (archived ones with archived=true). */
+        get: operations["scenarioList"];
+        put?: never;
+        /** @description Needs intelligence_scenario.run. Saves a scenario with its first version (audited). */
+        post: operations["scenarioCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_scenario.run. A scenario with all its versions, newest first. */
+        get: operations["scenarioGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_scenario.run. Stores a new version (observed values are read again). Identical inputs return the existing version with created false. */
+        post: operations["scenarioAddVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenarios/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence_scenario.run. Archives a scenario (versions are kept). */
+        post: operations["scenarioArchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/scenario-versions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence_scenario.run. One stored version, and whether recomputing it from its stored inputs reproduces its stored output. */
+        get: operations["scenarioVersionGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -14063,6 +14200,197 @@ export interface components {
             error: string;
             /** Format: date-time */
             created_at: string;
+        };
+        ScenarioRequest: {
+            /** @enum {integer} */
+            horizon_days: 30 | 60 | 90 | 182 | 365;
+            /** @enum {string} */
+            preset?: "base" | "conservative" | "optimistic" | "custom";
+            observed_months?: number;
+            /** @description Entered assumptions by input key; they replace observed and preset values. */
+            values?: {
+                [key: string]: number | null;
+            };
+            investments?: components["schemas"]["ScenarioInvestment"][];
+            changes?: {
+                /** @enum {string} */
+                kind: "price_increase" | "customer_growth" | "churn_change" | "ingredient_cost" | "hire" | "kitchen_expansion" | "delivery_expansion" | "new_meal_kit" | "marketing" | "supplier_change";
+                params?: {
+                    [key: string]: number;
+                };
+                label?: string;
+            }[];
+        };
+        ScenarioInvestment: {
+            week: number;
+            /** Format: int64 */
+            amount_minor: number;
+            label: string;
+        };
+        ScenarioObserved: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            months: number;
+            values: {
+                key: string;
+                label: string;
+                unit: string;
+                /** Format: int64 */
+                value: number | null;
+                basis: string;
+                sources: string[];
+            }[];
+            notes: string[];
+            /** Format: date-time */
+            generated_at: string;
+        };
+        ScenarioModel: {
+            observed: components["schemas"]["ScenarioObserved"];
+            variables: {
+                [key: string]: unknown;
+            }[];
+            horizons: number[];
+            change_kinds: {
+                kind: string;
+                params: string[];
+            }[];
+            presets: string[];
+            preset_note: string;
+            engine_version: string;
+        };
+        ScenarioInput: {
+            key: string;
+            label: string;
+            unit: string;
+            /** Format: int64 */
+            value: number | null;
+            /** @description observed, preset, assumption or what_if; empty when missing. */
+            source: string;
+            basis: string;
+        };
+        ScenarioTotals: {
+            /** Format: int64 */
+            sales_minor?: number;
+            /** Format: int64 */
+            variable_costs_minor?: number;
+            /** Format: int64 */
+            contribution_minor?: number;
+            /** Format: int64 */
+            fixed_costs_minor?: number;
+            /** Format: int64 */
+            investments_minor?: number;
+            /** Format: int64 */
+            operating_result_minor?: number;
+            /** Format: int64 */
+            paid_kits?: number;
+            /** Format: int64 */
+            end_active_subscriptions?: number;
+            capacity_breach_weeks?: number;
+        };
+        ScenarioBreakEven: {
+            /** Format: int64 */
+            subscriptions?: number | null;
+            contribution_per_subscription_week_minor?: string;
+            fixed_costs_per_week_minor?: string;
+            formula?: string;
+            note?: string;
+        };
+        ScenarioCash: {
+            /** Format: int64 */
+            peak_need_minor?: number;
+            /** Format: int64 */
+            lowest_cash_minor?: number | null;
+            first_negative_week?: number | null;
+            /** Format: int64 */
+            ending_cash_minor?: number | null;
+            note?: string;
+            opening_available?: boolean;
+        };
+        ScenarioOutput: {
+            engine_version: string;
+            input_hash: string;
+            complete: boolean;
+            missing: string[];
+            weeks: {
+                [key: string]: unknown;
+            }[];
+            totals: components["schemas"]["ScenarioTotals"] | null;
+            break_even: components["schemas"]["ScenarioBreakEven"] | null;
+            cash: components["schemas"]["ScenarioCash"];
+            limitations: string[];
+            statement: string;
+        };
+        ScenarioProjection: {
+            preset: string;
+            horizon_days: number;
+            inputs: components["schemas"]["ScenarioInput"][];
+            investments: components["schemas"]["ScenarioInvestment"][];
+            changes: {
+                [key: string]: unknown;
+            }[];
+            assumptions: string[];
+            preset_note: string;
+            observed: components["schemas"]["ScenarioObserved"];
+            output: components["schemas"]["ScenarioOutput"];
+        };
+        ScenarioVersion: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            scenario_id: string;
+            scenario_name: string;
+            version: number;
+            horizon_days: number;
+            engine_version: string;
+            input_hash: string;
+            note: string;
+            projection: components["schemas"]["ScenarioProjection"];
+            created: boolean;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Scenario: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            preset: string;
+            archived: boolean;
+            /** Format: date-time */
+            created_at: string;
+            versions: components["schemas"]["ScenarioVersion"][];
+        };
+        ScenarioSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            preset: string;
+            archived: boolean;
+            versions: number;
+            latest_version_id: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ScenarioComparison: {
+            columns: {
+                /** Format: uuid */
+                version_id: string;
+                scenario: string;
+                version: number;
+                preset: string;
+                horizon_days: number;
+                complete: boolean;
+                totals: components["schemas"]["ScenarioTotals"] | null;
+                break_even: components["schemas"]["ScenarioBreakEven"] | null;
+                cash: components["schemas"]["ScenarioCash"];
+                inputs: components["schemas"]["ScenarioInput"][];
+                assumptions: string[];
+            }[];
+            note: string;
+            statement: string;
         };
     };
     responses: {
@@ -29890,6 +30218,286 @@ export interface operations {
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
             422: components["responses"]["Error"];
+        };
+    };
+    scenarioObserved: {
+        parameters: {
+            query?: {
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ScenarioModel"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    scenarioRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ScenarioProjection"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    scenarioCompare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    version_ids: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ScenarioComparison"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    scenarioList: {
+        parameters: {
+            query?: {
+                archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["ScenarioSummary"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    scenarioCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioRequest"] & {
+                    name: string;
+                    description?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Scenario"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    scenarioGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Scenario"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    scenarioAddVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioRequest"] & {
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ScenarioVersion"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    scenarioArchive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Scenario"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    scenarioVersionGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            version: components["schemas"]["ScenarioVersion"];
+                            reproduced: boolean;
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
 }

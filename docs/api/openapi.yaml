@@ -13486,6 +13486,217 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/observed:
+    get:
+      tags: [admin-intelligence]
+      operationId: scenarioObserved
+      description: "Needs intelligence_scenario.run. The observed starting values (last complete calendar months; null with the reason when the records cannot support a value, never zero), the engine's inputs, horizons, presets and what-if change kinds."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: months, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 12 } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ScenarioModel" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/run:
+    post:
+      tags: [admin-intelligence]
+      operationId: scenarioRun
+      description: "Needs intelligence_scenario.run. Runs a scenario without saving it: observed values, then the preset, then entered assumptions, then what-if changes. Deterministic; nothing is projected while a required input is missing."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScenarioRequest" }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ScenarioProjection" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/compare:
+    post:
+      tags: [admin-intelligence]
+      operationId: scenarioCompare
+      description: "Needs intelligence_scenario.run. Puts 2 to 4 stored versions side by side."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [version_ids], properties: { version_ids: { type: array, minItems: 2, maxItems: 4, items: { type: string, format: uuid } } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ScenarioComparison" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios:
+    get:
+      tags: [admin-intelligence]
+      operationId: scenarioList
+      description: "Needs intelligence_scenario.run. Saved scenarios (archived ones with archived=true)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: archived, in: query, required: false, schema: { type: boolean } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/ScenarioSummary" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [admin-intelligence]
+      operationId: scenarioCreate
+      description: "Needs intelligence_scenario.run. Saves a scenario with its first version (audited)."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [{ $ref: "#/components/schemas/ScenarioRequest" }, { type: object, required: [name], properties: { name: { type: string, maxLength: 120 }, description: { type: string, maxLength: 1000 } } }] }
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Scenario" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: scenarioGet
+      description: "Needs intelligence_scenario.run. A scenario with all its versions, newest first."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Scenario" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/{id}/versions:
+    post:
+      tags: [admin-intelligence]
+      operationId: scenarioAddVersion
+      description: "Needs intelligence_scenario.run. Stores a new version (observed values are read again). Identical inputs return the existing version with created false."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [{ $ref: "#/components/schemas/ScenarioRequest" }, { type: object, properties: { note: { type: string, maxLength: 500 } } }] }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/ScenarioVersion" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenarios/{id}/archive:
+    post:
+      tags: [admin-intelligence]
+      operationId: scenarioArchive
+      description: "Needs intelligence_scenario.run. Archives a scenario (versions are kept)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/Scenario" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/scenario-versions/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: scenarioVersionGet
+      description: "Needs intelligence_scenario.run. One stored version, and whether recomputing it from its stored inputs reproduces its stored output."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [version, reproduced], properties: { version: { $ref: "#/components/schemas/ScenarioVersion" }, reproduced: { type: boolean } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -20842,3 +21053,187 @@ components:
         duration_ms: { type: integer }
         error: { type: string }
         created_at: { type: string, format: date-time }
+    ScenarioRequest:
+      type: object
+      required: [horizon_days]
+      properties:
+        horizon_days: { type: integer, enum: [30, 60, 90, 182, 365] }
+        preset: { type: string, enum: [base, conservative, optimistic, custom] }
+        observed_months: { type: integer, minimum: 1, maximum: 12 }
+        values: { type: object, additionalProperties: { type: integer, format: int64, nullable: true }, description: "Entered assumptions by input key; they replace observed and preset values." }
+        investments: { type: array, items: { $ref: "#/components/schemas/ScenarioInvestment" } }
+        changes:
+          type: array
+          items:
+            type: object
+            required: [kind]
+            properties:
+              kind: { type: string, enum: [price_increase, customer_growth, churn_change, ingredient_cost, hire, kitchen_expansion, delivery_expansion, new_meal_kit, marketing, supplier_change] }
+              params: { type: object, additionalProperties: { type: integer, format: int64 } }
+              label: { type: string, maxLength: 100 }
+    ScenarioInvestment:
+      type: object
+      required: [week, amount_minor, label]
+      properties:
+        week: { type: integer, minimum: 1 }
+        amount_minor: { type: integer, format: int64 }
+        label: { type: string }
+    ScenarioObserved:
+      type: object
+      required: [from, to, months, values, notes, generated_at]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        months: { type: integer }
+        values:
+          type: array
+          items:
+            type: object
+            required: [key, label, unit, value, basis, sources]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              unit: { type: string }
+              value: { type: integer, format: int64, nullable: true }
+              basis: { type: string }
+              sources: { type: array, items: { type: string } }
+        notes: { type: array, items: { type: string } }
+        generated_at: { type: string, format: date-time }
+    ScenarioModel:
+      type: object
+      required: [observed, variables, horizons, change_kinds, presets, preset_note, engine_version]
+      properties:
+        observed: { $ref: "#/components/schemas/ScenarioObserved" }
+        variables: { type: array, items: { type: object, additionalProperties: true } }
+        horizons: { type: array, items: { type: integer } }
+        change_kinds: { type: array, items: { type: object, required: [kind, params], properties: { kind: { type: string }, params: { type: array, items: { type: string } } } } }
+        presets: { type: array, items: { type: string } }
+        preset_note: { type: string }
+        engine_version: { type: string }
+    ScenarioInput:
+      type: object
+      required: [key, label, unit, value, source, basis]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        unit: { type: string }
+        value: { type: integer, format: int64, nullable: true }
+        source: { type: string, description: "observed, preset, assumption or what_if; empty when missing." }
+        basis: { type: string }
+    ScenarioTotals:
+      type: object
+      properties:
+        sales_minor: { type: integer, format: int64 }
+        variable_costs_minor: { type: integer, format: int64 }
+        contribution_minor: { type: integer, format: int64 }
+        fixed_costs_minor: { type: integer, format: int64 }
+        investments_minor: { type: integer, format: int64 }
+        operating_result_minor: { type: integer, format: int64 }
+        paid_kits: { type: integer, format: int64 }
+        end_active_subscriptions: { type: integer, format: int64 }
+        capacity_breach_weeks: { type: integer }
+    ScenarioBreakEven:
+      type: object
+      properties:
+        subscriptions: { type: integer, format: int64, nullable: true }
+        contribution_per_subscription_week_minor: { type: string }
+        fixed_costs_per_week_minor: { type: string }
+        formula: { type: string }
+        note: { type: string }
+    ScenarioCash:
+      type: object
+      properties:
+        peak_need_minor: { type: integer, format: int64 }
+        lowest_cash_minor: { type: integer, format: int64, nullable: true }
+        first_negative_week: { type: integer, nullable: true }
+        ending_cash_minor: { type: integer, format: int64, nullable: true }
+        note: { type: string }
+        opening_available: { type: boolean }
+    ScenarioOutput:
+      type: object
+      required: [engine_version, input_hash, complete, missing, weeks, totals, break_even, cash, limitations, statement]
+      properties:
+        engine_version: { type: string }
+        input_hash: { type: string }
+        complete: { type: boolean }
+        missing: { type: array, items: { type: string } }
+        weeks: { type: array, items: { type: object, additionalProperties: true } }
+        totals: { nullable: true, allOf: [{ $ref: "#/components/schemas/ScenarioTotals" }] }
+        break_even: { nullable: true, allOf: [{ $ref: "#/components/schemas/ScenarioBreakEven" }] }
+        cash: { $ref: "#/components/schemas/ScenarioCash" }
+        limitations: { type: array, items: { type: string } }
+        statement: { type: string }
+    ScenarioProjection:
+      type: object
+      required: [preset, horizon_days, inputs, investments, changes, assumptions, preset_note, observed, output]
+      properties:
+        preset: { type: string }
+        horizon_days: { type: integer }
+        inputs: { type: array, items: { $ref: "#/components/schemas/ScenarioInput" } }
+        investments: { type: array, items: { $ref: "#/components/schemas/ScenarioInvestment" } }
+        changes: { type: array, items: { type: object, additionalProperties: true } }
+        assumptions: { type: array, items: { type: string } }
+        preset_note: { type: string }
+        observed: { $ref: "#/components/schemas/ScenarioObserved" }
+        output: { $ref: "#/components/schemas/ScenarioOutput" }
+    ScenarioVersion:
+      type: object
+      required: [id, scenario_id, scenario_name, version, horizon_days, engine_version, input_hash, note, projection, created, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        scenario_id: { type: string, format: uuid }
+        scenario_name: { type: string }
+        version: { type: integer }
+        horizon_days: { type: integer }
+        engine_version: { type: string }
+        input_hash: { type: string }
+        note: { type: string }
+        projection: { $ref: "#/components/schemas/ScenarioProjection" }
+        created: { type: boolean }
+        created_at: { type: string, format: date-time }
+    Scenario:
+      type: object
+      required: [id, name, description, preset, archived, created_at, versions]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        preset: { type: string }
+        archived: { type: boolean }
+        created_at: { type: string, format: date-time }
+        versions: { type: array, items: { $ref: "#/components/schemas/ScenarioVersion" } }
+    ScenarioSummary:
+      type: object
+      required: [id, name, description, preset, archived, versions, latest_version_id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        preset: { type: string }
+        archived: { type: boolean }
+        versions: { type: integer }
+        latest_version_id: { type: string }
+        created_at: { type: string, format: date-time }
+    ScenarioComparison:
+      type: object
+      required: [columns, note, statement]
+      properties:
+        columns:
+          type: array
+          items:
+            type: object
+            required: [version_id, scenario, version, preset, horizon_days, complete, totals, break_even, cash, inputs, assumptions]
+            properties:
+              version_id: { type: string, format: uuid }
+              scenario: { type: string }
+              version: { type: integer }
+              preset: { type: string }
+              horizon_days: { type: integer }
+              complete: { type: boolean }
+              totals: { nullable: true, allOf: [{ $ref: "#/components/schemas/ScenarioTotals" }] }
+              break_even: { nullable: true, allOf: [{ $ref: "#/components/schemas/ScenarioBreakEven" }] }
+              cash: { $ref: "#/components/schemas/ScenarioCash" }
+              inputs: { type: array, items: { $ref: "#/components/schemas/ScenarioInput" } }
+              assumptions: { type: array, items: { type: string } }
+        note: { type: string }
+        statement: { type: string }

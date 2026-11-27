@@ -27,6 +27,7 @@ import (
 	"mise.tt/api/internal/events"
 	"mise.tt/api/internal/favorites"
 	"mise.tt/api/internal/finance"
+	"mise.tt/api/internal/finance/scenario"
 	"mise.tt/api/internal/forecasting"
 	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
@@ -454,7 +455,8 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	fin, bx := NewFinance(pool, com), NewBehavior(pool, com)
 	(&finance.Handler{S: fin, Identity: ids}).Routes(mux)
 	box := &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
-		Now: func() time.Time { return com.Service.Now() }}
+		Scenarios: &scenario.Service{Pool: pool, Finance: fin, Now: func() time.Time { return com.Service.Now() }},
+		Now:       func() time.Time { return com.Service.Now() }}
 	asst := NewAssistant(cfg, box)
 	box.AI = asst.Status
 	(&intelligence.Handler{Box: box, Assistant: asst, Identity: ids}).Routes(mux)

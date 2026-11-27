@@ -12995,6 +12995,11 @@ paths:
       description: "Needs finance_expenses.manage; approve and reject also need finance_expenses.approve, and only a super admin may approve an expense they recorded. submit, approve, reject (note required), void (note required). Audited."
       security: [{ adminSession: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [submit, approve, reject, void] } }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 1000 } } }
       responses:
         "200":
           description: OK.
@@ -13062,6 +13067,11 @@ paths:
       description: "Needs finance_expenses.manage; approve also needs finance_expenses.approve. approve or end. Audited."
       security: [{ adminSession: [] }]
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [approve, end] } }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, properties: { note: { type: string, maxLength: 1000 } } }
       responses:
         "200":
           description: OK.

@@ -247,7 +247,13 @@ var riskDefs = []riskDef{
 			}
 			o := proj.Output
 			if !o.Complete {
-				return nil, nil, "The base scenario is incomplete (missing: " + strings.Join(o.Missing, ", ") + ").", nil
+				var names []string
+				for _, k := range o.Missing {
+					if v, ok := scenario.Find(k); ok {
+						names = append(names, strings.ToLower(v.Label))
+					}
+				}
+				return nil, nil, "The base scenario cannot be calculated: " + strings.Join(names, ", ") + " are not recorded.", nil
 			}
 			if !o.Cash.OpeningAvailable {
 				return nil, nil, "No approved cash balance is recorded.", nil
@@ -437,20 +443,40 @@ func (b *Toolbox) Risks(ctx context.Context, p *identity.Principal, from, to str
 		}
 		r.Severity = severity(*v, t)
 		side := map[string]string{"above": "at or above", "below": "at or below"}[t.Direction]
-		val := fmt.Sprintf("%g %s", *v, d.unit)
+		val := withUnit(*v, d.unit)
 		if d.key == "cash_shortage" && *v == 99 {
 			val = "not within the horizon"
 		}
+		compared := ""
+		for _, m := range r.Metrics {
+			if m.Previous != nil {
+				compared = fmt.Sprintf(" The previous period (%s to %s) is under Evidence.", c.pFromS, c.pToS)
+				break
+			}
+		}
 		if r.Severity == SevNone {
 			r.Status = Clear
-			r.Explanation = fmt.Sprintf("%s: %s. Watch level is %s %g, high level %s %g.", d.measure, val, side, t.Warn, side, t.Critical)
+			r.Explanation = fmt.Sprintf("%s: %s. Watch level %s %s, high level %s %s.%s", d.measure, val, side, withUnit(t.Warn, d.unit), side, withUnit(t.Critical, d.unit), compared)
 		} else {
 			r.Status = Triggered
-			r.Explanation = fmt.Sprintf("%s: %s, %s the %s level (%g). Compared with %s to %s where shown. No probability is implied.",
-				d.measure, val, side, map[string]string{SevWatch: "watch", SevHigh: "high"}[r.Severity],
-				map[string]float64{SevWatch: t.Warn, SevHigh: t.Critical}[r.Severity], c.pFromS, c.pToS)
+			level := map[string]float64{SevWatch: t.Warn, SevHigh: t.Critical}[r.Severity]
+			r.Explanation = fmt.Sprintf("%s: %s, %s the %s level of %s.%s No probability is implied.",
+				d.measure, val, side, map[string]string{SevWatch: "watch", SevHigh: "high"}[r.Severity], withUnit(level, d.unit), compared)
 		}
 		out = append(out, r)
 	}
 	return out, nil
+}
+
+// withUnit writes a value in an indicator's unit for an explanation.
+func withUnit(v float64, unit string) string {
+	switch unit {
+	case "percent":
+		return fmt.Sprintf("%g%%", v)
+	case "percentage_points":
+		return fmt.Sprintf("%+g points", v)
+	case "weeks":
+		return fmt.Sprintf("%g weeks", v)
+	}
+	return fmt.Sprintf("%g", v)
 }

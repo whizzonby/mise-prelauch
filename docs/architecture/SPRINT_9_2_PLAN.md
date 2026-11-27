@@ -183,5 +183,18 @@ Resume from the first unchecked item.
   17 routes (OpenAPI + client; RBAC scope notes for meals and generate). Tests intelligence_insights_test.go (risk explanations, domain
   filtering, idempotent save, thresholds, tool parity; recommendations scoped, review flow, nothing operational changed; meal intelligence;
   proposals lifecycle, no meal/recipe changed, AI unavailable; AI concepts with an invented number marked and a malformed concept skipped).
-- [ ] Stage 8 — Briefings; command center and finance UI
+- [x] Stage 8 — Briefings; command center and finance UI — 27 Nov (real date): migration 00022 (briefings with input hash and
+  versions, schedules disabled with no recipients, deliveries). briefings.go: last complete day / Mon–Sun week / calendar month vs the
+  period before; performance and customer metrics from the registry, significant changes (≥ 20 %), financial position (withheld results
+  stay withheld, cash "not available" without an approved balance), operational exceptions, triggered risks, observed opportunities,
+  actions, data limitations; identical content keeps the same version; AI narrative once per version (briefing-v1, numbers checked);
+  schedules need executive-reader recipients and an approval (configure, audited); worker sends each period once, recipients re-checked
+  at send time, real outcome recorded. 6 routes (OpenAPI + client). Finance transition `note` body added to the contract (was missing).
+  API client: `mi` and `finance` blocks typed from the OpenAPI operations (OpData/OpBody, with compile-time resolution checks). Admin UI:
+  /intelligence/command-center (overview with headline figures and comparisons, briefing, finance, outlook scenario form and saving,
+  customers, meals + proposals, operations, risks with evidence and thresholds, opportunities, recommendations, Ask Mise AI with a clear
+  "AI unavailable" state, saved, history, readiness, settings for AI limits/budget and briefing schedules), detail pages for runs,
+  proposals and scenarios (versions, comparison, reproducibility), /finance/expenses (expenses, recurring, coverage, cash balances,
+  categories) and expense detail with history; nav entries. Screenshots docs/screenshots/sprint-9-2 (desktop and phone, every page
+  rendered without errors or horizontal scroll; tool e2e/tools/shots-9-2.mjs). Go tests intelligence_briefing_test.go.
 - [ ] Stage 9 — Docs, security and AI evaluation, Playwright, regression, screenshots, report, commit

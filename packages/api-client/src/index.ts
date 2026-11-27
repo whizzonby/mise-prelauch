@@ -8,6 +8,32 @@
 
 import type { components } from "./schema";
 
+// ---- Sprint 9.2: Mise Intelligence and management finance, typed from the OpenAPI contract.
+import type { operations } from "./schema";
+
+type Ok<R> = R extends { 200: { content: { "application/json": { data: infer D } } } }
+  ? D
+  : R extends { 201: { content: { "application/json": { data: infer D } } } }
+    ? D
+    : never;
+/** The `data` of an operation's success response. */
+export type OpData<K extends keyof operations> = Ok<operations[K]["responses"]>;
+/** An operation's JSON request body. */
+export type OpBody<K extends keyof operations> = operations[K] extends { requestBody: { content: { "application/json": infer B } } }
+  ? B
+  : operations[K] extends { requestBody?: { content: { "application/json": infer B } } }
+    ? B
+    : never;
+type S92 = components["schemas"];
+export type IntelligenceRun = S92["IntelligenceRun"];
+export type IntelligenceRisk = S92["IntelligenceRisk"];
+export type IntelligenceRecommendation = S92["IntelligenceRecommendation"];
+export type IntelligenceMealProposal = S92["IntelligenceMealProposal"];
+export type IntelligenceBriefing = S92["IntelligenceBriefing"];
+export type ScenarioProjection = S92["ScenarioProjection"];
+export type ScenarioRequest = S92["ScenarioRequest"];
+export type FinanceSummary = S92["FinanceSummary"];
+
 export type { components, paths } from "./schema";
 
 export type LeadStatus = "PENDING" | "VERIFIED" | "QUALIFIED" | "CONVERTED" | "UNSUBSCRIBED" | "BLOCKED";
@@ -1563,6 +1589,120 @@ export function createClient({ baseUrl, fetch: fetchImpl = fetch, headers: extra
         request<DeliveryReconciliation>(`/admin/delivery/dispatch-runs/${encodeURIComponent(id)}/reconcile`, { method: "POST", body: { explanation }, token, cache: "no-store" }),
     },
 
+    /** Sprint 9.2: Mise Intelligence (admin only). Types come from the OpenAPI contract. */
+    mi: {
+      readiness: (token: string) => request<OpData<"intelligenceReadiness">>("/admin/intelligence/readiness", { token, cache: "no-store" }),
+      tools: (token: string) => request<OpData<"intelligenceTools">>("/admin/intelligence/tools", { token, cache: "no-store" }),
+      tool: (token: string, name: string, args: Record<string, string> = {}) =>
+        request<OpData<"intelligenceRunTool">>(`/admin/intelligence/tools/${encodeURIComponent(name)}`, { method: "POST", body: { args }, token, cache: "no-store" }),
+      ai: (token: string) => request<OpData<"intelligenceAI">>("/admin/intelligence/ai", { token, cache: "no-store" }),
+      saveAISettings: (token: string, input: OpBody<"intelligenceAISettings">) =>
+        request<OpData<"intelligenceAISettings">>("/admin/intelligence/ai/settings", { method: "PUT", body: input, token, cache: "no-store" }),
+      ask: (token: string, input: OpBody<"intelligenceAsk">) =>
+        request<OpData<"intelligenceAsk">>("/admin/intelligence/ask", { method: "POST", body: input, token, cache: "no-store" }),
+      runs: (token: string, limit = 50) => request<OpData<"intelligenceRuns">>("/admin/intelligence/runs", { token, query: { limit }, cache: "no-store" }),
+      run: (token: string, id: string) => request<OpData<"intelligenceRun">>(`/admin/intelligence/runs/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      reviewRun: (token: string, id: string, input: OpBody<"intelligenceReviewRun">) =>
+        request<OpData<"intelligenceReviewRun">>(`/admin/intelligence/runs/${encodeURIComponent(id)}/review`, { method: "POST", body: input, token, cache: "no-store" }),
+
+      scenarioModel: (token: string, months?: number) =>
+        request<OpData<"scenarioObserved">>("/admin/intelligence/scenarios/observed", { token, query: months ? { months } : {}, cache: "no-store" }),
+      runScenario: (token: string, input: OpBody<"scenarioRun">) =>
+        request<OpData<"scenarioRun">>("/admin/intelligence/scenarios/run", { method: "POST", body: input, token, cache: "no-store" }),
+      scenarios: (token: string, archived = false) =>
+        request<OpData<"scenarioList">>("/admin/intelligence/scenarios", { token, query: archived ? { archived: "true" } : {}, cache: "no-store" }),
+      createScenario: (token: string, input: OpBody<"scenarioCreate">) =>
+        request<OpData<"scenarioCreate">>("/admin/intelligence/scenarios", { method: "POST", body: input, token, cache: "no-store" }),
+      scenario: (token: string, id: string) => request<OpData<"scenarioGet">>(`/admin/intelligence/scenarios/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      addScenarioVersion: (token: string, id: string, input: OpBody<"scenarioAddVersion">) =>
+        request<OpData<"scenarioAddVersion">>(`/admin/intelligence/scenarios/${encodeURIComponent(id)}/versions`, { method: "POST", body: input, token, cache: "no-store" }),
+      archiveScenario: (token: string, id: string) =>
+        request<OpData<"scenarioArchive">>(`/admin/intelligence/scenarios/${encodeURIComponent(id)}/archive`, { method: "POST", token, cache: "no-store" }),
+      scenarioVersion: (token: string, id: string) =>
+        request<OpData<"scenarioVersionGet">>(`/admin/intelligence/scenario-versions/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      compareScenarios: (token: string, versionIds: string[]) =>
+        request<OpData<"scenarioCompare">>("/admin/intelligence/scenarios/compare", { method: "POST", body: { version_ids: versionIds }, token, cache: "no-store" }),
+
+      meals: (token: string, query: { from?: string; to?: string } = {}) =>
+        request<OpData<"intelligenceMeals">>("/admin/intelligence/meals", { token, query, cache: "no-store" }),
+      risks: (token: string, query: { from?: string; to?: string } = {}) =>
+        request<OpData<"intelligenceRisks">>("/admin/intelligence/risks", { token, query, cache: "no-store" }),
+      thresholds: (token: string) => request<OpData<"intelligenceRiskThresholds">>("/admin/intelligence/risk-thresholds", { token, cache: "no-store" }),
+      setThreshold: (token: string, key: string, input: OpBody<"intelligenceSetRiskThreshold">) =>
+        request<OpData<"intelligenceSetRiskThreshold">>(`/admin/intelligence/risk-thresholds/${encodeURIComponent(key)}`, { method: "PUT", body: input, token, cache: "no-store" }),
+      opportunities: (token: string, query: { from?: string; to?: string } = {}) =>
+        request<OpData<"intelligenceOpportunities">>("/admin/intelligence/opportunities", { token, query, cache: "no-store" }),
+      recommendations: (token: string, status = "") =>
+        request<OpData<"intelligenceRecommendations">>("/admin/intelligence/recommendations", { token, query: status ? { status } : {}, cache: "no-store" }),
+      recommendation: (token: string, id: string) =>
+        request<OpData<"intelligenceRecommendation">>(`/admin/intelligence/recommendations/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      propose: (token: string, input: OpBody<"intelligenceProposeRecommendation">) =>
+        request<OpData<"intelligenceProposeRecommendation">>("/admin/intelligence/recommendations", { method: "POST", body: input, token, cache: "no-store" }),
+      saveRisk: (token: string, input: OpBody<"intelligenceSaveRisk">) =>
+        request<OpData<"intelligenceSaveRisk">>("/admin/intelligence/recommendations/from-risk", { method: "POST", body: input, token, cache: "no-store" }),
+      saveOpportunity: (token: string, input: OpBody<"intelligenceSaveOpportunity">) =>
+        request<OpData<"intelligenceSaveOpportunity">>("/admin/intelligence/recommendations/from-opportunity", { method: "POST", body: input, token, cache: "no-store" }),
+      reviewRecommendation: (token: string, id: string, action: string, input: OpBody<"intelligenceReviewRecommendation"> = {}) =>
+        request<OpData<"intelligenceReviewRecommendation">>(`/admin/intelligence/recommendations/${encodeURIComponent(id)}/${encodeURIComponent(action)}`, {
+          method: "POST", body: input, token, cache: "no-store" }),
+
+      proposals: (token: string, status = "") =>
+        request<OpData<"intelligenceMealProposals">>("/admin/intelligence/meal-proposals", { token, query: status ? { status } : {}, cache: "no-store" }),
+      proposal: (token: string, id: string) =>
+        request<OpData<"intelligenceMealProposal">>(`/admin/intelligence/meal-proposals/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createProposal: (token: string, input: OpBody<"intelligenceCreateMealProposal">) =>
+        request<OpData<"intelligenceCreateMealProposal">>("/admin/intelligence/meal-proposals", { method: "POST", body: input, token, cache: "no-store" }),
+      generateProposals: (token: string, brief = "") =>
+        request<OpData<"intelligenceGenerateMealConcepts">>("/admin/intelligence/meal-proposals/generate", { method: "POST", body: { brief }, token, cache: "no-store" }),
+      transitionProposal: (token: string, id: string, action: string, input: OpBody<"intelligenceTransitionMealProposal"> = {}) =>
+        request<OpData<"intelligenceTransitionMealProposal">>(`/admin/intelligence/meal-proposals/${encodeURIComponent(id)}/${encodeURIComponent(action)}`, {
+          method: "POST", body: input, token, cache: "no-store" }),
+
+      briefings: (token: string, cadence = "") =>
+        request<OpData<"intelligenceBriefings">>("/admin/intelligence/briefings", { token, query: cadence ? { cadence } : {}, cache: "no-store" }),
+      briefing: (token: string, id: string) => request<OpData<"intelligenceBriefing">>(`/admin/intelligence/briefings/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      generateBriefing: (token: string, cadence: "daily" | "weekly" | "monthly") =>
+        request<OpData<"intelligenceGenerateBriefing">>("/admin/intelligence/briefings", { method: "POST", body: { cadence }, token, cache: "no-store" }),
+      narrate: (token: string, id: string) =>
+        request<OpData<"intelligenceBriefingNarrative">>(`/admin/intelligence/briefings/${encodeURIComponent(id)}/narrative`, { method: "POST", token, cache: "no-store" }),
+      briefingSchedules: (token: string) => request<OpData<"intelligenceBriefingSchedules">>("/admin/intelligence/briefing-schedules", { token, cache: "no-store" }),
+      setBriefingSchedule: (token: string, cadence: string, input: OpBody<"intelligenceSetBriefingSchedule">) =>
+        request<OpData<"intelligenceSetBriefingSchedule">>(`/admin/intelligence/briefing-schedules/${encodeURIComponent(cadence)}`, { method: "PUT", body: input, token, cache: "no-store" }),
+
+      funnel: (token: string, query: { from?: string; to?: string } = {}) =>
+        request<OpData<"intelligenceFunnel">>("/admin/intelligence/funnel", { token, query, cache: "no-store" }),
+      segments: (token: string) => request<OpData<"intelligenceSegments">>("/admin/intelligence/segments", { token, cache: "no-store" }),
+      cancellationReasons: (token: string, query: { from?: string; to?: string } = {}) =>
+        request<OpData<"intelligenceCancellationReasons">>("/admin/intelligence/cancellation-reasons", { token, query, cache: "no-store" }),
+    },
+
+    /** Sprint 9.2: management finance (admin only). Not audited statements. */
+    finance: {
+      categories: (token: string) => request<OpData<"financeCategories">>("/admin/finance/expense-categories", { token, cache: "no-store" }),
+      expenses: (token: string, query: { status?: string; category?: string; from?: string; to?: string } = {}) =>
+        request<OpData<"financeExpenses">>("/admin/finance/expenses", { token, query, cache: "no-store" }),
+      expense: (token: string, id: string) => request<OpData<"financeExpense">>(`/admin/finance/expenses/${encodeURIComponent(id)}`, { token, cache: "no-store" }),
+      createExpense: (token: string, input: OpBody<"financeCreateExpense">) =>
+        request<OpData<"financeCreateExpense">>("/admin/finance/expenses", { method: "POST", body: input, token, cache: "no-store" }),
+      updateExpense: (token: string, id: string, input: OpBody<"financeUpdateExpense">) =>
+        request<OpData<"financeUpdateExpense">>(`/admin/finance/expenses/${encodeURIComponent(id)}`, { method: "PATCH", body: input, token, cache: "no-store" }),
+      transitionExpense: (token: string, id: string, action: string, input: OpBody<"financeExpenseTransition">) =>
+        request<OpData<"financeExpenseTransition">>(`/admin/finance/expenses/${encodeURIComponent(id)}/${encodeURIComponent(action)}`, {
+          method: "POST", body: input, token, cache: "no-store" }),
+      recurring: (token: string) => request<OpData<"financeRecurring">>("/admin/finance/recurring-expenses", { token, cache: "no-store" }),
+      createRecurring: (token: string, input: OpBody<"financeCreateRecurring">) =>
+        request<OpData<"financeCreateRecurring">>("/admin/finance/recurring-expenses", { method: "POST", body: input, token, cache: "no-store" }),
+      recurringStatus: (token: string, id: string, action: string, input: OpBody<"financeRecurringStatus">) =>
+        request<OpData<"financeRecurringStatus">>(`/admin/finance/recurring-expenses/${encodeURIComponent(id)}/${encodeURIComponent(action)}`, {
+          method: "POST", body: input, token, cache: "no-store" }),
+      confirmCoverage: (token: string, input: OpBody<"financeCoverage">) =>
+        request<OpData<"financeCoverage">>("/admin/finance/coverage", { method: "PUT", body: input, token, cache: "no-store" }),
+      cashBalances: (token: string) => request<OpData<"financeCashBalances">>("/admin/finance/cash-balances", { token, cache: "no-store" }),
+      recordCashBalance: (token: string, input: OpBody<"financeRecordCashBalance">) =>
+        request<OpData<"financeRecordCashBalance">>("/admin/finance/cash-balances", { method: "POST", body: input, token, cache: "no-store" }),
+      summary: (token: string, from: string, to: string) =>
+        request<OpData<"financeSummary">>("/admin/finance/summary", { token, query: { from, to }, cache: "no-store" }),
+    },
     /** Sprint 8: analytics, automation, scheduled reports and forecasting. Admin session; permissions per route. */
     intelligence: {
       metrics: (token: string) => request<{ items: AnalyticsMetric[] }>("/admin/analytics/metrics", { token, cache: "no-store" }),

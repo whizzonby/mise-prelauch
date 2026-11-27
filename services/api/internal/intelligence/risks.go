@@ -75,16 +75,16 @@ type Risk struct {
 
 type riskDef struct {
 	key, title, domain, measure, unit, direction, action, href string
-	requires                                                    []identity.Permission
-	eval                                                        func(ctx context.Context, b *Toolbox, c *riskCtx) (value *float64, metrics []RiskMetric, why string, err error)
+	requires                                                   []identity.Permission
+	eval                                                       func(ctx context.Context, b *Toolbox, c *riskCtx) (value *float64, metrics []RiskMetric, why string, err error)
 }
 
 type riskCtx struct {
-	cur, prev     analytics.Range
-	curV, prevV   map[string]*float64
-	curF, prevF   *finance.Summary
-	fromS, toS    string
-	pFromS, pToS  string
+	cur, prev    analytics.Range
+	curV, prevV  map[string]*float64
+	curF, prevF  *finance.Summary
+	fromS, toS   string
+	pFromS, pToS string
 }
 
 func pct(v float64) *float64 { x := math.Round(v*100) / 100; return &x }

@@ -104,8 +104,8 @@ var argDescriptions = map[string]string{
 	"from": "Start date YYYY-MM-DD (Trinidad and Tobago). Default: 27 days before today.",
 	"to":   "End date YYYY-MM-DD, inclusive. Default: today. At most two years after from.",
 	"plan": "Plan slug filter.", "meal": "Meal slug filter.", "zone": "Delivery zone filter.", "supplier": "Supplier filter.",
-	"query": "Search words (3 to 200 characters).",
-	"preset": "Scenario preset: base (observed values), conservative or optimistic (illustrative multipliers). Default base.",
+	"query":        "Search words (3 to 200 characters).",
+	"preset":       "Scenario preset: base (observed values), conservative or optimistic (illustrative multipliers). Default base.",
 	"horizon_days": "Projection horizon in days: 30, 60, 90, 182 or 365. Default 90.",
 }
 
@@ -286,13 +286,13 @@ var Tools = []Tool{
 		run: readinessTool},
 	{Name: "run_financial_scenario", Title: "Financial scenario", Domain: DomainFinancial, Requires: []identity.Permission{identity.PermIntelligenceScenarioRun},
 		Description: "Runs the deterministic scenario engine on observed values with a preset (base, conservative or optimistic): sales, costs, contribution, operating result, break-even subscriptions. Inputs that cannot be observed are reported missing and nothing is projected. Not a forecast.",
-		Args: []string{"preset", "horizon_days"}, run: scenarioTool},
+		Args:        []string{"preset", "horizon_days"}, run: scenarioTool},
 	{Name: "meal_intelligence", Title: "Meal intelligence", Domain: DomainOperational, Requires: []identity.Permission{identity.PermAnalyticsProductionRead},
 		Description: "Per meal: weeks on a published menu, kits ordered, kits per week on menu (availability-adjusted demand), repeat customers, waste records, recipe cost per serving, and labels (high demand, availability constrained, underperforming, high cost) with their rules.",
-		Args: []string{"from", "to"}, run: mealTool},
+		Args:        []string{"from", "to"}, run: mealTool},
 	{Name: "business_risks", Title: "Business risks", Domain: DomainGeneral,
 		Description: "Deterministic risk indicators you may see (renewals, payment failures, refunds, ingredient costs, contribution margin, expired stock, supplier delays, waste, delivery failures, incomplete financial records, cash): value, comparison period, threshold, severity and review action. No probabilities.",
-		Args: []string{"from", "to"}, run: risksTool},
+		Args:        []string{"from", "to"}, run: risksTool},
 	{Name: "knowledge_search", Title: "Knowledge search", Domain: DomainGeneral, Description: "Searches metric definitions and published help-centre articles.",
 		Args: []string{"query"}, Required: []string{"query"}, run: knowledgeTool},
 }

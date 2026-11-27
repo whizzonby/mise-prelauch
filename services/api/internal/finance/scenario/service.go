@@ -277,7 +277,7 @@ type Projection struct {
 	Changes     []Change     `json:"changes"`
 	Assumptions []string     `json:"assumptions"`
 	PresetNote  string       `json:"preset_note"`
-	Observed    *ObservedSet  `json:"observed"`
+	Observed    *ObservedSet `json:"observed"`
 	Output      *Output      `json:"output"`
 }
 

@@ -52,21 +52,21 @@ type BriefingItem struct {
 
 // BriefingContent is the deterministic body of a briefing.
 type BriefingContent struct {
-	Cadence      string           `json:"cadence"`
-	From         string           `json:"from"`
-	To           string           `json:"to"`
-	PreviousFrom string           `json:"previous_from"`
-	PreviousTo   string           `json:"previous_to"`
-	Performance  []BriefingMetric `json:"performance"`
-	Changes      []BriefingItem   `json:"significant_changes"`
-	Finance      []BriefingItem   `json:"financial_position"`
-	Customers    []BriefingMetric `json:"customer_trends"`
-	Operations   []BriefingItem   `json:"operational_exceptions"`
-	Risks        []BriefingItem   `json:"key_risks"`
-	Opportunities []BriefingItem  `json:"growth_opportunities"`
-	Actions      []BriefingItem   `json:"recommended_actions"`
-	Limitations  []string         `json:"data_limitations"`
-	Statement    string           `json:"statement"`
+	Cadence       string           `json:"cadence"`
+	From          string           `json:"from"`
+	To            string           `json:"to"`
+	PreviousFrom  string           `json:"previous_from"`
+	PreviousTo    string           `json:"previous_to"`
+	Performance   []BriefingMetric `json:"performance"`
+	Changes       []BriefingItem   `json:"significant_changes"`
+	Finance       []BriefingItem   `json:"financial_position"`
+	Customers     []BriefingMetric `json:"customer_trends"`
+	Operations    []BriefingItem   `json:"operational_exceptions"`
+	Risks         []BriefingItem   `json:"key_risks"`
+	Opportunities []BriefingItem   `json:"growth_opportunities"`
+	Actions       []BriefingItem   `json:"recommended_actions"`
+	Limitations   []string         `json:"data_limitations"`
+	Statement     string           `json:"statement"`
 }
 
 // Narrative is an AI-written summary of a briefing's content.

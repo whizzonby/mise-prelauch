@@ -197,4 +197,10 @@ Resume from the first unchecked item.
   proposals and scenarios (versions, comparison, reproducibility), /finance/expenses (expenses, recurring, coverage, cash balances,
   categories) and expense detail with history; nav entries. Screenshots docs/screenshots/sprint-9-2 (desktop and phone, every page
   rendered without errors or horizontal scroll; tool e2e/tools/shots-9-2.mjs). Go tests intelligence_briefing_test.go.
-- [ ] Stage 9 — Docs, security and AI evaluation, Playwright, regression, screenshots, report, commit
+- [x] Stage 9 — Docs, security and AI evaluation, Playwright, regression, screenshots, report, commit — 27 Nov (real date):
+  evaluation dataset (18 cases) and harness `TestModelEvaluation` (scripted model; claims reconciled by re-running the cited tool;
+  every threshold met; real-provider mode ready but blocked); `TestMiseIntelligenceIsAdminOnly` and
+  `TestCustomerFacingAppsNeverCallIntelligence`; docs AI_INTELLIGENCE, MANAGEMENT_FINANCE, FINANCIAL_METRIC_DEFINITIONS, TOOL_CONTRACTS,
+  MODEL_EVALUATION, COST_MANAGEMENT, AI_SECURITY; Playwright `mise-intelligence.spec.ts` (8 tests; also 24/24 on Firefox and WebKit);
+  regression: Go 22 packages / 244 test functions, Vitest 45, Playwright launch mode 80 passed (3 waitlist-only failures, 5 opt-in
+  skips), waitlist mode 25 passed; gofmt applied; report `docs/SPRINT_9_2_REPORT.md`.

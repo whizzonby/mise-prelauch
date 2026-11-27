@@ -50,10 +50,10 @@ func TestValidationRejectsInventedNumbersAndCitations(t *testing.T) {
 	a := &Answer{
 		Answer: "Net collections were 12,400 and margin 35%.",
 		Claims: []Claim{
-			{Text: "Revenue", Ref: "E7", Fact: "finance.net_collections", Value: fv(12345.67)},  // unknown ref
-			{Text: "Result", Ref: "E1", Fact: "finance.operating_result", Value: fv(0)},          // withheld given a value
-			{Text: "Margin", Ref: "E1", Fact: "finance.margin", Value: fv(0.4)},                  // wrong value
-			{Text: "Made up", Ref: "E1", Fact: "finance.profit"},                                 // no such fact
+			{Text: "Revenue", Ref: "E7", Fact: "finance.net_collections", Value: fv(12345.67)},         // unknown ref
+			{Text: "Result", Ref: "E1", Fact: "finance.operating_result", Value: fv(0)},                // withheld given a value
+			{Text: "Margin", Ref: "E1", Fact: "finance.margin", Value: fv(0.4)},                        // wrong value
+			{Text: "Made up", Ref: "E1", Fact: "finance.profit"},                                       // no such fact
 			{Text: "Net collections", Ref: "E1", Fact: "finance.net_collections", Value: fv(12345.67)}, // fine
 		},
 		Tables: []AnswerTable{{Ref: "E9", Rows: [][]string{{"x", "1"}}}, {Ref: "E2", Rows: [][]string{{"Pelau", "1300"}}}},

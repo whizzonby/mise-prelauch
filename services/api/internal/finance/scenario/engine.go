@@ -163,16 +163,16 @@ type CashView struct {
 
 // Output is a projection.
 type Output struct {
-	EngineVersion string    `json:"engine_version"`
-	InputHash     string    `json:"input_hash"`
-	Complete      bool      `json:"complete"`
-	Missing       []string  `json:"missing"`
-	Weeks         []Week    `json:"weeks"`
-	Totals        *Totals   `json:"totals"`
+	EngineVersion string     `json:"engine_version"`
+	InputHash     string     `json:"input_hash"`
+	Complete      bool       `json:"complete"`
+	Missing       []string   `json:"missing"`
+	Weeks         []Week     `json:"weeks"`
+	Totals        *Totals    `json:"totals"`
 	BreakEven     *BreakEven `json:"break_even"`
-	Cash          CashView  `json:"cash"`
-	Limitations   []string  `json:"limitations"`
-	Statement     string    `json:"statement"`
+	Cash          CashView   `json:"cash"`
+	Limitations   []string   `json:"limitations"`
+	Statement     string     `json:"statement"`
 }
 
 // Hash identifies inputs (engine version included).

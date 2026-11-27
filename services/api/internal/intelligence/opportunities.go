@@ -61,16 +61,16 @@ func (b *Toolbox) Opportunities(ctx context.Context, p *identity.Principal, from
 				switch l {
 				case LabelConstrained:
 					add(Opportunity{Key: "meal_availability:" + m.MealID, Title: "Offer " + m.Name + " more often", Domain: DomainOperational,
-						Summary: fmt.Sprintf("%s sells %s kits per week when on the menu (high demand) but was on %d of %d menus.", m.Name, ev["kits_per_week_on_menu"], m.WeeksOnMenu, mi.WeeksInPeriod),
+						Summary:  fmt.Sprintf("%s sells %s kits per week when on the menu (high demand) but was on %d of %d menus.", m.Name, ev["kits_per_week_on_menu"], m.WeeksOnMenu, mi.WeeksInPeriod),
 						Evidence: ev, Review: "Menu planning: consider scheduling it more often, within production and supply limits.", ReviewHref: "/menus", From: mi.From, To: mi.To})
 				case LabelUnder:
 					add(Opportunity{Key: "meal_review:" + m.MealID, Title: "Review " + m.Name, Domain: DomainOperational,
-						Summary: fmt.Sprintf("%s was on %d menus and sold %s kits per week on menu, half the median or less.", m.Name, m.WeeksOnMenu, ev["kits_per_week_on_menu"]),
+						Summary:  fmt.Sprintf("%s was on %d menus and sold %s kits per week on menu, half the median or less.", m.Name, m.WeeksOnMenu, ev["kits_per_week_on_menu"]),
 						Evidence: ev, Review: "Culinary and menu review: description, photography, recipe or rotation.", ReviewHref: "/catalog/meals", From: mi.From, To: mi.To})
 				case LabelHighCost:
 					ev["cost_per_serving_minor"] = fmt.Sprint(*m.CostPerServing)
 					add(Opportunity{Key: "meal_cost:" + m.MealID, Title: "Review the cost of " + m.Name, Domain: DomainOperational,
-						Summary: fmt.Sprintf("%s costs %s per serving by reference costs, 1.5 × the median or more.", m.Name, money(*m.CostPerServing)),
+						Summary:  fmt.Sprintf("%s costs %s per serving by reference costs, 1.5 × the median or more.", m.Name, money(*m.CostPerServing)),
 						Evidence: ev, Review: "Culinary costing review: ingredient choices and supplier products, through recipe versioning.", ReviewHref: "/culinary/recipes", From: mi.From, To: mi.To})
 				}
 			}
@@ -107,9 +107,9 @@ func (b *Toolbox) Opportunities(ctx context.Context, p *identity.Principal, from
 		}
 		for _, x := range list {
 			add(Opportunity{Key: "supplier_price:" + x.id, Title: "Review the price of " + x.name, Domain: DomainOperational,
-				Summary: fmt.Sprintf("%s from %s went from %s to %s (from %s), an increase of 10 %% or more.", x.name, x.supplier, money(x.prev), money(x.cur), x.since),
+				Summary:  fmt.Sprintf("%s from %s went from %s to %s (from %s), an increase of 10 %% or more.", x.name, x.supplier, money(x.prev), money(x.cur), x.since),
 				Evidence: map[string]string{"product": x.name, "supplier": x.supplier, "previous_price_minor": fmt.Sprint(x.prev), "current_price_minor": fmt.Sprint(x.cur), "since": x.since, "source": "supplier_prices"},
-				Review: "Procurement review: compare quotations from approved suppliers. Substitutions go through recipe approval.", ReviewHref: "/procurement/suppliers"})
+				Review:   "Procurement review: compare quotations from approved suppliers. Substitutions go through recipe approval.", ReviewHref: "/procurement/suppliers"})
 		}
 	}
 	if p.Can(identity.PermIntelligenceCustomerRead) && b.Behavior != nil {

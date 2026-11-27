@@ -382,8 +382,10 @@ func (h *Handler) saveFrom(w http.ResponseWriter, r *http.Request, fn func(conte
 	httpx.JSON(w, r, status, rec)
 }
 
-func (h *Handler) saveRisk(w http.ResponseWriter, r *http.Request)        { h.saveFrom(w, r, h.Box.SaveRisk) }
-func (h *Handler) saveOpportunity(w http.ResponseWriter, r *http.Request) { h.saveFrom(w, r, h.Box.SaveOpportunity) }
+func (h *Handler) saveRisk(w http.ResponseWriter, r *http.Request) { h.saveFrom(w, r, h.Box.SaveRisk) }
+func (h *Handler) saveOpportunity(w http.ResponseWriter, r *http.Request) {
+	h.saveFrom(w, r, h.Box.SaveOpportunity)
+}
 
 func (h *Handler) reviewRecommendation(w http.ResponseWriter, r *http.Request) {
 	var b struct {

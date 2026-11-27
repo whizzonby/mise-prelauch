@@ -82,6 +82,21 @@ type Config struct {
 
 	// Sprint 3: subscription commerce.
 	Commerce CommerceConfig
+
+	// Sprint 9.2: the language-model provider for Mise Intelligence.
+	AI AIConfig
+}
+
+// AIConfig: the language-model provider. Credentials come only from the
+// environment. Unset provider = AI unavailable; every deterministic view
+// still works. Limits, budget and prices are owner settings in the database.
+type AIConfig struct {
+	Provider string // "" (none) or "openai"
+	Model    string // required with a provider; never hardcoded
+	APIKey   string
+	APIBase  string // tests only; default https://api.openai.com/v1
+	Timeout  time.Duration
+	Retries  int
 }
 
 // CommerceConfig holds the subscription, billing and payment settings.
@@ -305,6 +320,7 @@ func Load() (Config, error) {
 		errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER cannot be true in production: the test provider never takes real money"))
 	}
 	errs = append(errs, loadProviders(&cfg.Commerce, cfg.IsProduction())...)
+	errs = append(errs, loadAI(&cfg.AI)...)
 	if v := strings.TrimSpace(os.Getenv("PAYMENTS_TEST_PROVIDER_SECRET")); v != "" {
 		if len(v) < 32 {
 			errs = append(errs, errors.New("PAYMENTS_TEST_PROVIDER_SECRET must be at least 32 characters"))
@@ -515,5 +531,39 @@ func loadProviders(c *CommerceConfig, production bool) []error {
 		errs = append(errs, errors.New("STRIPE_API_BASE and PAYPAL_API_BASE are for tests only"))
 	}
 	c.Scotiabank = ScotiabankConfig{MerchantID: strings.TrimSpace(os.Getenv("SCOTIABANK_MERCHANT_ID"))}
+	return errs
+}
+
+func loadAI(c *AIConfig) []error {
+	var errs []error
+	c.Provider = strings.ToLower(strings.TrimSpace(os.Getenv("AI_PROVIDER")))
+	c.Model = strings.TrimSpace(os.Getenv("AI_MODEL"))
+	c.APIKey = strings.TrimSpace(os.Getenv("AI_API_KEY"))
+	c.APIBase = strings.TrimSpace(os.Getenv("AI_API_BASE"))
+	var err error
+	if c.Timeout, err = getDuration("AI_TIMEOUT", 45*time.Second); err != nil {
+		errs = append(errs, err)
+	} else if c.Timeout < time.Second || c.Timeout > 5*time.Minute {
+		errs = append(errs, errors.New("AI_TIMEOUT must be between 1s and 5m"))
+	}
+	if c.Retries, err = getInt("AI_RETRIES", 2); err != nil {
+		errs = append(errs, err)
+	} else if c.Retries < 0 || c.Retries > 5 {
+		errs = append(errs, errors.New("AI_RETRIES must be between 0 and 5"))
+	}
+	switch c.Provider {
+	case "":
+	case "openai":
+		if c.Model == "" || c.APIKey == "" {
+			errs = append(errs, errors.New("AI_PROVIDER=openai needs AI_MODEL and AI_API_KEY"))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("AI_PROVIDER %q is not supported (use openai, or leave it empty)", c.Provider))
+	}
+	if c.APIBase != "" {
+		if u, err := url.Parse(c.APIBase); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+			errs = append(errs, errors.New("AI_API_BASE must be an http(s) URL"))
+		}
+	}
 	return errs
 }

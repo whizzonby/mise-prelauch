@@ -36,7 +36,7 @@ type Readiness struct {
 // Readiness runs every check. The overall status is the worst check
 // (AI availability excluded: the deterministic views work without it).
 func (b *Toolbox) Readiness(ctx context.Context) (*Readiness, error) {
-	out := &Readiness{Checks: []Check{}, AI: b.aiStatus(), GeneratedAt: b.Now()}
+	out := &Readiness{Checks: []Check{}, AI: b.aiStatus(ctx), GeneratedAt: b.Now()}
 	add := func(c Check) { out.Checks = append(out.Checks, c) }
 
 	// Real vs test payments (all time).

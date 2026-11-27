@@ -13344,6 +13344,148 @@ paths:
                   meta: { $ref: "#/components/schemas/Meta" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/ai:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceAI
+      description: "Needs intelligence.read. Whether AI can be used now (and why not), the caller's usage and the organisation's month; the settings for intelligence.configure only (null otherwise)."
+      security: [{ adminSession: [] }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceAIInfo" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/ai/settings:
+    put:
+      tags: [admin-intelligence]
+      operationId: intelligenceAISettings
+      description: "Needs intelligence.configure. Replaces the AI settings (audited). Turning AI on needs a monthly budget, provider prices, their source and an approval reference. The provider, model and key come only from the environment."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntelligenceAISettingsInput" }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceAISettings" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/ask:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceAsk
+      description: "Needs intelligence.ask. Ask Mise AI: the model may call only the caller's own read-only tools (permissions are enforced by the server); every number in the answer is checked against the tool results (one regeneration, then unsupported parts are removed and marked). The run is stored. 503 ai_unavailable when AI is not available; 429 ai_user_limit at the daily limit. A provider failure returns a stored run with status failed and no answer."
+      security: [{ adminSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [question], properties: { question: { type: string, minLength: 3, maxLength: 2000 }, from: { type: string, format: date }, to: { type: string, format: date } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/runs:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRuns
+      description: "Needs intelligence.read. Intelligence runs, newest first: the caller's own (all runs for intelligence.configure)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100 } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: object, required: [items], properties: { items: { type: array, items: { $ref: "#/components/schemas/IntelligenceRun" } } } }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/runs/{id}:
+    get:
+      tags: [admin-intelligence]
+      operationId: intelligenceRun
+      description: "Needs intelligence.read. One run the caller may see."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/intelligence/runs/{id}/review:
+    post:
+      tags: [admin-intelligence]
+      operationId: intelligenceReviewRun
+      description: "Needs intelligence.read and access to the run. Marks it reviewed or flagged (a note is required to flag)."
+      security: [{ adminSession: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [reviewed, flagged, unreviewed] }, note: { type: string, maxLength: 1000 } } }
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: "#/components/schemas/IntelligenceRun" }
+                  meta: { $ref: "#/components/schemas/Meta" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
 components:
   securitySchemes:
     guestSession:
@@ -20554,3 +20696,149 @@ components:
               unit: { type: string }
         ai: { $ref: "#/components/schemas/IntelligenceAIStatus" }
         generated_at: { type: string, format: date-time }
+    IntelligenceAISettingsInput:
+      type: object
+      required: [enabled, monthly_budget_usd_micros, input_price_usd_micros_per_mtok, output_price_usd_micros_per_mtok, price_reference, user_daily_requests, max_output_tokens, max_input_tokens, max_tool_calls, max_seconds, retention_days, approval_ref]
+      properties:
+        enabled: { type: boolean }
+        monthly_budget_usd_micros: { type: integer, format: int64, nullable: true, description: "Millionths of a US dollar per calendar month. null = no budget = AI unavailable." }
+        input_price_usd_micros_per_mtok: { type: integer, format: int64, nullable: true }
+        output_price_usd_micros_per_mtok: { type: integer, format: int64, nullable: true }
+        price_reference: { type: string, maxLength: 300 }
+        user_daily_requests: { type: integer, minimum: 1, maximum: 1000 }
+        max_output_tokens: { type: integer, minimum: 200, maximum: 8000 }
+        max_input_tokens: { type: integer, minimum: 2000, maximum: 200000 }
+        max_tool_calls: { type: integer, minimum: 1, maximum: 20 }
+        max_seconds: { type: integer, minimum: 10, maximum: 300 }
+        retention_days: { type: integer, minimum: 7, maximum: 3650 }
+        approval_ref: { type: string, maxLength: 300 }
+    IntelligenceAISettings:
+      allOf:
+        - $ref: "#/components/schemas/IntelligenceAISettingsInput"
+        - type: object
+          required: [updated_at]
+          properties:
+            updated_at: { type: string, format: date-time }
+    IntelligenceAIUsage:
+      type: object
+      required: [month_start, month_requests, month_input_tokens, month_output_tokens, month_cost_usd_micros, budget_usd_micros, budget_remaining_usd_micros, today_requests, today_limit, note]
+      properties:
+        month_start: { type: string, format: date }
+        month_requests: { type: integer }
+        month_input_tokens: { type: integer, format: int64 }
+        month_output_tokens: { type: integer, format: int64 }
+        month_cost_usd_micros: { type: integer, format: int64 }
+        budget_usd_micros: { type: integer, format: int64, nullable: true }
+        budget_remaining_usd_micros: { type: integer, format: int64, nullable: true }
+        today_requests: { type: integer }
+        today_limit: { type: integer }
+        note: { type: string }
+    IntelligenceAIInfo:
+      type: object
+      required: [status, usage, prompt_version, can_ask, settings]
+      properties:
+        status: { $ref: "#/components/schemas/IntelligenceAIStatus" }
+        usage: { $ref: "#/components/schemas/IntelligenceAIUsage" }
+        prompt_version: { type: string }
+        can_ask: { type: boolean }
+        settings:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/IntelligenceAISettings"
+    IntelligenceAnswer:
+      type: object
+      required: [answer, claims, tables, charts, assumptions, limitations, follow_ups]
+      properties:
+        answer: { type: string }
+        claims:
+          type: array
+          items:
+            type: object
+            required: [text, ref, fact, value]
+            properties:
+              text: { type: string }
+              ref: { type: string, description: "The evidence ref (E1, E2, ...) of the tool result the claim comes from." }
+              fact: { type: string }
+              value: { type: number, nullable: true }
+        tables:
+          type: array
+          items:
+            type: object
+            required: [title, ref, columns, rows]
+            properties:
+              title: { type: string }
+              ref: { type: string }
+              columns: { type: array, items: { type: string } }
+              rows: { type: array, items: { type: array, items: { type: string } } }
+        charts:
+          type: array
+          items:
+            type: object
+            required: [type, title, table, label_column, value_column]
+            properties:
+              type: { type: string, enum: [bar, line] }
+              title: { type: string }
+              table: { type: integer, description: "Index into tables." }
+              label_column: { type: integer }
+              value_column: { type: integer }
+        assumptions: { type: array, items: { type: string } }
+        limitations: { type: array, items: { type: string } }
+        follow_ups: { type: array, items: { type: string } }
+    IntelligenceRun:
+      type: object
+      required: [id, kind, user_id, job, provider, model, prompt_version, question, from, to, status, output, tool_calls, evidence, limitations, validation, review_status, review_note, model_calls, input_tokens, output_tokens, cost_usd_micros, duration_ms, error, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [ask, briefing, meal_concepts] }
+        user_id: { type: string, format: uuid, nullable: true }
+        job: { type: string }
+        provider: { type: string }
+        model: { type: string }
+        prompt_version: { type: string }
+        question: { type: string }
+        from: { type: string, format: date, nullable: true }
+        to: { type: string, format: date, nullable: true }
+        status: { type: string, enum: [completed, partial, unavailable, refused, failed] }
+        output:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/IntelligenceAnswer"
+        tool_calls:
+          type: array
+          items:
+            type: object
+            required: [ref, tool, args, ok]
+            properties:
+              ref: { type: string }
+              tool: { type: string }
+              args: { type: object, additionalProperties: true }
+              ok: { type: boolean }
+              error: { type: string }
+        evidence: { type: array, items: { $ref: "#/components/schemas/IntelligenceEvidence" } }
+        limitations: { type: array, items: { type: string } }
+        validation:
+          type: object
+          required: [claims_checked, numbers_checked, unsupported, regenerated, removed]
+          properties:
+            claims_checked: { type: integer }
+            numbers_checked: { type: integer }
+            unsupported:
+              type: array
+              items:
+                type: object
+                required: [where, value, reason]
+                properties:
+                  where: { type: string }
+                  value: { type: string }
+                  reason: { type: string }
+            regenerated: { type: boolean }
+            removed: { type: integer }
+        review_status: { type: string, enum: [unreviewed, reviewed, flagged] }
+        review_note: { type: string }
+        model_calls: { type: integer }
+        input_tokens: { type: integer }
+        output_tokens: { type: integer }
+        cost_usd_micros: { type: integer, format: int64, nullable: true, description: "Estimated from the configured prices; the provider's invoice is authoritative." }
+        duration_ms: { type: integer }
+        error: { type: string }
+        created_at: { type: string, format: date-time }

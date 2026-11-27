@@ -155,6 +155,12 @@ func newHarness(t *testing.T, mutate ...func(*config.Config, *server.Limits)) *h
 		`UPDATE scheduled_reports SET enabled = false, recipients = '{}', approval_ref = ''`,
 		// Sprint 9.1: chat settings ship empty (no hours, no promises).
 		`INSERT INTO support_chat_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
+		// Sprint 9.2: AI ships switched off with no budget (TRUNCATE users CASCADE empties it).
+		`TRUNCATE intelligence_runs`,
+		`INSERT INTO intelligence_ai_settings DEFAULT VALUES ON CONFLICT DO NOTHING`,
+		`UPDATE intelligence_ai_settings SET enabled = false, monthly_budget_usd_micros = NULL, input_price_usd_micros_per_mtok = NULL,
+			output_price_usd_micros_per_mtok = NULL, price_reference = '', user_daily_requests = 20, max_output_tokens = 1500, max_input_tokens = 30000,
+			max_tool_calls = 6, max_seconds = 60, retention_days = 180, approval_ref = '', updated_by = NULL`,
 		`UPDATE support_chat_settings SET enabled = true, timezone = 'America/Port_of_Spain', business_hours = '[]', online_message = '',
 			offline_message = '', response_expectation = '', email_cooldown_minutes = 30, updated_by = NULL`,
 		// Sprint 9.1: only the simulator is enabled, in test mode, as shipped.

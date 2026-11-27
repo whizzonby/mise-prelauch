@@ -144,7 +144,7 @@ func (t *Tool) Allowed(p *identity.Principal) bool {
 	return true
 }
 
-// AIStatus is whether an AI provider is available (Stage 5 fills it in).
+// AIStatus is whether AI can be used now (see Assistant.Status).
 type AIStatus struct {
 	Available bool   `json:"available"`
 	Provider  string `json:"provider"`
@@ -160,14 +160,14 @@ type Toolbox struct {
 	Behavior    *behavior.Service
 	Forecasting *forecasting.Service
 	Now         func() time.Time
-	AI          func() AIStatus
+	AI          func(context.Context) AIStatus
 }
 
-func (b *Toolbox) aiStatus() AIStatus {
+func (b *Toolbox) aiStatus(ctx context.Context) AIStatus {
 	if b.AI == nil {
 		return AIStatus{Reason: "No AI provider is configured."}
 	}
-	return b.AI()
+	return b.AI(ctx)
 }
 
 func period(b *Toolbox, a Args) (analytics.Range, error) { return b.Analytics.ParseRange(a.From, a.To) }

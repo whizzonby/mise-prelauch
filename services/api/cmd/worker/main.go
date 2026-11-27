@@ -14,6 +14,7 @@ import (
 	"mise.tt/api/internal/automation"
 	"mise.tt/api/internal/backoffice"
 	"mise.tt/api/internal/fulfillment"
+	"mise.tt/api/internal/intelligence"
 	"mise.tt/api/internal/launch"
 	"mise.tt/api/internal/notifications"
 	"mise.tt/api/internal/platform/buildinfo"
@@ -109,6 +110,8 @@ func run() error {
 		reportMailer = mailer
 	}
 	au, reports := server.NewAutomation(cfg, pool, com, bo, ids, an, reportMailer)
+	// Sprint 9.2: intelligence runs past the retention setting are deleted.
+	runsRetention := &intelligence.Assistant{Box: &intelligence.Toolbox{Pool: pool, Now: time.Now}}
 	runner.Register(automation.JobExecute, au.HandleExecute)
 	runner.Register(automation.JobEvent, au.HandleEvent)
 	runner.Register(automation.JobReportEmail, reports.HandleEmail)
@@ -124,6 +127,11 @@ func run() error {
 			}
 			if _, err := reports.Due(ctx); err != nil && ctx.Err() == nil {
 				slog.ErrorContext(ctx, "scheduled reports failed", "error", err.Error())
+			}
+			if n, err := runsRetention.Purge(ctx); err != nil && ctx.Err() == nil {
+				slog.ErrorContext(ctx, "intelligence retention failed", "error", err.Error())
+			} else if n > 0 {
+				slog.InfoContext(ctx, "intelligence runs past retention deleted", "count", n)
 			}
 			select {
 			case <-ctx.Done():

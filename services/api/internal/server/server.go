@@ -31,6 +31,7 @@ import (
 	"mise.tt/api/internal/fulfillment"
 	"mise.tt/api/internal/identity"
 	"mise.tt/api/internal/intelligence"
+	"mise.tt/api/internal/intelligence/ai"
 	"mise.tt/api/internal/inventory"
 	"mise.tt/api/internal/launch"
 	"mise.tt/api/internal/leads"
@@ -125,6 +126,16 @@ func NewFinance(pool *pgxpool.Pool, com *Commerce) *finance.Service {
 }
 
 // NewLaunch builds the launch readiness service from configuration.
+// NewAssistant is Ask Mise AI over the configured provider (none: AI unavailable).
+func NewAssistant(cfg config.Config, box *intelligence.Toolbox) *intelligence.Assistant {
+	a := &intelligence.Assistant{Box: box, Model: cfg.AI.Model}
+	if cfg.AI.Provider == "openai" {
+		a.Provider = ai.Retrying{P: &ai.OpenAI{APIKey: cfg.AI.APIKey, Model: cfg.AI.Model, BaseURL: cfg.AI.APIBase, Timeout: cfg.AI.Timeout},
+			Attempts: cfg.AI.Retries + 1, Backoff: time.Second}
+	}
+	return a
+}
+
 func NewLaunch(cfg config.Config, pool *pgxpool.Pool, com *Commerce) *launch.Service {
 	name, live, _, ok := com.Payments.Available()
 	if !ok {
@@ -442,8 +453,11 @@ func BuildWith(cfg config.Config, pool *pgxpool.Pool, limits Limits, ids *identi
 	(&supportchat.Handler{S: chat, Identity: ids, Customers: customerService, StartLimit: limits.Signup.ByIP}).Routes(mux)
 	fin, bx := NewFinance(pool, com), NewBehavior(pool, com)
 	(&finance.Handler{S: fin, Identity: ids}).Routes(mux)
-	(&intelligence.Handler{Box: &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
-		Now: func() time.Time { return com.Service.Now() }}, Identity: ids}).Routes(mux)
+	box := &intelligence.Toolbox{Pool: pool, Analytics: an, Finance: fin, Behavior: bx, Forecasting: fc,
+		Now: func() time.Time { return com.Service.Now() }}
+	asst := NewAssistant(cfg, box)
+	box.AI = asst.Status
+	(&intelligence.Handler{Box: box, Assistant: asst, Identity: ids}).Routes(mux)
 	(&behavior.Handler{S: bx, Identity: ids, Customers: customerService, Limit: limits.Events.ByIP}).Routes(mux)
 
 	mux.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

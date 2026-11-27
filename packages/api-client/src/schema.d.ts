@@ -7373,6 +7373,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/intelligence/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Whether AI can be used now (and why not), the caller's usage and the organisation's month; the settings for intelligence.configure only (null otherwise). */
+        get: operations["intelligenceAI"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/ai/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Needs intelligence.configure. Replaces the AI settings (audited). Turning AI on needs a monthly budget, provider prices, their source and an approval reference. The provider, model and key come only from the environment. */
+        put: operations["intelligenceAISettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence.ask. Ask Mise AI: the model may call only the caller's own read-only tools (permissions are enforced by the server); every number in the answer is checked against the tool results (one regeneration, then unsupported parts are removed and marked). The run is stored. 503 ai_unavailable when AI is not available; 429 ai_user_limit at the daily limit. A provider failure returns a stored run with status failed and no answer. */
+        post: operations["intelligenceAsk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. Intelligence runs, newest first: the caller's own (all runs for intelligence.configure). */
+        get: operations["intelligenceRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Needs intelligence.read. One run the caller may see. */
+        get: operations["intelligenceRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/intelligence/runs/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Needs intelligence.read and access to the run. Marks it reviewed or flagged (a note is required to flag). */
+        post: operations["intelligenceReviewRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -13827,6 +13929,140 @@ export interface components {
             ai: components["schemas"]["IntelligenceAIStatus"];
             /** Format: date-time */
             generated_at: string;
+        };
+        IntelligenceAISettingsInput: {
+            enabled: boolean;
+            /**
+             * Format: int64
+             * @description Millionths of a US dollar per calendar month. null = no budget = AI unavailable.
+             */
+            monthly_budget_usd_micros: number | null;
+            /** Format: int64 */
+            input_price_usd_micros_per_mtok: number | null;
+            /** Format: int64 */
+            output_price_usd_micros_per_mtok: number | null;
+            price_reference: string;
+            user_daily_requests: number;
+            max_output_tokens: number;
+            max_input_tokens: number;
+            max_tool_calls: number;
+            max_seconds: number;
+            retention_days: number;
+            approval_ref: string;
+        };
+        IntelligenceAISettings: components["schemas"]["IntelligenceAISettingsInput"] & {
+            /** Format: date-time */
+            updated_at: string;
+        };
+        IntelligenceAIUsage: {
+            /** Format: date */
+            month_start: string;
+            month_requests: number;
+            /** Format: int64 */
+            month_input_tokens: number;
+            /** Format: int64 */
+            month_output_tokens: number;
+            /** Format: int64 */
+            month_cost_usd_micros: number;
+            /** Format: int64 */
+            budget_usd_micros: number | null;
+            /** Format: int64 */
+            budget_remaining_usd_micros: number | null;
+            today_requests: number;
+            today_limit: number;
+            note: string;
+        };
+        IntelligenceAIInfo: {
+            status: components["schemas"]["IntelligenceAIStatus"];
+            usage: components["schemas"]["IntelligenceAIUsage"];
+            prompt_version: string;
+            can_ask: boolean;
+            settings: components["schemas"]["IntelligenceAISettings"] | null;
+        };
+        IntelligenceAnswer: {
+            answer: string;
+            claims: {
+                text: string;
+                /** @description The evidence ref (E1, E2, ...) of the tool result the claim comes from. */
+                ref: string;
+                fact: string;
+                value: number | null;
+            }[];
+            tables: {
+                title: string;
+                ref: string;
+                columns: string[];
+                rows: string[][];
+            }[];
+            charts: {
+                /** @enum {string} */
+                type: "bar" | "line";
+                title: string;
+                /** @description Index into tables. */
+                table: number;
+                label_column: number;
+                value_column: number;
+            }[];
+            assumptions: string[];
+            limitations: string[];
+            follow_ups: string[];
+        };
+        IntelligenceRun: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "ask" | "briefing" | "meal_concepts";
+            /** Format: uuid */
+            user_id: string | null;
+            job: string;
+            provider: string;
+            model: string;
+            prompt_version: string;
+            question: string;
+            /** Format: date */
+            from: string | null;
+            /** Format: date */
+            to: string | null;
+            /** @enum {string} */
+            status: "completed" | "partial" | "unavailable" | "refused" | "failed";
+            output: components["schemas"]["IntelligenceAnswer"] | null;
+            tool_calls: {
+                ref: string;
+                tool: string;
+                args: {
+                    [key: string]: unknown;
+                };
+                ok: boolean;
+                error?: string;
+            }[];
+            evidence: components["schemas"]["IntelligenceEvidence"][];
+            limitations: string[];
+            validation: {
+                claims_checked: number;
+                numbers_checked: number;
+                unsupported: {
+                    where: string;
+                    value: string;
+                    reason: string;
+                }[];
+                regenerated: boolean;
+                removed: number;
+            };
+            /** @enum {string} */
+            review_status: "unreviewed" | "reviewed" | "flagged";
+            review_note: string;
+            model_calls: number;
+            input_tokens: number;
+            output_tokens: number;
+            /**
+             * Format: int64
+             * @description Estimated from the configured prices; the provider's invoice is authoritative.
+             */
+            cost_usd_micros: number | null;
+            duration_ms: number;
+            error: string;
+            /** Format: date-time */
+            created_at: string;
         };
     };
     responses: {
@@ -29464,6 +29700,196 @@ export interface operations {
             };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
+        };
+    };
+    intelligenceAI: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceAIInfo"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceAISettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntelligenceAISettingsInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceAISettings"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    intelligenceAsk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    question: string;
+                    /** Format: date */
+                    from?: string;
+                    /** Format: date */
+                    to?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    intelligenceRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            items: components["schemas"]["IntelligenceRun"][];
+                        };
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    intelligenceRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    intelligenceReviewRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "reviewed" | "flagged" | "unreviewed";
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["IntelligenceRun"];
+                        meta: components["schemas"]["Meta"];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            422: components["responses"]["Error"];
         };
     };
 }

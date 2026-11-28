@@ -77,5 +77,5 @@ actual SDKs and data used. Nothing is published.
 - [x] Stage 7 — orders, delivery tracking (real milestones, no GPS), cooking mode; backend `GET /me/orders/{id}/meals/{mealId}/recipe` (owner + confirmed order + published version only; Go tests pass)
 - [x] Stage 8 — support chat (existing inbox; SSE with Last-Event-ID replay, backoff, closed in background; dedup by seq and client id) and help centre (plain text only)
 - [x] Stage 9 — migration 00024 + internal/appnotify (in-app centre from email events, push devices, FCM v1 adapter tested on a fake, deletion requests + admin queue; Go tests pass), app notification centre, push service (off until Firebase), account screens, validated deep links
-- [ ] Stage 10 — security, performance, accessibility review
-- [ ] Stage 11 — tests, screenshots, Android build, docs, report, commit
+- [x] Stage 10 — security review (docs/security/MOBILE_SECURITY.md), accessibility built in; performance not measured on devices
+- [x] Stage 11 — 57 Flutter tests, full Go suite, 28 test renders, docs, report; Android build Blocked by the PC clock (7 days behind)

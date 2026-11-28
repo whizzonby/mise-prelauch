@@ -44,6 +44,8 @@ Future<void> bootstrap() async {
   final seen = await flags.getBool(Flags.onboardingSeen);
 
   final container = ProviderContainer(
+    // No silent automatic retries: screens show the error and a Try again.
+    retry: (_, _) => null,
     overrides: [
       environmentProvider.overrideWithValue(env),
       flagsProvider.overrideWithValue(flags),

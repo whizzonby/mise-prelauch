@@ -174,6 +174,10 @@ class MiseNetworkImage extends StatelessWidget {
             child: const Icon(Icons.restaurant_outlined, color: MiseColors.borderStrong, size: 32),
           );
         }
+        // Bundled images (`asset:` URLs) — used for test renders and fallbacks.
+        if (url!.startsWith('asset:')) {
+          return Image.asset(url!.substring(6), fit: fit, cacheWidth: w);
+        }
         return CachedNetworkImage(
           imageUrl: url!,
           fit: fit,

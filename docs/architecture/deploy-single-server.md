@@ -46,9 +46,13 @@ nano .env.production            # email settings, MAIL_FROM
 Point the domain at the server first (the Route 53 table below); Caddy can only get
 certificates once DNS resolves and ports 80 and 443 are open.
 
-What `start` sets up: four systemd services (`mise-api`, `mise-worker`, `mise-marketing`,
-`mise-admin`) that restart on failure and on reboot. They listen only on `127.0.0.1`;
-Caddy is the only thing facing the internet. On the public domain Caddy forwards just the
+What `start` sets up: five systemd services (`mise-api` on 8090, `mise-worker`,
+`mise-marketing` on 3100, `mise-web` on 3102 for the customer app at `app.<domain>`, and
+`mise-admin` on 3101) that restart on failure and on reboot. They listen only on `127.0.0.1`;
+Caddy (or the nginx/Apache already on the server) is the only thing facing the internet.
+`SITE_MODE` in `.env.production` is compiled into the site by `build`: `waitlist` until
+go-live, `launch` to send meal, plan and sign-in links to the customer app. Rebuild after
+changing it. On the public domain Caddy forwards just the
 public API endpoints to the API, so the admin API is never reachable from outside.
 
 Day to day:
@@ -56,7 +60,7 @@ Day to day:
 ```sh
 ./infrastructure/native/mise.sh update        # git pull, rebuild, migrate, restart
 ./infrastructure/native/mise.sh status
-./infrastructure/native/mise.sh logs api      # or worker, marketing, admin
+./infrastructure/native/mise.sh logs api      # or worker, marketing, web, admin
 ./infrastructure/native/mise.sh clean         # free disk space used by build caches
 ```
 
@@ -91,12 +95,13 @@ Docker subnet (a line in `pg_hba.conf`, for example
 
 ## 3. Point the domain at the server (Route 53)
 
-In the hosted zone for your domain, create three records pointing at the server's public IP:
+In the hosted zone for your domain, create four records pointing at the server's public IP:
 
 | Name | Type | Value |
 |---|---|---|
 | `example.com` | A | server IP |
 | `www.example.com` | A | server IP |
+| `app.example.com` | A | server IP |
 | `admin.example.com` | A | server IP |
 
 Use the server's Elastic IP (or static IP) so the address does not change on reboot.

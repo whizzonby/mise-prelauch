@@ -2,16 +2,20 @@
 # Runs Mise directly on an Ubuntu server, without Docker.
 #
 #   ./infrastructure/native/mise.sh setup     install Node.js, pnpm and Go if missing
-#   ./infrastructure/native/mise.sh build     compile the API and build both sites
+#   ./infrastructure/native/mise.sh build     compile the API and build the site, customer app and admin
 #   ./infrastructure/native/mise.sh start     install systemd services, migrate, start everything
 #   ./infrastructure/native/mise.sh https     serve the domain over HTTPS (adds Mise to nginx or Apache if one
 #                                             already runs here; otherwise installs Caddy)
 #   ./infrastructure/native/mise.sh admin EMAIL "NAME"   create an admin (asks for the password)
 #   ./infrastructure/native/mise.sh update    git pull, rebuild, restart
-#   ./infrastructure/native/mise.sh status    show the four services
+#   ./infrastructure/native/mise.sh status    show the five services
 #   ./infrastructure/native/mise.sh warm      prepare every image size now (start and update do this)
-#   ./infrastructure/native/mise.sh logs [api|worker|marketing|admin]
+#   ./infrastructure/native/mise.sh logs [api|worker|marketing|web|admin]
 #   ./infrastructure/native/mise.sh clean     delete build caches to free disk space
+#
+# Hostnames: https://DOMAIN (public site), https://app.DOMAIN (customer app:
+# accounts, plans, checkout) and https://admin.DOMAIN (admin). DNS for DOMAIN,
+# www, app and admin must point at this server before running https.
 #
 # Settings are read from .env.production in the repository root.
 # Guide: docs/architecture/deploy-single-server.md
@@ -22,7 +26,7 @@ ENV_FILE="$ROOT/.env.production"
 RUN_USER="${SUDO_USER:-$(id -un)}"
 NODE_MAJOR=22
 PNPM_VERSION=11.9.0
-SERVICES=(mise-api mise-worker mise-marketing mise-admin)
+SERVICES=(mise-api mise-worker mise-marketing mise-web mise-admin)
 export PATH="/usr/local/go/bin:$PATH"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
@@ -43,6 +47,9 @@ load_env() {
   # Fixed for this layout: the API listens on this machine only, behind Caddy.
   export MISE_ENV=production HTTP_ADDR=127.0.0.1:8090 TRUSTED_PROXY_HOPS=1 RATE_LIMITS_DISABLED=false
   export PUBLIC_SITE_URL="https://$DOMAIN" CORS_ORIGINS="https://$DOMAIN"
+  export CUSTOMER_APP_URL="https://app.$DOMAIN" ADMIN_APP_URL="https://admin.$DOMAIN"
+  SITE_MODE="$(setting SITE_MODE)"
+  SITE_MODE="${SITE_MODE:-waitlist}"
 }
 
 cmd_setup() {
@@ -76,19 +83,23 @@ cmd_build() {
   (cd "$ROOT/services/api" && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "$ROOT/bin/" ./cmd/...)
 
   say "Installing JavaScript dependencies"
-  (cd "$ROOT" && pnpm install --frozen-lockfile --filter "@mise/marketing..." --filter "@mise/admin...")
+  (cd "$ROOT" && pnpm install --frozen-lockfile --filter "@mise/marketing..." --filter "@mise/web..." --filter "@mise/admin...")
 
-  say "Building the site"
-  # The browser calls /api/v1 on the site's own address; Caddy sends those
-  # requests to the API (see the https command).
+  say "Building the site ($SITE_MODE mode)"
+  # The browser calls /api/v1 on the site's own address; the web server sends
+  # those requests to the API (see the https command). In launch mode the
+  # site's meal, plan and sign-in links go to the customer app.
   (cd "$ROOT" && NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SITE_URL="https://$DOMAIN" NEXT_PUBLIC_API_URL="" \
+    NEXT_PUBLIC_APP_URL="https://app.$DOMAIN" NEXT_PUBLIC_SITE_MODE="$SITE_MODE" \
     pnpm --filter @mise/marketing build)
+  say "Building the customer app"
+  (cd "$ROOT" && NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SITE_URL="https://$DOMAIN" pnpm --filter @mise/web build)
   say "Building the admin"
   (cd "$ROOT" && NEXT_TELEMETRY_DISABLED=1 pnpm --filter @mise/admin build)
 
   # A standalone Next.js server expects its static files beside it.
   local app out
-  for app in marketing admin; do
+  for app in marketing web admin; do
     out="$ROOT/apps/$app/.next/standalone/apps/$app"
     rm -rf "$out/.next/static" "$out/public"
     cp -r "$ROOT/apps/$app/.next/static" "$out/.next/static"
@@ -123,8 +134,9 @@ UNIT
 cmd_start() {
   load_env
   [ -x "$ROOT/bin/api" ] || die "Nothing is built yet. Run: $0 build"
+  [ -f "$ROOT/apps/web/.next/standalone/apps/web/server.js" ] || die "The customer app is not built yet. Run: $0 build"
   local go_env node
-  go_env="Environment=MISE_ENV=production HTTP_ADDR=127.0.0.1:8090 TRUSTED_PROXY_HOPS=1 RATE_LIMITS_DISABLED=false PUBLIC_SITE_URL=https://$DOMAIN CORS_ORIGINS=https://$DOMAIN"
+  go_env="Environment=MISE_ENV=production HTTP_ADDR=127.0.0.1:8090 TRUSTED_PROXY_HOPS=1 RATE_LIMITS_DISABLED=false PUBLIC_SITE_URL=https://$DOMAIN CORS_ORIGINS=https://$DOMAIN CUSTOMER_APP_URL=https://app.$DOMAIN ADMIN_APP_URL=https://admin.$DOMAIN"
   node="$(command -v node)"
 
   say "Applying database migrations"
@@ -135,6 +147,8 @@ cmd_start() {
   unit mise-worker "Mise worker (email)" "$ROOT" "$ROOT/bin/worker" "$go_env"
   unit mise-marketing "Mise site" "$ROOT/apps/marketing/.next/standalone/apps/marketing" "$node server.js" \
     "Environment=NODE_ENV=production PORT=3100 HOSTNAME=127.0.0.1 API_INTERNAL_URL=http://127.0.0.1:8090"
+  unit mise-web "Mise customer app" "$ROOT/apps/web/.next/standalone/apps/web" "$node server.js" \
+    "Environment=NODE_ENV=production PORT=3102 HOSTNAME=127.0.0.1 API_INTERNAL_URL=http://127.0.0.1:8090 CUSTOMER_APP_URL=https://app.$DOMAIN WEB_COOKIE_SECURE=true"
   unit mise-admin "Mise admin" "$ROOT/apps/admin/.next/standalone/apps/admin" "$node server.js" \
     "Environment=NODE_ENV=production PORT=3101 HOSTNAME=127.0.0.1 API_INTERNAL_URL=http://127.0.0.1:8090 ADMIN_COOKIE_SECURE=true"
   sudo systemctl daemon-reload
@@ -153,9 +167,10 @@ issue_certificates() { # nginx|apache
     sudo apt-get install -y -qq certbot "python3-certbot-$1" >/dev/null
   fi
   say "Requesting HTTPS certificates"
-  sudo certbot "--$1" --redirect -d "$DOMAIN" -d "www.$DOMAIN" -d "admin.$DOMAIN" ||
-    die "certbot did not finish. The site is reachable over http:// for now. Check that DNS for $DOMAIN, www.$DOMAIN and admin.$DOMAIN points at this server and ports 80/443 are open, then run: $0 https"
-  echo "Serving https://$DOMAIN and https://admin.$DOMAIN (sign in at https://admin.$DOMAIN/login)."
+  # --expand: a certificate from an earlier run (without app.) is widened, not duplicated.
+  sudo certbot "--$1" --redirect --expand -d "$DOMAIN" -d "www.$DOMAIN" -d "app.$DOMAIN" -d "admin.$DOMAIN" ||
+    die "certbot did not finish. The site is reachable over http:// for now. Check that DNS for $DOMAIN, www.$DOMAIN, app.$DOMAIN and admin.$DOMAIN points at this server and ports 80/443 are open, then run: $0 https"
+  echo "Serving https://$DOMAIN, https://app.$DOMAIN and https://admin.$DOMAIN (admin sign-in at https://admin.$DOMAIN/login)."
 }
 
 # Adds Mise to an nginx that already serves other sites. Only this one file is
@@ -177,7 +192,8 @@ server {
 
     # Only the endpoints the public site uses reach the API. The admin API is
     # not exposed on the public domain.
-    location ~ ^/api/v1/(leads(/.*)?|referrals/.*|events|health|ready)\$ {
+    # Payment provider webhooks also go straight to the API (signed, verified there).
+    location ~ ^/api/v1/(leads(/.*)?|referrals/.*|events|health|ready|version|webhooks/payments/.*)\$ {
         proxy_pass http://127.0.0.1:8090;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -187,6 +203,26 @@ server {
     location / {
         proxy_pass http://127.0.0.1:3100;
         proxy_http_version 1.1;
+        # Live chat streams events; pass them on as they arrive.
+        proxy_buffering off;
+        proxy_read_timeout 120s;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.$DOMAIN;
+
+    location / {
+        proxy_pass http://127.0.0.1:3102;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_read_timeout 120s;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -227,19 +263,36 @@ https_apache() {
   if [ -f /etc/apache2/sites-available/mise-le-ssl.conf ]; then
     echo "HTTPS is already configured for Mise in Apache; not rewriting it."
   else
-    sudo a2enmod -q proxy proxy_http headers rewrite >/dev/null
+    sudo a2enmod -q proxy proxy_http headers rewrite setenvif >/dev/null
     sudo tee "$conf" >/dev/null <<APACHE
 # Mise. Written by infrastructure/native/mise.sh; certbot adds the HTTPS copy.
+# flushpackets=on and no compression on /api/chat: live chat (Server-Sent
+# Events) must reach the browser as it happens, not when a buffer fills.
 <VirtualHost *:80>
     ServerName $DOMAIN
     ServerAlias www.$DOMAIN
     ProxyPreserveHost On
     ProxyRequests Off
-    # Only the endpoints the public site uses reach the API. The admin API is
-    # not exposed on the public domain.
-    ProxyPassMatch "^(/api/v1/(?:leads(?:/.*)?|referrals/.*|events|health|ready))\$" "http://127.0.0.1:8090\$1"
-    ProxyPass / http://127.0.0.1:3100/
+    ProxyTimeout 120
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    SetEnvIf Request_URI "^/api/chat/" no-gzip dont-vary
+    # Only the endpoints the public site uses, plus payment provider webhooks
+    # (signed, verified by the API), reach the API. The admin API is not
+    # exposed on the public domain.
+    ProxyPassMatch "^(/api/v1/(?:leads(?:/.*)?|referrals/.*|events|health|ready|version|webhooks/payments/.*))\$" "http://127.0.0.1:8090\$1"
+    ProxyPass / http://127.0.0.1:3100/ flushpackets=on
     ProxyPassReverse / http://127.0.0.1:3100/
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName app.$DOMAIN
+    ProxyPreserveHost On
+    ProxyRequests Off
+    ProxyTimeout 120
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    SetEnvIf Request_URI "^/api/chat/" no-gzip dont-vary
+    ProxyPass / http://127.0.0.1:3102/ flushpackets=on
+    ProxyPassReverse / http://127.0.0.1:3102/
 </VirtualHost>
 
 <VirtualHost *:80>
@@ -287,7 +340,7 @@ Point that web server at 127.0.0.1:3100 (site), 127.0.0.1:3101 (admin) and 127.0
   sudo tee /etc/caddy/Caddyfile >/dev/null <<CADDY
 $DOMAIN {
 	encode zstd gzip
-	@api path /api/v1/leads /api/v1/leads/* /api/v1/referrals/* /api/v1/events /api/v1/health /api/v1/ready
+	@api path /api/v1/leads /api/v1/leads/* /api/v1/referrals/* /api/v1/events /api/v1/health /api/v1/ready /api/v1/version /api/v1/webhooks/payments/*
 	handle @api {
 		reverse_proxy 127.0.0.1:8090
 	}
@@ -300,6 +353,11 @@ www.$DOMAIN {
 	redir https://$DOMAIN{uri} permanent
 }
 
+app.$DOMAIN {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3102
+}
+
 admin.$DOMAIN {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3101
@@ -307,7 +365,7 @@ admin.$DOMAIN {
 CADDY
   sudo systemctl enable --quiet caddy
   sudo systemctl reload caddy 2>/dev/null || sudo systemctl restart caddy
-  echo "Caddy is serving https://$DOMAIN and https://admin.$DOMAIN."
+  echo "Caddy is serving https://$DOMAIN, https://app.$DOMAIN and https://admin.$DOMAIN."
   echo "Certificates are issued once DNS for those names points at this server and ports 80 and 443 are open."
 }
 
@@ -333,6 +391,7 @@ cmd_status() {
   for s in "${SERVICES[@]}"; do printf '%-16s %s\n' "$s" "$(systemctl is-active "$s" 2>/dev/null || true)"; done
   curl -fsS --max-time 5 http://127.0.0.1:8090/api/v1/ready >/dev/null 2>&1 && echo "API: ready (database reachable)" || echo "API: NOT ready - run: $0 logs api"
   curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:3100/robots.txt 2>/dev/null && echo "Site: responding" || echo "Site: NOT responding - run: $0 logs marketing"
+  curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:3102/robots.txt 2>/dev/null && echo "Customer app: responding" || echo "Customer app: NOT responding - run: $0 logs web"
   curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:3101/login 2>/dev/null && echo "Admin: responding" || echo "Admin: NOT responding - run: $0 logs admin"
 }
 
@@ -356,7 +415,7 @@ cmd_clean() {
   say "Removing build caches"
   go clean -cache -modcache 2>/dev/null || true
   (cd "$ROOT" && pnpm store prune >/dev/null 2>&1 || true)
-  rm -rf "$ROOT/apps/marketing/.next/cache" "$ROOT/apps/admin/.next/cache"
+  rm -rf "$ROOT/apps/marketing/.next/cache" "$ROOT/apps/web/.next/cache" "$ROOT/apps/admin/.next/cache"
   df -h "$ROOT" | tail -1
 }
 

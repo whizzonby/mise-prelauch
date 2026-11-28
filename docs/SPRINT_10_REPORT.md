@@ -160,3 +160,7 @@ domain, payments, legal). No store submission without the owner's explicit appro
 
 ## Commit and working tree
 Implementation commit and hash note: see the end of this file.
+
+Implementation commit: `14a8ef4` on `sprint-10/mobile-app` (28 Nov 2026), after checkpoints `cf35232`, `8ffd3bd`, `0b5797e`,
+`3ea927b`, `789f811`, `ecd6786`. Working tree after it: clean. Not pushed (needs the owner's approval). The commit that adds this
+line is the report's hash note.
